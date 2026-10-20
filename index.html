@@ -110,12 +110,12 @@ button,input,select{font-family:inherit}
 .ptop{flex-wrap:nowrap}
 .ptop .btn{flex:none}
 .strip,.builder{border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
-.strip{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-end;padding:12px 14px}
+.strip{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;padding:12px 14px}
 .group{display:flex;flex-direction:column;gap:6px;min-width:0}
 .lbl{font-size:12px;font-weight:500;color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .seg{display:inline-flex;flex-wrap:wrap;padding:3px;border-radius:22px;background:rgba(0,0,0,.25);border:1px solid var(--border)}
-.seg button{appearance:none;border:0;background:transparent;color:var(--fg);font:500 14px var(--font-body);padding:0 14px;min-height:36px;border-radius:999px;cursor:pointer}
+.seg button{appearance:none;border:0;background:transparent;color:var(--fg);font:500 14px var(--font-body);padding:0 12px;min-height:36px;border-radius:999px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .stepper{display:inline-flex;align-items:center;border-radius:999px;background:rgba(0,0,0,.25);border:1px solid var(--border);padding:3px}
 .stepper button{appearance:none;border:0;background:var(--surface-2);color:var(--fg);width:36px;height:36px;border-radius:50%;font:600 18px var(--font-body);cursor:pointer}
@@ -352,7 +352,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
   input[type=range]{height:32px}
 }
 /* Smartphone: beim Bauen hat der Baukasten den ganzen Platz, Start zeigt die Bühne wieder */
-@media (max-height:700px),(max-width:560px){ #player.building .stage{display:none} }
+@media (max-height:700px),(max-width:560px){ #player.building .stage,#player.set-open .stage{display:none} #player.set-open .pctl{flex:1 1 auto} }
 /* ---------- Schmale Bildschirme (Smartphone hochkant) ---------- */
 @media (max-width:560px){
   .btn .bt{display:none}
@@ -1272,7 +1272,7 @@ const PIANO={
   pick:{tag:'Tastenlauf',text:'Akkorde und Begleitmuster auf der Klaviatur.'},
   hero:'Welche Akkorde spielst du am <em>Klavier?</em>',
   heroP:'Such dir eine Übung aus. Bei jeder Übung kannst du eigene Akkorde einsetzen. Oder bau selbst: Akkorde in Kästchen setzen, Spielmuster wählen, fertig.',
-  whoLabel:'Wer spielt?', whoOpts:[['app','Die App'],['R','Rechts'],['L','Links'],['both','Beide Hände']], whoDefault:'app',
+  whoLabel:'Wer spielt?', whoOpts:[['app','Die App'],['L','Links'],['R','Rechts'],['both','Beide']], whoDefault:'app',
   accLabel:'Bass', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
   patTitle:'Spielmuster wählen',
   patHint:'Das Muster spielst du in jedem Takt – mit deinen Akkorden. Oben steht die rechte Hand (R), unten die linke (L). <b>■</b> ganzer Akkord · <b>1</b> Grundton · <b>3</b> Terz · <b>5</b> Quinte · <b>6</b> Sexte · <b>8</b> Oktave.',
@@ -1567,12 +1567,13 @@ function fromSpec(bpm,hands){
   });
 }
 /* Ein Melodie-Lied fertig machen. Mit „band“: Einzähltakt, Schlagzeug und Akkord-Begleitung wie bei den anderen Instrumenten */
-function melodySong(s){
-  const off=-(s.pickup||0)*60/s.bpm, items=[];
-  fromSpec(s.bpm,s.spec()).forEach(gr=>gr.notes.forEach(n=>items.push({kind:'note',hand:gr.name==='Linke Hand'?'L':'R',midi:n.midi,start:n.start+off,end:n.end+off,vel:n.vel})));
+function melodySong(s,bpm){
+  bpm=bpm||s.bpm;
+  const off=-(s.pickup||0)*60/bpm, items=[];
+  fromSpec(bpm,s.spec()).forEach(gr=>gr.notes.forEach(n=>items.push({kind:'note',hand:gr.name==='Linke Hand'?'L':'R',midi:n.midi,start:n.start+off,end:n.end+off,vel:n.vel})));
   if(!s.band) return finishSong(s.name,items,[],{kind:'midi',lead:-3},{hasAcc:false});
   const acc=[], chords=s.band.chords.split(/\s+/).map(parseChordName);
-  const fr=grooveFrame({bpm:s.bpm,reps:1,drums:'simple',chords},s.band.meter*2,(c,t,st,bar)=>{
+  const fr=grooveFrame({bpm,reps:1,drums:'simple',chords},s.band.meter*2,(c,t,st,bar)=>{
     const third=TYPES[c.type].third; let base=48+c.pc; if(base<52) base+=12;
     for(const iv of [0,third,7]) acc.push({midi:base+iv,start:t,end:t+bar*0.97,vel:0.42,v:'keys'});
     acc.push({midi:28+mod12(c.pc-4),start:t,end:t+bar*0.9,vel:0.6,v:'bass'});
@@ -1588,9 +1589,9 @@ const MELODY={
   pick:{tag:'Tastenfall',text:'Melodien mit fallenden Noten, rechte und linke Hand.'},
   hero:'Welches Lied willst du <em>spielen?</em>',
   heroP:'Tippe auf ein Lied. Fang mit „Leicht“ an. Wenn du alle Töne schaffst, bekommst du drei Sterne. Lieder mit „Klassenband“ gibt es auch bei Gitarre, Ukulele, Bass und Klavierbegleitung – dort spielt man die Akkorde dazu.',
-  whoLabel:'Wer spielt?', whoOpts:[['R','Rechts'],['L','Links'],['both','Beide Hände'],['app','Die App']], whoDefault:'R',
-  hands:true, micWho:'R', waitDefault:true, songs:MSONGS,
-  accLabel:'Begleitung', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
+  whoLabel:'Wer spielt?', whoOpts:[['app','Die App'],['L','Links'],['R','Rechts'],['both','Beide']], whoDefault:'app',
+  hands:true, micWho:'R', songs:MSONGS,
+  accLabel:'Akkorde', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
   patTitle:'', patHint:'', patterns:[], presets:[],
   defaultGv:()=>({bpm:80,reps:1,chords:[]}),
   midi(name,groups){
@@ -1621,7 +1622,8 @@ const MELODY={
     const L=GEO;
     let lo=127,hi=0; if(song) for(const it of song.items){ lo=Math.min(lo,it.midi); hi=Math.max(hi,it.midi); }
     if(lo>hi){ lo=60; hi=72; }
-    lo--; hi++; while(hi-lo<24){ lo--; if(hi-lo<24) hi++; }
+    const span=W<560?14:24;
+    lo--; hi++; while(hi-lo<span){ lo--; if(hi-lo<span) hi++; }
     lo=Math.max(21,lo); hi=Math.min(108,hi);
     if(isBlackKey(lo)) lo--; if(isBlackKey(hi)) hi++;
     L.keys=new Array(128).fill(null); L.whites=[];
@@ -1716,10 +1718,10 @@ const MELODY={
     const ms=[...new Set(nd.map(n=>n.midi))].sort((a,b)=>a-b);
     return [{t:'Drück: '+ms.map(noteName).join(' + '),f:`700 20px ${FD}`,c:TH.canvas.accent,h:30},{t:'Das Lied wartet auf dich.',f:`400 14px ${FB}`,c:TH.canvas.soft,h:22}];
   },
-  idleHint(){ return who==='app'?'Du hörst nur zu. Wähl oben bei „Wer spielt?“ eine Hand.':who==='both'?'Du spielst mit beiden Händen.':who==='R'?'Du spielst die rechte Hand. Links spielt die App.':'Du spielst die linke Hand. Rechts spielt die App.'; },
+  idleHint(){ return who==='app'?'Die App spielt dir das Lied vor. Du hörst zu.':who==='both'?'Du spielst mit beiden Händen.':who==='R'?'Du spielst die rechte Hand. Links spielt die App.':'Du spielst die linke Hand. Rechts spielt die App.'; },
   help:[
     ['Lied aussuchen','Tippe auf ein Lied. Die Farbe zeigt, wie schwer es ist: grün ist leicht, gelb ist mittel, rot ist schwer.'],
-    ['Hand wählen','Bei „Wer spielt?“ wählst du die rechte Hand, die linke oder beide. Die andere Hand spielt dann die App.'],
+    ['Erst zuhören, dann mitspielen','Zuerst spielt dir die App das Lied vor. Dann wählst du bei „Wer spielt?“ die linke Hand, die rechte oder beide. Die andere Hand spielt die App.'],
     ['Start drücken','Die Balken fallen nach unten. Berührt ein Balken die gelbe Linie, drückst du die Taste darunter.'],
     ['Spielen','Auf dem Bildschirm, mit der Computer-Tastatur (<kbd>A</kbd> bis <kbd>K</kbd>), mit einem Keyboard am Kabel oder am echten Klavier. Für das echte Klavier drückst du „App hört zu“.'],
     ['Klassenband','Lieder mit „Klassenband“ gibt es auch bei Gitarre, Ukulele, Bass und Klavierbegleitung. Dort spielt man die Akkorde dazu. So könnt ihr zusammen als Band spielen.']
@@ -2360,11 +2362,11 @@ function openMidi(s){
   $('accBtn').hidden=!song.hasAcc; $('bandGroup').hidden=!song.hasAcc;
 }
 function openMelody(s){
-  meta={name:s.name,level:s.level,kind:'melody'}; gv=null;
+  meta={name:s.name,level:s.level,kind:'melody',src:s,bpm:s.bpm}; gv=null;
   showPlayer(s.name,s.level);
   $('builder').hidden=true;
-  $('bpmGroup').hidden=true; $('speedGroup').hidden=false;
-  setSpeedBtns(100); speed=1;
+  $('bpmGroup').hidden=false; $('speedGroup').hidden=true;
+  speed=1;
   const sg=melodySong(s); setBand(false,false);
   setSong(sg,true);
   $('drumsBtn').hidden=!sg.band; $('accBtn').hidden=!sg.band; $('bandGroup').hidden=!sg.band;
@@ -2385,7 +2387,7 @@ function setSong(s,reset){
   song=s; finished=false; parts=[]; fx=[];
   if(reset) pos=leadPos();
   $('seek').max=song.duration.toFixed(2); $('dur').textContent=fmt(song.duration);
-  $('bpmOut').textContent=(gv?gv.bpm:'')+' BPM';
+  $('bpmOut').textContent=(gv?gv.bpm:meta&&meta.bpm||'')+' BPM';
   rebuildPractice(); layout();
   if(!reset&&was) playing=true;
 }
@@ -2968,7 +2970,16 @@ document.querySelectorAll('#tempo button').forEach(b=>b.onclick=()=>{
   setSpeedBtns(+b.dataset.v); speed=+b.dataset.v/100;
   if(playing&&!waiting){ stopScheduled(); resyncFrom(pos); } else if(!playing&&pos<0) pos=leadPos();
 });
-function bpmStep(d){ if(!gv) return; gv.bpm=Math.max(40,Math.min(180,gv.bpm+d)); rebuild(!playing&&pos<=0); }
+function bpmStep(d){
+  if(meta&&meta.kind==='melody'){
+    const old=meta.bpm; meta.bpm=Math.max(40,Math.min(180,old+d)); if(meta.bpm===old) return;
+    const keep=pos*old/meta.bpm, was=playing, reset=!playing&&pos<=0;
+    setSong(melodySong(meta.src,meta.bpm),reset);
+    if(!reset){ pos=Math.min(keep,song.duration); if(was) resyncFrom(pos); resetScore(); }
+    return;
+  }
+  if(!gv) return; gv.bpm=Math.max(40,Math.min(180,gv.bpm+d)); rebuild(!playing&&pos<=0);
+}
 $('bpmDown').onclick=()=>bpmStep(-5); $('bpmUp').onclick=()=>bpmStep(5);
 $('wait').onclick=e=>{
   waitMode=!waitMode; e.currentTarget.setAttribute('aria-pressed',waitMode); $('waitLbl').textContent=waitMode?'An':'Aus';
