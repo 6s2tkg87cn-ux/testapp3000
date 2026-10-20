@@ -1,8 +1,8 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Bandlauf</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Lexend:wght@400;500;600&display=swap">
+<meta name="description" content="Bandlauf – Übe-App für Musik: Gitarre, Bass, Ukulele und Klavier mit Laufband, Stimmgerät und Mikrofon.">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: optional instrument picker, then a library (cards with mini previews) and a player: settings strip, foldable chord/pattern builder, running band + instrument view, round transport */
 :root{
@@ -405,6 +405,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
 }
 @media (prefers-reduced-motion:reduce){ .card,.icard,.switch .track,.switch .track::after,.bhead .chev{transition:none} .card:hover,.icard:hover{transform:none} }
 </style>
+</head><body>
 
 <section class="screen" id="pick" hidden>
   <div class="pick-in">
@@ -638,7 +639,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
 
 <script>
 (()=>{
-const ONLY='', APPFILE='Bandlauf.html';
+const ONLY='';
 const NAMES=['C','Cis','D','Dis','E','F','Fis','G','Gis','A','Ais','H'];
 const FLATN=['C','Des','D','Es','E','F','Ges','G','As','A','B','H'];
 const PCN=['C','Cis','D','Es','E','F','Fis','G','As','A','B','H'];
@@ -2452,7 +2453,7 @@ let inFrame=false; try{ inFrame=window.self!==window.top; }catch(e){ inFrame=tru
 const IOS_DEV=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function micErrorText(e){
   const n=e&&e.name||'';
-  if(!window.isSecureContext) return 'Das Mikrofon geht nur über eine sichere Adresse (https://). Öffne Bandlauf über deinen Netlify-Link.';
+  if(!window.isSecureContext) return 'Das Mikrofon geht nur über eine sichere Adresse (https://…). Öffne Bandlauf über die https-Adresse des Schulservers – oder bitte die Schul-IT, HTTPS einzurichten.';
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return IOS_DEV?'Dieser Browser erlaubt kein Mikrofon. Öffne Bandlauf direkt in Safari (nicht in WhatsApp, Mail oder Teams).':'Dieser Browser erlaubt kein Mikrofon. Nimm Chrome, Edge, Safari oder Firefox.';
   if(n==='NotAllowedError'||n==='SecurityError'||n==='PermissionDeniedError') return IOS_DEV
     ? 'Das Mikrofon ist gesperrt. So gibst du es frei: 1. Einstellungen → Apps → Safari → Mikrofon → „Fragen“. 2. In Safari links in der Adresszeile auf „aA“ → Website-Einstellungen → Mikrofon → „Erlauben“. 3. Seite neu laden.'
@@ -2468,7 +2469,7 @@ async function getMicStream(ec){
   finally{ micPending=false; setTimeout(audioMode,0); }
 }
 function micDeniedText(){ return inFrame
-  ? `In dieser Ansicht darf die App das Mikrofon nicht benutzen. So klappt es: Öffne die Datei „${APPFILE}“ im Browser (Chrome, Edge, Safari oder Firefox) und erlaube dort das Mikrofon.`
+  ? `In dieser Ansicht darf die App das Mikrofon nicht benutzen. So klappt es: Öffne die App in einem eigenen Browser-Tab (${location.href.split(/[?#]/)[0]}) und erlaube dort das Mikrofon.`
   : 'Die App darf das Mikrofon nicht benutzen. Tippe oben in der Adresszeile auf das Schloss- oder „aA“-Symbol und erlaube das Mikrofon. Dann lade die Seite neu.'; }
 async function openMic(ec){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw new Error('none');
