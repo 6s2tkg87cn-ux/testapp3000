@@ -34,6 +34,10 @@ funktioniert alles andere, nur das Mikrofon nicht – die App zeigt dann einen H
   aktivieren (die drei auskommentierten Zeilen am Ende).
 - Hat er keins, die Schul-IT bitten, HTTPS einzurichten (z. B. kostenlos mit Let's Encrypt).
 
+## In WordPress einbinden
+
+Schritt-für-Schritt-Anleitung: [ANLEITUNG-WORDPRESS.md](ANLEITUNG-WORDPRESS.md)
+
 ## In Moodle, IServ & Co. einbetten
 
 Am einfachsten verlinkt man die App (Link „in neuem Fenster öffnen“). Soll sie in einem
