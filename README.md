@@ -1,7 +1,12 @@
 # Bandlauf
 
-Übe-App für Musik: Gitarre, Bass, Ukulele und Klavier mit Laufband, Akkord-Baukasten,
-Stimmgerät, Mikrofon-Erkennung und MIDI. Die App ist eine reine Web-Seite (HTML, CSS,
+Übe-App für Musik mit fünf Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
+(Laufband mit Akkorden, Akkord-Baukasten) sowie Klaviermelodie (fallende Noten, rechte und
+linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
+
+**Klassenband:** Zehn Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
+bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
+Tonart, im selben Tempo und mit einem Takt zum Einzählen. So kann eine Klasse zusammen spielen. Die App ist eine reine Web-Seite (HTML, CSS,
 JavaScript) – sie braucht **kein PHP, keine Datenbank und keine Installation** auf dem Server.
 
 ## Dateien
