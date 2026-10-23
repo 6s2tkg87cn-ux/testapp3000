@@ -6,7 +6,14 @@ linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
 
 **Klassenband:** Zehn Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
 bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
-Tonart, im selben Tempo und mit einem Takt zum Einzählen. So kann eine Klasse zusammen spielen. Die App ist eine reine Web-Seite (HTML, CSS,
+Tonart, im selben Tempo und mit einem Takt zum Einzählen. So kann eine Klasse zusammen spielen.
+
+**Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
+MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
+dann die linke Hand. Mit Quantisieren, Rückgängig, Tempo und Taktart. Geteilt wird über einen
+Link oder Code, der die ganze Melodie enthält (kein Server nötig), oder als MIDI-Datei.
+
+Die App ist eine reine Web-Seite (HTML, CSS,
 JavaScript) – sie braucht **kein PHP, keine Datenbank und keine Installation** auf dem Server.
 
 ## Dateien
