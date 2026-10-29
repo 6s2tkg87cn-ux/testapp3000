@@ -4,9 +4,14 @@
 (Laufband mit Akkorden, Akkord-Baukasten) sowie Klaviermelodie (fallende Noten, rechte und
 linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
 
-**Klassenband:** Zehn Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
+**Klassenband:** 14 Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
 bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
-Tonart, im selben Tempo und mit einem Takt zum Einzählen. So kann eine Klasse zusammen spielen.
+Tonart, im selben Tempo und mit einem Takt zum Einzählen (4/4, 3/4 oder 2/4). So kann eine
+Klasse zusammen spielen. Neu dabei: „Die Gedanken sind frei“, „Kein schöner Land“ und „Muss i denn“
+(Melodien nach der Essener Volksliedsammlung) sowie „Morgen kommt der Weihnachtsmann“.
+
+**Übersicht:** Die Lieder jedes Instruments sind in Bereiche aufgeteilt – Übungen, Klassenband,
+Popsongs und „Meine“ (bei Klaviermelodie: alle Lieder, Klassenband, „Meine“).
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
