@@ -1,8 +1,9 @@
 # Bandlauf
 
-Übe-App für Musik mit fünf Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
-(Laufband mit Akkorden, Akkord-Baukasten) sowie Klaviermelodie (fallende Noten, rechte und
-linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
+Übe-App für Musik mit sechs Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
+(Laufband mit Akkorden, Akkord-Baukasten), Klaviermelodie (fallende Noten, rechte und
+linke Hand) und Gesang (mitlaufender Liedtext mit Akkorden). Dazu Stimmgerät,
+Mikrofon-Erkennung und MIDI.
 
 **Klassenband:** 14 Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
 bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
@@ -12,6 +13,15 @@ Klasse zusammen spielen. Neu dabei: „Die Gedanken sind frei“, „Kein schön
 
 **Übersicht:** Die Lieder jedes Instruments sind in Bereiche aufgeteilt – Übungen, Klassenband,
 Popsongs und „Meine“ (bei Klaviermelodie: alle Lieder, Klassenband, „Meine“).
+
+**Lieder importieren:** Ein Lied mit Akkorden einfügen – Akkorde in einer eigenen Zeile über
+dem Text (wie auf Akkordseiten) oder im ChordPro-Format. Die App erkennt Abschnitte,
+Wiederholungen, englische und deutsche Akkordnamen (B/H) und vereinfacht Sonderakkorde.
+Wie lange jeder Akkord dauert, steht in keinem Akkordblatt: Das stellt man im Schritt „Takte“
+ein – per Knopf („Alle 2 Takte“) oder durch **Mitklopfen** zum Original. Danach gibt es das Lied
+bei Gesang (Text läuft mit, die App spielt die Band) und bei allen Begleit-Instrumenten.
+Liedtexte sind urheberrechtlich geschützt: importierte Lieder nur im Unterricht mit der eigenen
+Lerngruppe nutzen; sie bleiben im Browser und werden nur per Link/Code geteilt.
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
