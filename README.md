@@ -1,8 +1,9 @@
 # Bandlauf
 
-Übe-App für Musik mit fünf Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
-(Laufband mit Akkorden, Akkord-Baukasten) sowie Klaviermelodie (fallende Noten, rechte und
-linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
+Übe-App für Musik mit sechs Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
+(Laufband mit Akkorden, Akkord-Baukasten), Klaviermelodie (fallende Noten, rechte und
+linke Hand) und Gesang (Liedtext Zeile für Zeile mit Akkorden). Dazu Stimmgerät,
+Mikrofon-Erkennung und MIDI.
 
 **Klassenband:** 14 Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
 bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
@@ -12,6 +13,25 @@ Klasse zusammen spielen. Neu dabei: „Die Gedanken sind frei“, „Kein schön
 
 **Übersicht:** Die Lieder jedes Instruments sind in Bereiche aufgeteilt – Übungen, Klassenband,
 Popsongs und „Meine“ (bei Klaviermelodie: alle Lieder, Klassenband, „Meine“).
+
+**Lieder importieren:** Ein Lied mit Akkorden einfügen – Akkorde in einer eigenen Zeile über
+dem Text (wie auf Akkordseiten) oder im ChordPro-Format. Die App erkennt Abschnitte,
+Wiederholungen, englische und deutsche Akkordnamen (B/H) und vereinfacht Sonderakkorde.
+Wie lange jeder Akkord dauert, steht in keinem Akkordblatt: Das stellt man im Schritt „Takte“
+ein (− / +, „Alle 2 Takte“). Unpassende Akkorde oder ganze Zeilen lassen sich entfernen, und eine
+fertige Strophe bzw. ein fertiger Refrain wird mit einem Tipp auf alle gleichartigen Abschnitte
+übertragen. Danach gibt es das Lied bei Gesang (aktuelle Zeile mit Akkorden, die App spielt die
+Band) und bei allen Begleit-Instrumenten.
+
+**Teilen per QR-Code:** Beim Teilen zeigt die App einen QR-Code (auch groß für den Beamer).
+Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofort loslegen.
+Liedtexte sind urheberrechtlich geschützt: importierte Lieder nur im Unterricht mit der eigenen
+Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
+
+**Beamer:** „Vollbild“ zeigt nur Text und Akkorde ohne Bedienelemente (z. B. beim Spiegeln per
+AirPlay). Am Laptop/PC mit Beamer als zweitem Bildschirm öffnet „Beamer-Fenster“ ein eigenes,
+synchron laufendes Fenster für den Beamer – wie der Präsentationsmodus von PowerPoint. Hinweis:
+Über AirPlay kann eine Web-App kein eigenes zweites Bild erzeugen, AirPlay spiegelt das iPad.
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
