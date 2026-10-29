@@ -4,9 +4,14 @@
 (Laufband mit Akkorden, Akkord-Baukasten) sowie Klaviermelodie (fallende Noten, rechte und
 linke Hand). Dazu Stimmgerät, Mikrofon-Erkennung und MIDI.
 
-**Klassenband:** Zehn Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
+**Klassenband:** 14 Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
 bei Gitarre, Ukulele, Bass und Klavierbegleitung die passenden Akkorde, jeweils in derselben
-Tonart, im selben Tempo und mit einem Takt zum Einzählen. So kann eine Klasse zusammen spielen.
+Tonart, im selben Tempo und mit einem Takt zum Einzählen (4/4, 3/4 oder 2/4). So kann eine
+Klasse zusammen spielen. Neu dabei: „Die Gedanken sind frei“, „Kein schöner Land“ und „Muss i denn“
+(Melodien nach der Essener Volksliedsammlung) sowie „Morgen kommt der Weihnachtsmann“.
+
+**Übersicht:** Die Lieder jedes Instruments sind in Bereiche aufgeteilt – Übungen, Klassenband,
+Popsongs und „Meine“ (bei Klaviermelodie: alle Lieder, Klassenband, „Meine“).
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
@@ -81,6 +86,20 @@ dem Link zum Öffnen im eigenen Tab.
 - Inline-`<script>` und `<style>` werden verwendet. Setzt der Server eine strenge
   Content-Security-Policy, braucht diese Seite `script-src 'self' 'unsafe-inline'` und
   `style-src 'self' 'unsafe-inline'`.
+
+## Sicherheit
+
+- Die App lädt nichts von fremden Servern und baut keine Verbindungen auf. Eine
+  Sicherheitsrichtlinie (Content-Security-Policy) steht direkt in `index.html` und verbietet
+  das zusätzlich; `.htaccess` und `web.config` senden sie auch als Server-Header, dazu eine
+  Permissions-Policy (Mikrofon und MIDI nur für Bandlauf, Kamera, Standort usw. aus).
+- MIDI-Dateien (höchstens 2 MB), Melodie-Links und -Codes sowie gespeicherte Daten werden
+  geprüft, bevor die App sie verwendet. Namen werden immer als reiner Text angezeigt.
+- **Empfehlung:** Bandlauf möglichst unter einer eigenen Adresse betreiben, z. B.
+  `bandlauf.meine-schule.de`. Browser merken sich die Mikrofon-Freigabe und den Speicher pro
+  Adresse – liegen auf derselben Adresse noch andere Web-Apps, teilen sie sich beides.
+- Einbetten per iframe ist erlaubt (Moodle, WordPress). Wer das einschränken will, aktiviert
+  die Zeile `X-Frame-Options` in der `.htaccess`.
 
 ## Lizenzen
 

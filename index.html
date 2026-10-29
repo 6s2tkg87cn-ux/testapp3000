@@ -2,6 +2,7 @@
 <title>Bandlauf</title>
 <meta name="description" content="Bandlauf – Übe-App für Musik: Gitarre, Bass, Ukulele, Klavierbegleitung und Klaviermelodie mit Laufband, fallenden Noten, Stimmgerät und Mikrofon.">
 <meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: optional instrument picker, then a library (cards with mini previews) and a player: settings strip, foldable chord/pattern builder, running band + instrument view, round transport */
@@ -76,6 +77,24 @@ button,input,select{font-family:inherit}
 .thumb{display:block;width:100%;height:78px;background:rgba(0,0,0,.22)}
 .cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .ctop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.libacts{gap:8px;margin-top:6px}
+.libbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.libtabs button{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+.libtabs .cnt{font-size:12px;font-weight:600;min-width:20px;padding:1px 6px;border-radius:999px;background:rgba(255,255,255,.1);font-variant-numeric:tabular-nums}
+.libtabs button[aria-pressed="true"] .cnt{background:rgba(0,0,0,.12)}
+.filters .filter{min-height:38px;padding:0 14px;font-size:14px}
+.secinfo{margin:-10px 0 -8px;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:72ch}
+.libtabs .ts,.libacts .ts{display:none}
+@media (max-width:560px){
+  .libbar{gap:8px}
+  .seg.libtabs{flex-wrap:nowrap;max-width:100%;box-sizing:border-box}
+  .seg.libtabs button{white-space:nowrap;padding:0 9px;gap:5px;font-size:13.5px;flex:1 1 auto;justify-content:center}
+  .libtabs .cnt{padding:1px 5px;min-width:0}
+  .libtabs .tl,.libacts .tl{display:none} .libtabs .ts,.libacts .ts{display:inline}
+  .filters{gap:6px} .filters .filter{min-height:34px;padding:0 12px;font-size:13.5px}
+  .hero p,.secinfo{font-size:14px}
+}
+.libempty{margin:0;padding:22px;border:1.5px dashed var(--border);border-radius:var(--r);color:var(--muted);text-align:center;line-height:1.5}
 .btag{align-self:flex-start;font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .card h3{margin:0;font-family:var(--font-display);font-weight:500;font-size:16px;line-height:1.25;letter-spacing:-.01em}
 .card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.4}
@@ -117,6 +136,7 @@ button,input,select{font-family:inherit}
 .seg{display:inline-flex;flex-wrap:wrap;padding:3px;border-radius:22px;background:rgba(0,0,0,.25);border:1px solid var(--border)}
 .seg button{appearance:none;border:0;background:transparent;color:var(--fg);font:500 14px var(--font-body);padding:0 12px;min-height:36px;border-radius:999px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:disabled{opacity:.35;cursor:default}
 .stepper{display:inline-flex;align-items:center;border-radius:999px;background:rgba(0,0,0,.25);border:1px solid var(--border);padding:3px}
 .stepper button{appearance:none;border:0;background:var(--surface-2);color:var(--fg);width:36px;height:36px;border-radius:50%;font:600 18px var(--font-body);cursor:pointer}
 .stepper output{min-width:78px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
@@ -504,20 +524,20 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
     <div class="hero">
       <h1 id="heroH"></h1>
       <p id="heroP"></p>
+      <div class="row libacts" id="libActs"></div>
     </div>
-    <div class="filters" id="filters">
-      <button class="filter" data-f="0" aria-pressed="true">Alle</button>
-      <button class="filter" data-f="1" aria-pressed="false">Leicht</button>
-      <button class="filter" data-f="2" aria-pressed="false">Mittel</button>
-      <button class="filter" data-f="3" aria-pressed="false">Schwer</button>
+    <div class="libbar">
+      <div class="seg libtabs" id="libTabs" aria-label="Bereich"></div>
+      <div class="filters" id="filters" aria-label="Schwierigkeit">
+        <button class="filter" data-f="0" aria-pressed="true">Alle</button>
+        <button class="filter" data-f="1" aria-pressed="false">Leicht</button>
+        <button class="filter" data-f="2" aria-pressed="false">Mittel</button>
+        <button class="filter" data-f="3" aria-pressed="false">Schwer</button>
+      </div>
     </div>
+    <p class="secinfo" id="secInfo"></p>
     <div class="grid" id="grid"></div>
-    <div class="sec" id="bandTitle" hidden>Klassenband · die Begleitung zu den Melodien bei Klaviermelodie</div>
-    <div class="grid" id="band"></div>
-    <div class="sec" id="songsTitle">Popsongs · nur die Akkorde, zum Mitspielen</div>
-    <div class="grid" id="songs"></div>
-    <div class="sec" id="mineTitle" hidden>Meine Akkordfolgen · bei allen Instrumenten</div>
-    <div class="grid" id="mine"></div>
+    <p class="libempty" id="libEmpty" hidden></p>
   </div>
   <input class="vh" type="file" id="file" accept=".mid,.midi,audio/midi,audio/x-midi">
 </section>
@@ -749,7 +769,7 @@ const ch=(pc,type='maj',bars=1,hi=false)=>({pc,type,bars,hi});
 const c1=(pc,type='maj',hi=false)=>({pc,type,bars:1,hi});
 const clone=o=>JSON.parse(JSON.stringify(o));
 function normalize(chs){ const out=[]; chs.forEach(c=>{ for(let i=0;i<(c.bars||1);i++) out.push({pc:c.pc,type:c.type,bars:1,hi:!!c.hi}); }); return out; }
-function useFlats(c){ return [3,5,8,10].includes(c.pc)||(c.type==='min'&&[0,2,5,7].includes(c.pc))||(c.type==='dom'&&[0,5].includes(c.pc)); }
+function useFlats(c){ return [3,5,8,10].includes(c.pc)&&c.type!=='min'||(c.type==='min'&&[0,2,3,5,7,10].includes(c.pc))||(c.type==='dom'&&[0,5].includes(c.pc)); }
 function chordToneNames(c){
   const t=TYPES[c.type].third, ivs=[0,t,7].concat(c.type==='dom'?[10]:[]);
   const N=useFlats(c)?FLATN:NAMES;
@@ -956,22 +976,23 @@ function parseMidi(buf){
   const vl=()=>{let v=0,c;do{c=b[p++];v=(v<<7)|(c&0x7f);}while(c&0x80&&p<b.length);return v;};
   if(str(4)!=='MThd') throw new Error('kein MIDI');
   const hl=u32(); u16(); const ntr=u16(); const div=u16(); p+=hl-6;
-  let ppq=div, smpte=0;
-  if(div&0x8000){ const fps=256-(div>>8); smpte=1/(fps*(div&0xff)); }
-  const tempos=[], raw=[], names=[];
-  for(let t=0;t<ntr&&p<b.length;t++){
-    const id=str(4), len=u32(), end=p+len;
+  let ppq=div||96, smpte=0;
+  if(div&0x8000){ const fps=256-(div>>8), sub=div&0xff; if(fps>0&&sub>0) smpte=1/(fps*sub); else ppq=96; }
+  /* Grenzen gegen präparierte Dateien: Spuren enden spätestens am Dateiende, höchstens 20 000 Noten und 2 000 Tempowechsel */
+  const tempos=[], raw=[], names=[], MAXN=20000;
+  for(let t=0;t<ntr&&p<b.length&&raw.length<MAXN;t++){
+    const id=str(4), len=u32(), end=Math.min(b.length,p+len);
     if(id!=='MTrk'){p=end;t--;continue;}
     let tick=0, rs=0, name='';
     const open=new Map();
-    while(p<end){
+    while(p<end&&raw.length<MAXN){
       tick+=vl();
       let st=b[p];
       if(st<0x80) st=rs; else p++;
       if(st===0xFF){
         const type=b[p++], l=vl();
-        if(type===0x51&&l===3) tempos.push({tick,uspq:(b[p]<<16)|(b[p+1]<<8)|b[p+2]});
-        else if(type===0x03&&!name){ for(let i=0;i<l;i++) name+=String.fromCharCode(b[p+i]); }
+        if(type===0x51&&l===3&&tempos.length<2000) tempos.push({tick,uspq:(b[p]<<16)|(b[p+1]<<8)|b[p+2]});
+        else if(type===0x03&&!name&&l<=200){ for(let i=0;i<l&&p+i<b.length;i++) name+=String.fromCharCode(b[p+i]); }
         p+=l;
       } else if(st===0xF0||st===0xF7){ p+=vl(); }
       else {
@@ -984,7 +1005,7 @@ function parseMidi(buf){
         else { const s=open.get(key); if(s&&s.length){ const o=s.shift(); raw.push({trk:t,ch,midi:a,t0:o.tick,t1:tick,vel:o.vel}); } }
       }
     }
-    for(const [key,s] of open) for(const o of s) raw.push({trk:t,ch:key>>7,midi:key&127,t0:o.tick,t1:tick,vel:o.vel});
+    for(const [key,s] of open) for(const o of s) if(raw.length<MAXN) raw.push({trk:t,ch:key>>7,midi:key&127,t0:o.tick,t1:tick,vel:o.vel});
     names[t]=name.trim();
     p=end;
   }
@@ -1152,7 +1173,7 @@ const BASS={
   canvas:{top:'#0f2c33',bot:'#06151a',panel:'rgba(8,30,35,0.94)',dark:'#071a1e',muted:'#9fc0bf',soft:'#c9e2e0',accent:'#ff7a59',ink:'#2b0d04'},
   pick:{tag:'Basslauf',text:'Basslines mit Tab-Laufband und Griffbrett.'},
   hero:'Was willst du heute am <em>Bass</em> üben?',
-  heroP:'Such dir eine Übung aus. Bei jeder Übung kannst du eigene Akkorde einsetzen. Oder bau deine eigene Bassline: Akkorde in Kästchen setzen, Muster wählen, fertig.',
+  heroP:'Wähl eine Übung oder ein Lied – oder bau deine eigene Bassline.',
   whoLabel:'Wer spielt den Bass?', whoOpts:[['app','Die App'],['you','Ich']], whoDefault:'app',
   accLabel:'Akkorde', accDefault:true, micLabel:'Echter Bass', sensQuiet:'Bass ist leise',
   patTitle:'Bass-Muster wählen',
@@ -1325,7 +1346,7 @@ const BASS={
   },
   idleHint(){ return who==='you'?'Du spielst den Bass. Tippe auch aufs Griffbrett.':'Die App spielt den Bass. Du hörst zu.'; },
   help:[
-    ['Übung aussuchen','Tippe auf eine Übung. Du kannst auch selbst eine Bassline bauen oder ein MIDI-Lied öffnen.'],
+    ['Übung aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen. Tippe auf eine Karte. Mit „Selbst bauen“ machst du eine eigene Bassline.'],
     ['Kästchen lesen','Die Kästchen laufen nach links. Die Farbe zeigt die Saite: <span class="sdots"><i style="background:#7ae582"></i>G</span> <span class="sdots"><i style="background:#4cc9f0"></i>D</span> <span class="sdots"><i style="background:#ffd23f"></i>A</span> <span class="sdots"><i style="background:#ff4fa3"></i>E</span>. Die Zahl ist der Bund. 0 heißt: leere Saite.'],
     ['Spielen','Berührt ein Kästchen die Linie, spielst du den Ton. Unten auf dem Griffbrett siehst du, wo dein Finger hin muss.'],
     ['Selbst bauen','Tippe Akkorde an und wähle ein Muster. Der Bass spielt das Muster mit deinen Akkorden.']
@@ -1359,7 +1380,7 @@ const PIANO={
   canvas:{top:'#123024',bot:'#06120d',panel:'rgba(10,30,22,0.94)',dark:'#0a1712',muted:'#a3bfb2',soft:'#cfe3d8',accent:'#f2c14e',ink:'#2a1d00'},
   pick:{tag:'Tastenlauf',text:'Akkorde und Begleitmuster auf der Klaviatur.'},
   hero:'Welche Akkorde spielst du am <em>Klavier?</em>',
-  heroP:'Such dir eine Übung aus. Bei jeder Übung kannst du eigene Akkorde einsetzen. Oder bau selbst: Akkorde in Kästchen setzen, Spielmuster wählen, fertig.',
+  heroP:'Wähl eine Übung oder ein Lied – oder bau dir eine eigene Begleitung.',
   whoLabel:'Wer spielt?', whoOpts:[['app','Die App'],['L','Links'],['R','Rechts'],['both','Beide']], whoDefault:'app',
   accLabel:'Bass', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
   patTitle:'Spielmuster wählen',
@@ -1420,7 +1441,7 @@ const PIANO={
         const a=gv.rh[i]; if(a!=='-') for(const m of R[a]) items.push({kind:'note',hand:'R',midi:m,start:t+i*st,end:t+i*st+lenOf(gv.rh,i,st),vel:i%2?0.65:0.8,label:a==='A'?lab:null});
         const b=gv.lh[i]; if(b!=='-') for(const m of Lt[b]) items.push({kind:'note',hand:'L',midi:m,start:t+i*st,end:t+i*st+lenOf(gv.lh,i,st),vel:i%2?0.6:0.75,label:b==='A'?lab:null});
       }
-      { const br=28+mod12(c.pc-4); acc.push({midi:br,start:t,end:t+st*(n===8?3.6:5.5),vel:0.7,v:'bass'}); if(n===8) acc.push({midi:br,start:t+4*st,end:t+7.6*st,vel:0.6,v:'bass'}); }
+      { const br=28+mod12(c.pc-4); acc.push({midi:br,start:t,end:t+st*(n===6?5.5:3.6),vel:0.7,v:'bass'}); if(n===8) acc.push({midi:br,start:t+4*st,end:t+7.6*st,vel:0.6,v:'bass'}); }
     });
     return finishSong('',items,acc,fr,{hasAcc:true});
   },
@@ -1546,7 +1567,7 @@ const PIANO={
   },
   idleHint(){ return who==='app'?'Die App spielt. Du hörst zu.':who==='both'?'Du spielst mit beiden Händen.':who==='R'?'Du spielst die rechte Hand. Links spielt die App.':'Du spielst die linke Hand. Rechts spielt die App.'; },
   help:[
-    ['Übung aussuchen','Tippe auf eine Übung. Du kannst auch selbst bauen: Akkorde in Kästchen setzen, Spielmuster wählen.'],
+    ['Übung aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen. Tippe auf eine Karte. Mit „Selbst bauen“ setzt du eigene Akkorde in Kästchen.'],
     ['Kästchen lesen','Oben läuft die rechte Hand (R), unten die linke Hand (L). In den Kästchen steht der Akkord oder der Ton.'],
     ['Spielen','Berührt ein Kästchen die Linie, drückst du die Tasten. Die Punkte auf der Klaviatur zeigen alle Tasten des Akkords.'],
     ['Hand wählen','Bei „Wer spielt?“ wählst du beide Hände, nur rechts oder nur links. Die andere Hand spielt dann die App.']
@@ -1583,6 +1604,9 @@ const MSONGS=(()=>{
   const feAm=[[45,.25],[52,.25],[57,.25],[0,.75]], feE=[[40,.25],[52,.25],[56,.25],[0,.75]];
   const feL=[[0,1.5],...feAm,...feE,...feAm,[0,1.5],...feAm,...feE];
   const hbC='C G G C C F C C', wwC='C F D7 G C Am G C', snC='C C C C G G C C F F C C F F C C G G7 C C C G7 C C';
+  const gdC='C C G7 C C C G7 C G7 C G7 C F C G7 C', ksC='G D7 G D7 G D7 G G G D7 G G', miC='C C C G7 C C C C G7 C G7 C F C C C C G7 C';
+  /* „Muss i denn“: wiederkehrende Zeile (Takt 1–3) */
+  const miA=[[64,.5],[64,.25],[67,.25],[65,.5],[65,.25],[69,.25],[67,.5],[67,.25],[65,.25],[64,1],[67,.5],[67,.25],[65,.25],[64,.5],[64,.25],[67,.25]];
 
   return [
     {name:'Alle meine Entchen',origin:'Kinderlied',level:1,hint:'Fünf Töne, nur weiße Tasten',bpm:100,
@@ -1594,6 +1618,7 @@ const MSONGS=(()=>{
       spec:()=>[RH([[64,1],[62,1],[60,1],[62,1],[64,1],[64,1],[64,2],[62,1],[62,1],[62,2],[64,1],[67,1],[67,2],[64,1],[62,1],[60,1],[62,1],[64,1],[64,1],[64,1],[64,1],[62,1],[62,1],[64,1],[62,1],[60,4]]),
         LH([[48,4],[48,4],[43,4],[48,4],[48,4],[48,4],[43,4],[48,4]])]},
     {name:'Morgen kommt der Weihnachtsmann',origin:'Volkslied · auch „Twinkle, Twinkle“',level:1,hint:'Große Sprünge, ruhiges Tempo',bpm:100,
+      band:{meter:2,feel:'ballad',chords:'C C F C F C G C C F C G C F C G C C F C F C G C'},
       spec:()=>[RH([...twA,...twB,...twB,...twA]),LH([...twLA,...twLB,...twLB,...twLA])]},
     {name:'Hänschen klein',origin:'Kinderlied',level:1,hint:'Fünf Töne, nur weiße Tasten',bpm:108,
       band:{meter:4,feel:'country',chords:'C G7 C C C G7 C C G G7 C C C G7 C C'},
@@ -1634,6 +1659,25 @@ const MSONGS=(()=>{
           [69,2],[69,1],[72,1.5],[71,.5],[69,1],[67,1.5],[69,.5],[67,1],[64,3],[69,2],[69,1],[72,1.5],[71,.5],[69,1],[67,1.5],[69,.5],[67,1],[64,3],
           [74,2],[74,1],[77,1.5],[74,.5],[71,1],[72,3],[76,3],[72,1],[67,1],[64,1],[67,1.5],[65,.5],[62,1],[60,6]]),
         lhFrom(snC,3)]},
+    {name:'Die Gedanken sind frei',origin:'Volkslied, um 1800',level:2,hint:'Dreiertakt mit Auftakt',bpm:138,pickup:1,
+      band:{meter:3,feel:'waltz',chords:gdC},
+      spec:()=>[RH([[67,.5],[67,.5],[72,1],[72,1],[76,.5],[72,.5],[67,2],[67,1],[65,1],[62,1],[67,1],[64,1],[60,1],[67,1],
+          [72,1],[72,1],[76,.5],[72,.5],[67,2],[67,1],[65,1],[62,1],[67,1],[64,1],[60,1],[72,1],
+          [71,1],[74,1.5],[71,.5],[72,1],[76,1],[72,1],[71,1],[74,1.5],[71,.5],[72,1],[76,1],[72,1],
+          [69,1],[69,1],[72,.5],[69,.5],[67,2],[67,.5],[76,.5],[76,.5],[74,.5],[72,1],[71,1],[72,2],[0,1]]),
+        {...lhFrom(gdC,3),seq:[[0,1],...lhFrom(gdC,3).seq]}]},
+    {name:'Kein schöner Land',origin:'Volkslied · Anton Wilhelm von Zuccalmaglio',level:2,hint:'Ruhiger Dreiertakt mit Auftakt',bpm:96,pickup:1.5,
+      band:{meter:3,feel:'waltz',chords:ksC},
+      spec:()=>[RH([[62,.5],[62,.5],[62,.5],[67,1],[71,1],[69,.5],[67,.5],[69,1],[0,.5],[62,.5],[62,.5],[62,.5],[67,1],[71,1],[69,.5],[67,.5],[69,1],[0,.5],[71,.5],[67,.5],[69,.5],
+          [71,.5],[74,.5],[72,.5],[71,.5],[69,.5],[67,.5],[69,.5],[72,.5],[71,1],[69,1],[67,2],[66,1],[67,1],[0,.5],[71,.5],[67,.5],[69,.5],
+          [71,.5],[74,.5],[72,.5],[71,.5],[69,.5],[67,.5],[69,.5],[72,.5],[71,1],[69,1],[67,2],[66,1],[67,1],[0,2]]),
+        {...lhFrom(ksC,3),seq:[[0,1.5],...lhFrom(ksC,3).seq]}]},
+    {name:'Muss i denn',origin:'Volkslied aus Schwaben',level:2,hint:'Zweiertakt, kurze punktierte Töne',bpm:80,pickup:.5,
+      band:{meter:2,feel:'country',chords:miC},
+      spec:()=>[RH([[60,.25],[62,.25],...miA,[65,.5],[65,.5],[62,.5],[67,.5],[64,1],[0,.5],[60,.25],[62,.25],...miA,[65,.5],[65,.5],[62,.5],[67,.5],[64,1],[0,.5],[60,.25],[64,.25],
+          [62,.75],[64,.25],[65,.5],[62,.5],[64,.75],[65,.25],[67,.5],[67,.25],[67,.25],[69,.5],[69,.5],[72,.5],[71,.25],[69,.25],[67,1],[0,.5],[60,.25],[64,.25],
+          [67,.5],[67,.25],[69,.25],[67,.5],[67,.25],[72,.25],[67,.5],[67,.25],[65,.25],[64,1],[67,.5],[67,.25],[65,.25],[64,.5],[64,.25],[67,.25],[65,.5],[65,.5],[62,.5],[67,.5],[64,1],[0,1]]),
+        {...lhFrom(miC,2),seq:[[0,.5],...lhFrom(miC,2).seq]}]},
     {name:'Menuett in G',origin:'Christian Petzold · aus Bachs Notenbüchlein',level:3,hint:'Achtel und Sprünge, beide Hände',bpm:108,
       band:{meter:3,feel:'waltz',chords:'G G C G Am G D D G G C G Am G D G'},
       spec:()=>[RH([...meA,[66,1],[67,.5],[69,.5],[71,.5],[67,.5],[69,3],...meA,[69,1],[71,.5],[69,.5],[67,.5],[66,.5],[67,3]]),
@@ -1677,7 +1721,7 @@ const MELODY={
   canvas:{top:'#16123a',bot:'#0a0818',panel:'rgba(20,17,48,0.92)',dark:'#0c0a1d',muted:'#a9a5cc',soft:'#cfcbe8',accent:'#ffd166',ink:'#241800'},
   pick:{tag:'Tastenfall',text:'Melodien mit fallenden Noten, rechte und linke Hand.'},
   hero:'Welches Lied willst du <em>spielen?</em>',
-  heroP:'Tippe auf ein Lied. Fang mit „Leicht“ an. Wenn du alle Töne schaffst, bekommst du drei Sterne. Lieder mit „Klassenband“ gibt es auch bei Gitarre, Ukulele, Bass und Klavierbegleitung – dort spielt man die Akkorde dazu.',
+  heroP:'Spiel Lieder mit fallenden Noten – oder schreib deine eigene Melodie.',
   whoLabel:'Wer spielt?', whoOpts:[['app','Die App'],['L','Links'],['R','Rechts'],['both','Beide']], whoDefault:'app',
   hands:true, micWho:'R', songs:MSONGS,
   accLabel:'Akkorde', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
@@ -1809,7 +1853,7 @@ const MELODY={
   },
   idleHint(){ return who==='app'?'Die App spielt dir das Lied vor. Du hörst zu.':who==='both'?'Du spielst mit beiden Händen.':who==='R'?'Du spielst die rechte Hand. Links spielt die App.':'Du spielst die linke Hand. Rechts spielt die App.'; },
   help:[
-    ['Lied aussuchen','Tippe auf ein Lied. Die Farbe zeigt, wie schwer es ist: grün ist leicht, gelb ist mittel, rot ist schwer.'],
+    ['Lied aussuchen','Oben wählst du: alle Lieder, die Klassenband-Lieder oder deine eigenen. Die Farbe zeigt, wie schwer ein Lied ist: grün leicht, gelb mittel, rot schwer.'],
     ['Erst zuhören, dann mitspielen','Zuerst spielt dir die App das Lied vor. Dann wählst du bei „Wer spielt?“ die linke Hand, die rechte oder beide. Die andere Hand spielt die App.'],
     ['Start drücken','Die Balken fallen nach unten. Berührt ein Balken die gelbe Linie, drückst du die Taste darunter.'],
     ['Spielen','Auf dem Bildschirm, mit der Computer-Tastatur (<kbd>A</kbd> bis <kbd>K</kbd>), mit einem Keyboard am Kabel oder am echten Klavier. Für das echte Klavier drückst du „App hört zu“.'],
@@ -1822,14 +1866,14 @@ const MELODY={
 const BAND=MSONGS.filter(s=>s.band);
 function bandGv(s){
   const r=songGv({c:s.band.chords,bpm:s.bpm,f:s.band.feel});
-  r.gv.reps=1; return r;
+  r.gv.reps=1; if(s.band.meter===2) INST.setMeter(r.gv,4); r.gv.lockN=INST.meter(r.gv); return r;
 }
 
 /* =====================================================================
    MELODIE-EDITOR (Klaviermelodie): Balken setzen, aufnehmen, quantisieren, teilen
    Eine Melodie: {id,name,bpm,meter,notes:[{p:MIDI-Ton,t:Start in Schlägen,d:Länge in Schlägen,h:'L'|'R'}]}
    ===================================================================== */
-const OWN_KEY='tastenfall-eigene', PMIN=36, PMAX=96, TPB=24;
+const OWN_KEY='tastenfall-eigene', PMIN=21, PMAX=108, TPB=24;
 const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 /* Gespeicherte oder empfangene Daten prüfen und bereinigen */
@@ -1844,7 +1888,7 @@ function cleanMel(m){
     bpm:Math.max(40,Math.min(240,Math.round(+(m&&m.bpm))||100)),meter:+(m&&m.meter)===3?3:4,notes};
 }
 let ownMel=[];
-try{ const a=JSON.parse(localStorage.getItem(OWN_KEY)||'[]'); if(Array.isArray(a)) ownMel=a.filter(x=>x&&typeof x==='object').map(cleanMel); }catch(e){}
+try{ const a=JSON.parse(localStorage.getItem(OWN_KEY)||'[]'); if(Array.isArray(a)) ownMel=a.filter(x=>x&&typeof x==='object').slice(0,500).map(cleanMel); }catch(e){}
 function saveOwnAll(){ try{ localStorage.setItem(OWN_KEY,JSON.stringify(ownMel)); return true; }catch(e){ return false; } }
 function storeMel(m){ const i=ownMel.findIndex(x=>x.id===m.id); if(i<0) ownMel.unshift(m); else ownMel[i]=m; return saveOwnAll(); }
 /* Eigene Melodie als Lied zum Üben: ein Takt Einzählen, Schlagzeug zum Zuschalten */
@@ -1873,7 +1917,7 @@ function encodeMel(m){
   return s;
 }
 function decodeMel(str){
-  str=String(str||'').trim(); const i=str.indexOf('melodie='); if(i>=0) str=str.slice(i+8);
+  str=String(str||'').trim(); if(str.length>40000) throw new Error('zu lang'); const i=str.indexOf('melodie='); if(i>=0) str=str.slice(i+8);
   str=str.replace(/[^A-Za-z0-9\-_]/g,''); if(str.length<8) throw new Error('zu kurz');
   const bytes=[]; let acc=0,bits=0;
   for(const ch of str){ acc=(acc<<6)|B64.indexOf(ch); bits+=6; if(bits>=8){ bits-=8; bytes.push((acc>>bits)&255); acc&=(1<<bits)-1; } }
@@ -2154,7 +2198,7 @@ edCv.addEventListener('wheel',e=>{
 },{passive:false});
 
 /* ---------- Knöpfe ---------- */
-$('edBack').onclick=()=>{ edStop(true); for(const p of [...held.keys()]) unpress(p); setVars(INST.theme); showScreen('lib'); renderLib(); };
+$('edBack').onclick=()=>{ edStop(true); for(const p of [...held.keys()]) unpress(p); if(ownMel.some(x=>x.id===ED.m.id)) libTab.melody='mine'; setVars(INST.theme); showScreen('lib'); renderLib(); };
 $('edPlay').onclick=()=>{ if(ED.rec) return; if(ED.play) edStop(); else edStartPlay(false); };
 $('edRec').onclick=()=>{ if(ED.rec) edStop(); else edStartPlay(true); };
 $('edStart').onclick=()=>{ const was=ED.play&&!ED.rec; edStop(); ED.ph=0; ED.sx=0; if(was) edStartPlay(false); edBtns(); };
@@ -2212,16 +2256,24 @@ $('shareClose').onclick=()=>{ $('shareDlg').hidden=true; };
 function openImport(pre){
   $('importCode').value=pre||''; $('importMsg').textContent='';
   $('importDesc').textContent=pre?'Du hast eine Melodie bekommen. Tippe auf „Öffnen“, dann wird sie bei dir gespeichert.':'Füge hier den Link oder Code ein, den du bekommen hast.';
-  $('importDlg').hidden=false; setTimeout(()=>(pre?$('importOk'):$('importCode')).focus(),50);
+  $('importDlg').hidden=false; importPreview(); setTimeout(()=>(pre?$('importOk'):$('importCode')).focus(),50);
 }
+/* Vorschau: Was steckt im Code? Erst nach „Öffnen“ wird gespeichert */
+function importPreview(){
+  const v=$('importCode').value.trim(); if(!v){ $('importMsg').textContent=''; return; }
+  try{ const m=decodeMel(v); $('importMsg').textContent=m.notes.length?`Gefunden: „${m.name}“ · ${m.notes.length} Noten · ${m.bpm} BPM`:'In diesem Code sind keine Noten.'; }
+  catch(e){ $('importMsg').textContent='Das ist noch kein gültiger Melodie-Code.'; }
+}
+$('importCode').addEventListener('input',importPreview);
 $('importCancel').onclick=()=>{ $('importDlg').hidden=true; };
 $('importOk').onclick=()=>{
   let m; try{ m=decodeMel($('importCode').value); }catch(e){ $('importMsg').textContent='Das ist kein gültiger Melodie-Code. Prüf, ob du alles kopiert hast.'; return; }
   if(!m.notes.length){ $('importMsg').textContent='In diesem Code sind keine Noten.'; return; }
   $('importDlg').hidden=true; storeMel(m);
   if(INST!==MELODY) setInst('melody');
+  libTab.melody='mine';
   showScreen('lib'); renderLib(); openMelody(m);
-  notice(`Melodie „${m.name}“ gespeichert. Du findest sie unter „Meine Melodien“.`);
+  notice(`Melodie „${m.name}“ gespeichert. Du findest sie im Bereich „Meine“.`);
 };
 for(const id of ['shareDlg','importDlg']) $(id).addEventListener('click',e=>{ if(e.target.id===id) $(id).hidden=true; });
 function checkHash(){
@@ -2285,7 +2337,7 @@ function makeFretted(C){
           if(v==='D'||v==='U') items.push({kind:'strum',dir:v,start:t+i*st,end:t+i*st+st*0.8,vel:v==='D'?0.9:0.65,shape:sh,label:sh.label});
           else { const s=C.tokenString(v,sh); if(s<0) continue; const f=Math.max(0,sh.f[s]); items.push({kind:'note',str:s,fret:f,midi:OPEN[s]+f,start:t+i*st,end:t+i*st+lenOf(gv.steps,i,st),vel:0.8,label:sh.label}); }
         }
-        { const br=28+mod12(c.pc-4); acc.push({midi:br,start:t,end:t+st*(n===8?3.6:5.5),vel:0.7,v:'bass'}); if(n===8) acc.push({midi:br,start:t+4*st,end:t+7.6*st,vel:0.6,v:'bass'}); }
+        { const br=28+mod12(c.pc-4); acc.push({midi:br,start:t,end:t+st*(n===6?5.5:3.6),vel:0.7,v:'bass'}); if(n===8) acc.push({midi:br,start:t+4*st,end:t+7.6*st,vel:0.6,v:'bass'}); }
       });
       const ss=items.filter(i=>i.kind==='strum').sort((a,b)=>a.start-b.start);
       ss.forEach((it,i)=>{ it.ring=Math.min(ss[i+1]?ss[i+1].start-it.start:fr.bar,fr.bar); });
@@ -2505,7 +2557,7 @@ const UKE=makeFretted({
   canvas:{top:'#33201a',bot:'#140906',panel:'rgba(36,20,15,0.95)',dark:'#1c0f0b',muted:'#cdb1a5',soft:'#ecd9d0',accent:'#3fd6b0',ink:'#04261e'},
   pick:{tag:'Ukulauf',text:'Akkorddiagramme, Schlag- und Zupfmuster.'},
   hero:'Was spielst du heute auf der <em>Ukulele?</em>',
-  heroP:'Such dir eine Übung aus. Bei jeder Übung kannst du eigene Akkorde einsetzen. Oder bau selbst: Akkorde in Kästchen setzen, Schlag- oder Zupfmuster wählen, fertig.',
+  heroP:'Wähl eine Übung oder ein Lied – oder bau eigene Akkordfolgen mit Schlag- und Zupfmustern.',
   whoLabel:'Wer spielt die Ukulele?', micLabel:'Echte Ukulele', sensQuiet:'Ukulele ist leise',
   patHint:'Das Muster spielst du in jedem Takt – mit deinen Akkorden. <b>↓</b> Abschlag · <b>↑</b> Aufschlag · <b>G C E A</b>: nur diese Saite zupfen.',
   cycleS:['-','D','U'], cycleP:['-','G','C','E','A'], pickSeq:['G','C','E','A'],
@@ -2542,7 +2594,7 @@ const UKE=makeFretted({
   ],
   defaultGv:()=>({bpm:80,reps:2,drums:'simple',pad:true,kind:'s',steps:P('D-D-D-D-'),chords:[c1(0),c1(9,'min'),c1(5),c1(7)]}),
   help:[
-    ['Übung aussuchen','Tippe auf eine Übung. Du kannst auch selbst bauen: Akkorde in Kästchen setzen, Schlag- oder Zupfmuster wählen.'],
+    ['Übung aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen. Tippe auf eine Karte. Mit „Selbst bauen“ setzt du eigene Akkorde in Kästchen.'],
     ['Akkord greifen','Links unten ist das Akkord-Diagramm. Die Punkte zeigen, wo deine Finger hin müssen. Die Zahl ist der Finger: 1 Zeigefinger, 2 Mittelfinger, 3 Ringfinger, 4 kleiner Finger.'],
     ['Schlagen oder zupfen','↓ heißt Abschlag, ↑ heißt Aufschlag. Steht eine Zahl in einer Saite, zupfst du nur diese Saite.'],
     ['Spielen','Erreicht ein Zeichen die Linie, schlägst oder zupfst du. Auf dem Bildschirm: Knöpfe „↓ Ab“ und „↑ Auf“ oder übers Griffbrett wischen.']
@@ -2559,7 +2611,7 @@ const GUITAR=makeFretted({
   canvas:{top:'#151d3d',bot:'#070b18',panel:'rgba(14,20,42,0.95)',dark:'#0a1022',muted:'#a7aecb',soft:'#d4d8ee',accent:'#b48cff',ink:'#1a0d33'},
   pick:{tag:'Gitarrenlauf',text:'Akkordgriffe mit Barré, Schlag- und Zupfmuster.'},
   hero:'Was spielst du heute auf der <em>Gitarre?</em>',
-  heroP:'Such dir eine Übung aus. Bei jeder Übung kannst du eigene Akkorde einsetzen. Oder bau selbst: Akkorde in Kästchen setzen, Schlag- oder Zupfmuster wählen, fertig.',
+  heroP:'Wähl eine Übung oder ein Lied – oder bau eigene Akkordfolgen mit Schlag- und Zupfmustern.',
   whoLabel:'Wer spielt die Gitarre?', micLabel:'Echte Gitarre', sensQuiet:'Gitarre ist leise',
   patHint:'Das Muster spielst du in jedem Takt – mit deinen Akkorden. <b>↓</b> Abschlag · <b>↑</b> Aufschlag · <b>B</b> Basston (tiefste Saite des Akkords) · <b>W</b> Wechselbass (nächste Saite) · <b>G H e</b>: nur diese Saite zupfen.',
   cycleS:['-','D','U','B'], cycleP:['-','B','W','G','H','e'], pickSeq:['B','G','H','e'],
@@ -2597,7 +2649,7 @@ const GUITAR=makeFretted({
   ],
   defaultGv:()=>({bpm:80,reps:2,drums:'simple',pad:true,kind:'s',steps:P('D-D-D-D-'),chords:[c1(7),c1(2),c1(4,'min'),c1(0)]}),
   help:[
-    ['Übung aussuchen','Tippe auf eine Übung. Du kannst auch selbst bauen: Akkorde in Kästchen setzen, Schlag- oder Zupfmuster wählen.'],
+    ['Übung aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen. Tippe auf eine Karte. Mit „Selbst bauen“ setzt du eigene Akkorde in Kästchen.'],
     ['Akkord greifen','Links unten ist das Akkord-Diagramm. Die Punkte zeigen, wo deine Finger hin müssen. Die Zahl ist der Finger: 1 Zeigefinger, 2 Mittelfinger, 3 Ringfinger, 4 kleiner Finger. × heißt: Saite nicht spielen. Ein Balken heißt Barré: Der Zeigefinger drückt mehrere Saiten.'],
     ['Schlagen oder zupfen','↓ heißt Abschlag, ↑ heißt Aufschlag. B ist der Basston, also die tiefste Saite des Akkords. Steht eine Zahl in einer Saite, zupfst du nur diese Saite.'],
     ['Spielen','Erreicht ein Zeichen die Linie, schlägst oder zupfst du. Auf dem Bildschirm: Knöpfe „↓ Ab“ und „↑ Auf“ oder übers Griffbrett wischen.']
@@ -2723,21 +2775,45 @@ $('switchInst').onclick=()=>{ setVars(PICK_THEME); document.title='Bandlauf'; sh
 const FOLGEN_KEY='bandlauf-folgen', PAT_KEYS=['steps','rh','lh','voicing','kind','drums','pad','drumsOn','padOn'];
 let best={}, folgen=[];
 function patOf(g){ const o={}; for(const k of PAT_KEYS) if(g[k]!==undefined) o[k]=clone(g[k]); return o; }
+/* Gespeicherte Akkordfolgen prüfen: kaputte oder fremde Daten (z. B. von einer anderen Web-App auf demselben Server) dürfen die App nicht lahmlegen */
+const PAT_OK={bass:{steps:/^[-135678]$/},piano:{rh:/^[-A1358]$/,lh:/^[-A13568]$/},uke:{steps:/^[-DUGCEA]$/},guitar:{steps:/^[-DUBWGHe]$/}};
+function cleanFolge(f){
+  if(!f||typeof f!=='object') return null;
+  const chords=(Array.isArray(f.chords)?f.chords:[]).slice(0,64).filter(c=>c&&Number.isInteger(c.pc)&&c.pc>=0&&c.pc<12&&Object.prototype.hasOwnProperty.call(TYPES,c.type)).map(c=>({pc:c.pc,type:c.type,bars:1,hi:!!c.hi}));
+  if(!chords.length) return null;
+  const out={name:String(f.name||'Meine Akkordfolge').slice(0,40),chords,bpm:Math.max(40,Math.min(180,Math.round(+f.bpm)||80)),reps:[1,2,4].includes(+f.reps)?+f.reps:2,pats:{}};
+  const pats=f.pats&&typeof f.pats==='object'?f.pats:{};
+  for(const id of Object.keys(PAT_OK)){
+    const q=pats[id]; if(!q||typeof q!=='object') continue;
+    const r={};
+    for(const [k,re] of Object.entries(PAT_OK[id])){ const a=q[k]; if(Array.isArray(a)&&[4,6,8].includes(a.length)&&a.every(v=>typeof v==='string'&&re.test(v))) r[k]=a.slice(); }
+    if(id==='piano'&&!(r.rh&&r.lh&&r.rh.length===r.lh.length)){ delete r.rh; delete r.lh; }
+    if(['root','near'].includes(q.voicing)) r.voicing=q.voicing;
+    if(['s','p'].includes(q.kind)) r.kind=q.kind;
+    if(['simple','rock','off'].includes(q.drums)) r.drums=q.drums;
+    for(const k of ['pad','drumsOn','padOn']) if(typeof q[k]==='boolean') r[k]=q[k];
+    out.pats[id]=r;
+  }
+  return out;
+}
 function loadFolgen(){
   folgen=[];
-  try{ folgen=JSON.parse(localStorage.getItem(FOLGEN_KEY)||'[]')||[]; }catch(e){}
+  try{ const a=JSON.parse(localStorage.getItem(FOLGEN_KEY)||'[]'); if(Array.isArray(a)) folgen=a; }catch(e){}
   let moved=false; try{ moved=!!localStorage.getItem(FOLGEN_KEY+'-alt'); }catch(e){}
   if(!moved){
     for(const [inst,key] of [['bass','basslauf'],['piano','tastenlauf'],['uke','ukulauf'],['guitar','gitarrenlauf']]){
       let old=[]; try{ old=JSON.parse(localStorage.getItem(key+'-mine')||'[]')||[]; }catch(e){}
-      for(const m of old){ if(!m||!m.gv) continue; let f=folgen.find(x=>x.name===m.name); if(!f){ f={name:m.name,chords:normalize(m.gv.chords),bpm:m.gv.bpm,reps:m.gv.reps,pats:{}}; folgen.push(f); } f.pats[inst]=patOf(m.gv); }
+      if(!Array.isArray(old)) continue;
+      for(const m of old){ try{ if(!m||!m.gv||!Array.isArray(m.gv.chords)) continue; let f=folgen.find(x=>x&&x.name===m.name); if(!f){ f={name:m.name,chords:normalize(m.gv.chords),bpm:m.gv.bpm,reps:m.gv.reps,pats:{}}; folgen.push(f); } f.pats[inst]=patOf(m.gv); }catch(e){} }
     }
+    folgen=folgen.map(cleanFolge).filter(Boolean);
     try{ localStorage.setItem(FOLGEN_KEY,JSON.stringify(folgen)); localStorage.setItem(FOLGEN_KEY+'-alt','1'); }catch(e){}
   }
+  folgen=folgen.map(cleanFolge).filter(Boolean).slice(0,200);
 }
 function loadStore(){
-  best={};
-  try{ best=JSON.parse(localStorage.getItem(INST.store+'-best')||'{}')||{}; }catch(e){}
+  best=Object.create(null);
+  try{ const o=JSON.parse(localStorage.getItem(INST.store+'-best')||'{}'); if(o&&typeof o==='object') for(const [k,v] of Object.entries(o)) if(k.length<=80&&Number.isInteger(v)&&v>=0&&v<=3) best[k]=v; }catch(e){}
   loadFolgen();
 }
 function folgeGv(f){ return {...INST.defaultGv(),...(f.pats&&f.pats[INST.id]?clone(f.pats[INST.id]):{}),chords:clone(f.chords),bpm:f.bpm||80,reps:f.reps||2}; }
@@ -2761,66 +2837,56 @@ function card(item,onclick){
   requestAnimationFrame(()=>drawThumb(c.querySelector('canvas'),item));
   return c;
 }
+/* Die Bibliothek ist in Bereiche (Reiter) aufgeteilt; der gewählte Bereich wird je Instrument gemerkt */
+const ICON_PEN='<svg viewBox="0 0 16 16"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg>', ICON_UP='<svg viewBox="0 0 16 16"><path d="M8 1l4 4H9v6H7V5H4l4-4zM2 13h12v2H2z"/></svg>', ICON_DOWN='<svg viewBox="0 0 16 16"><path d="M7.2 1h1.6v6.6l2.1-2.1 1.1 1.1L8 10.6 4 6.6l1.1-1.1 2.1 2.1zM2.5 9h1.6v4.4h7.8V9h1.6v6h-11z"/></svg>';
+const libTab={};
+function chordList(g1){ const labels=[]; g1.chords.forEach(c=>{ const l=chordLabel(c); if(!labels.includes(l)) labels.push(l); }); return labels.join(' – '); }
+function meterNote(g1){ const n=INST.meter?INST.meter(g1):8; return n===6?' · 3/4-Takt':n===4?' · 2/4-Takt':''; }
+function libSections(){
+  const midi=ownMidi[INST.id].map((s,i)=>({item:s,id:'card-m'+i,open:()=>openMidi(s)}));
+  if(INST.songs){
+    const mel=(s,i)=>({item:{...s,hint:s.origin+(s.hint?' · '+s.hint:''),btag:!!s.band},id:'card-ms'+i,open:()=>openMelody(s)});
+    return [
+      {id:'songs',t:'Alle Lieder',ts:'Lieder',info:'Fang mit „Leicht“ an. Schaffst du alle Töne, gibt es drei Sterne. „Klassenband“ heißt: Dieses Lied gibt es auch bei den anderen Instrumenten.',items:INST.songs.map(mel)},
+      {id:'band',t:'Klassenband',ts:'Band',info:'Diese Lieder gibt es bei allen Instrumenten, in gleicher Tonart und gleichem Tempo. Hier spielst du die Melodie – bei Gitarre, Ukulele, Bass und Klavierbegleitung spielt man die Akkorde dazu.',items:INST.songs.map(mel).filter(x=>x.item.band).map(x=>({...x,item:{...x.item,btag:false}}))},
+      {id:'mine',t:'Meine',info:'Deine Melodien und geöffnete MIDI-Dateien. Sie sind nur in diesem Browser gespeichert – teile eine Melodie per Link, dann geht sie nicht verloren.',empty:'Noch keine eigenen Melodien. Tippe oben auf „Melodie schreiben“ oder „Melodie empfangen“.',
+        items:[...ownMel.map((m,i)=>{ const hs=new Set(m.notes.map(n=>n.h)); return {item:{name:m.name,level:4,hint:`${m.notes.length} Noten · ${m.bpm} BPM`+(hs.size>1?' · beide Hände':''),notes:m.notes,bpm:m.bpm,meter:m.meter},id:'card-own'+i,open:()=>openMelody(m)}; }),...midi]}
+    ];
+  }
+  return [
+    {id:'ex',t:'Übungen',info:'Übungen zu Akkorden und Mustern. In jeder Übung kannst du die Akkorde und das Muster ändern.',
+      items:INST.presets.map((p,i)=>({item:p,id:'card-p'+i,open:()=>openGroove(p,false)}))},
+    {id:'band',t:'Klassenband',ts:'Band',info:'Diese Lieder gibt es bei allen Instrumenten, in gleicher Tonart und gleichem Tempo. Bei Klaviermelodie spielt jemand die Melodie – du spielst die Begleitung dazu.',
+      items:BAND.map((sg,i)=>{ const {gv:g1,level}=bandGv(sg); return {item:{name:sg.name,level,hint:chordList(g1)+meterNote(g1),gv:g1},id:'card-b'+i,open:()=>{ const r=bandGv(sg); openGroove({name:sg.name,level:r.level,gv:r.gv},false); }}; })},
+    {id:'pop',t:'Popsongs',ts:'Pop',info:'Die Akkorde bekannter Songs zum Mitspielen und Mitsingen – ohne Melodie.',
+      items:POPSONGS.map((sg,i)=>{ const {gv:g1,level}=songGv(sg); return {item:{name:sg.t,level,hint:sg.a+' · '+chordList(g1),gv:g1},id:'card-s'+i,open:()=>{ const r=songGv(sg); openGroove({name:sg.t,level:r.level,gv:r.gv},false); }}; })},
+    {id:'mine',t:'Meine',info:'Deine Akkordfolgen – sie gelten für alle Instrumente, jedes merkt sich sein eigenes Muster – und geöffnete MIDI-Dateien.',empty:'Noch nichts gespeichert. Tippe oben auf „Selbst bauen“ und speichere deine Akkordfolge.',
+      items:[...folgen.map((f,i)=>{ const own=!!(f.pats&&f.pats[INST.id]); return {item:{name:f.name,level:4,hint:normalize(f.chords).map(chordLabel).join(' – ')+(own?'':' · neues Muster'),gv:folgeGv(f)},id:'card-mine'+i,open:()=>openGroove({name:f.name,level:4,gv:folgeGv(f),saved:true},true)}; }),...midi]}
+  ];
+}
 function renderLib(){
   const grid=$('grid'); grid.innerHTML='';
-  if(INST.songs){ renderMelodyLib(); return; }
-  if(!filter){
-    const b=document.createElement('button'); b.className='card act build'; b.id='card-build';
-    b.innerHTML='<span class="plus"><svg viewBox="0 0 16 16"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg></span><b>Selbst bauen</b><span>Akkorde in Kästchen setzen, Rhythmus wählen</span>';
-    b.onclick=()=>openGroove({name:'Mein Stück',level:4,gv:{...INST.defaultGv(),chords:[]}},true);
-    grid.appendChild(b);
-  }
-  INST.presets.forEach((p,i)=>{ if(filter&&p.level!==filter) return; const c=card(p,()=>openGroove(p,false)); c.id='card-p'+i; grid.appendChild(c); });
-  ownMidi[INST.id].forEach((s,i)=>{ if(filter) return; const c=card(s,()=>openMidi(s)); c.id='card-m'+i; grid.appendChild(c); });
-  if(!filter){
-    const o=document.createElement('button'); o.className='card act'; o.id='card-midi';
-    o.innerHTML=`<span class="plus"><svg viewBox="0 0 16 16"><path d="M8 1l4 4H9v6H7V5H4l4-4zM2 13h12v2H2z"/></svg></span><b>Eigenes Lied öffnen</b><span>MIDI-Datei (.mid)</span>`;
-    o.onclick=()=>$('file').click();
-    grid.appendChild(o);
-  }
-  const sgrid=$('songs'); sgrid.innerHTML=''; let ns=0;
-  POPSONGS.forEach((sg,i)=>{ const {gv:g1,level}=songGv(sg); if(filter&&level!==filter) return; ns++;
-    const labels=[]; g1.chords.forEach(c=>{ const l=chordLabel(c); if(!labels.includes(l)) labels.push(l); });
-    const c=card({name:sg.t,level,hint:sg.a+' · '+labels.join(' – '),gv:g1},()=>{ const r=songGv(sg); openGroove({name:sg.t,level:r.level,gv:r.gv},false); }); c.id='card-s'+i; sgrid.appendChild(c); });
-  $('songsTitle').hidden=!ns; sgrid.hidden=!ns;
-  const bgrid=$('band'); bgrid.innerHTML=''; let nb=0;
-  BAND.forEach((sg,i)=>{ const {gv:g1,level}=bandGv(sg); if(filter&&level!==filter) return; nb++;
-    const labels=[]; g1.chords.forEach(c=>{ const l=chordLabel(c); if(!labels.includes(l)) labels.push(l); });
-    const c=card({name:sg.name,level,hint:labels.join(' – ')+(g1.steps&&g1.steps.length===6||g1.rh&&g1.rh.length===6?' · 3/4-Takt':''),gv:g1,btag:true},()=>{ const r=bandGv(sg); openGroove({name:sg.name,level:r.level,gv:r.gv},false); }); c.id='card-b'+i; bgrid.appendChild(c); });
-  $('bandTitle').hidden=!nb; bgrid.hidden=!nb;
-  const mg=$('mine'); mg.innerHTML='';
-  $('mineTitle').textContent='Meine Akkordfolgen · bei allen Instrumenten';
-  $('mineTitle').hidden=!folgen.length||!!filter; mg.hidden=!folgen.length||!!filter;
-  folgen.forEach((f,i)=>{ const g0=folgeGv(f), own=!!(f.pats&&f.pats[INST.id]);
-    const c=card({name:f.name,level:4,hint:normalize(f.chords).map(chordLabel).join(' – ')+(own?'':' · neues Muster'),gv:g0},()=>openGroove({name:f.name,level:4,gv:folgeGv(f),saved:true},true)); c.id='card-mine'+i; mg.appendChild(c); });
-  $('switchInst').hidden=!!ONLY;
-}
-/* Klaviermelodie: Lieder statt Übungen, kein Baukasten */
-function renderMelodyLib(){
-  const grid=$('grid');
-  if(!filter){
-    const b=document.createElement('button'); b.className='card act build'; b.id='card-write';
-    b.innerHTML='<span class="plus"><svg viewBox="0 0 16 16"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg></span><b>Melodie schreiben</b><span>Balken setzen oder mit dem Keyboard aufnehmen</span>';
-    b.onclick=newMelody; grid.appendChild(b);
-  }
-  INST.songs.forEach((s,i)=>{ if(filter&&s.level!==filter) return;
-    const c=card({...s,hint:s.origin+(s.hint?' · '+s.hint:''),btag:!!s.band},()=>openMelody(s)); c.id='card-ms'+i; grid.appendChild(c); });
-  ownMidi[INST.id].forEach((s,i)=>{ if(filter) return; const c=card(s,()=>openMidi(s)); c.id='card-m'+i; grid.appendChild(c); });
-  if(!filter){
-    const o=document.createElement('button'); o.className='card act'; o.id='card-midi';
-    o.innerHTML=`<span class="plus"><svg viewBox="0 0 16 16"><path d="M8 1l4 4H9v6H7V5H4l4-4zM2 13h12v2H2z"/></svg></span><b>Eigenes Lied öffnen</b><span>MIDI-Datei (.mid)</span>`;
-    o.onclick=()=>$('file').click();
-    grid.appendChild(o);
-    const r=document.createElement('button'); r.className='card act'; r.id='card-import';
-    r.innerHTML='<span class="plus"><svg viewBox="0 0 16 16"><path d="M7.2 1h1.6v6.6l2.1-2.1 1.1 1.1L8 10.6 4 6.6l1.1-1.1 2.1 2.1zM2.5 9h1.6v4.4h7.8V9h1.6v6h-11z"/></svg></span><b>Melodie empfangen</b><span>Link oder Code einfügen</span>';
-    r.onclick=()=>openImport(''); grid.appendChild(r);
-  }
-  for(const id of ['songs','band']){ $(id).innerHTML=''; $(id).hidden=true; }
-  for(const id of ['songsTitle','bandTitle']) $(id).hidden=true;
-  const mg=$('mine'); mg.innerHTML=''; $('mineTitle').textContent='Meine Melodien';
-  $('mineTitle').hidden=!ownMel.length||!!filter; mg.hidden=!ownMel.length||!!filter;
-  if(!filter) ownMel.forEach((m,i)=>{ const hs=new Set(m.notes.map(n=>n.h));
-    const c=card({name:m.name,level:4,hint:`${m.notes.length} Noten · ${m.bpm} BPM`+(hs.size>1?' · beide Hände':''),notes:m.notes,bpm:m.bpm,meter:m.meter},()=>openMelody(m)); c.id='card-own'+i; mg.appendChild(c); });
+  // Aktionen
+  const acts=$('libActs'); acts.innerHTML='';
+  const act=(id,icon,t,ts,fn,primary)=>{ const b=document.createElement('button'); b.className='btn small'+(primary?' primary':''); b.id=id; b.innerHTML=icon+'<span class="tl"></span><span class="ts"></span>'; b.children[1].textContent=t; b.children[2].textContent=ts; b.onclick=fn; acts.appendChild(b); };
+  if(INST.songs){ act('card-write',ICON_PEN,'Melodie schreiben','Schreiben',newMelody,true); act('card-import',ICON_DOWN,'Melodie empfangen','Empfangen',()=>openImport('')); }
+  else act('card-build',ICON_PEN,'Selbst bauen','Selbst bauen',()=>openGroove({name:'Mein Stück',level:4,gv:{...INST.defaultGv(),chords:[]}},true),true);
+  act('card-midi',ICON_UP,'MIDI-Datei öffnen','MIDI öffnen',()=>$('file').click());
+  // Bereiche
+  const secs=libSections(), keep=it=>!filter||!(it.item.level>=1&&it.item.level<=3)||it.item.level===filter;
+  let cur=libTab[INST.id]; if(!cur){ try{ cur=localStorage.getItem('bandlauf-bereich-'+INST.id); }catch(e){} }
+  if(!secs.some(x=>x.id===cur)) cur=secs[0].id;
+  libTab[INST.id]=cur;
+  const tabs=$('libTabs'); tabs.innerHTML='';
+  secs.forEach(sec=>{ const b=document.createElement('button'); b.id='tab-'+sec.id; b.setAttribute('aria-pressed',sec.id===cur);
+    b.innerHTML='<span class="tl"></span><span class="ts"></span><span class="cnt"></span>'; b.children[0].textContent=sec.t; b.children[1].textContent=sec.ts||sec.t; b.children[2].textContent=sec.items.filter(keep).length;
+    b.onclick=()=>{ libTab[INST.id]=sec.id; try{ localStorage.setItem('bandlauf-bereich-'+INST.id,sec.id); }catch(e){} renderLib(); };
+    tabs.appendChild(b); });
+  const sec=secs.find(x=>x.id===cur), shown=sec.items.filter(keep);
+  $('secInfo').textContent=sec.info;
+  shown.forEach(it=>{ const c=card(it.item,it.open); c.id=it.id; grid.appendChild(c); });
+  $('libEmpty').hidden=!!shown.length; grid.hidden=!shown.length;
+  $('libEmpty').textContent=sec.items.length?'Hier gibt es nichts mit dieser Schwierigkeit. Wähl oben „Alle“.':(sec.empty||'');
   $('switchInst').hidden=!!ONLY;
 }
 function drawThumb(c,item){
@@ -2831,7 +2897,7 @@ function drawThumb(c,item){
   let s;
   try{ if(item.gv) s=INST.build({...item.gv,reps:1}); else { if(!item.cacheSong) item.cacheSong=INST.midi(item.name,item.build()); s=item.cacheSong; } }catch(e){ return; }
   const notes=s.items; if(!notes.length) return;
-  const end=Math.max(...notes.map(n=>n.end),1), span=item.gv?end:Math.min(end,16), xs=(r.width-16)/span, ih=r.height-16;
+  const end=Math.max(...notes.map(n=>n.end),1), span=Math.min(end,item.gv?(s.bar||end)*2:16), xs=(r.width-16)/span, ih=r.height-16;
   const n0=INST.lane(notes[0]).n||4;
   for(let i=0;i<n0;i++){ x.fillStyle='rgba(255,255,255,0.06)'; x.fillRect(8,8+i*ih/n0+ih/n0/2,r.width-16,1); }
   for(const n of notes){ if(n.start>span) break;
@@ -3004,7 +3070,7 @@ function renderPalette(){
     const meter=(pt.p||pt.rh).length===6?' · 3/4':'';
     b.innerHTML=`<span class="pn"><span></span><span class="lv" style="--lc:${L.c}" title="${L.t}">${lv}</span></span>${INST.cardCells(pt)}`;
     b.querySelector('.pn span').textContent=pt.n+meter;
-    b.onclick=()=>{ INST.applyPattern(gv,pt); changed(); };
+    b.onclick=()=>{ INST.applyPattern(gv,pt); if(gv.lockN&&INST.meter(gv)!==gv.lockN) INST.setMeter(gv,gv.lockN); changed(); };
     pg.appendChild(b);
   });
 }
@@ -3041,11 +3107,12 @@ function renderEditor(){
   const se=$('stepEdit'); se.innerHTML='';
   const n=INST.meter(gv);
   const top=document.createElement('div'); top.className='row';
-  top.innerHTML=`<span class="lbl">Takt:</span><div class="seg" id="meterSeg"><button data-n="8" aria-pressed="${n===8}">4/4</button><button data-n="6" aria-pressed="${n===6}">3/4</button></div>`;
-  top.querySelectorAll('button').forEach(b=>b.onclick=()=>{ INST.setMeter(gv,+b.dataset.n); changed(); });
+  top.innerHTML=`<span class="lbl">Takt:</span><div class="seg" id="meterSeg"><button data-n="8" aria-pressed="${n===8}">4/4</button><button data-n="6" aria-pressed="${n===6}">3/4</button><button data-n="4" aria-pressed="${n===4}">2/4</button></div>`;
+  top.querySelectorAll('button').forEach(b=>{ if(gv.lockN&&+b.dataset.n!==gv.lockN) b.disabled=true; b.onclick=()=>{ INST.setMeter(gv,+b.dataset.n); changed(); }; });
+  if(gv.lockN){ const l=document.createElement('span'); l.className='lbl'; l.textContent='Klassenband-Lied: Die Taktart bleibt gleich, damit alle zusammen spielen können.'; top.appendChild(l); }
   se.appendChild(top);
   if(INST.editTop) se.appendChild(INST.editTop(gv));
-  const hint=document.createElement('span'); hint.className='lbl'; hint.textContent=(n===8?'8 Kästchen sind 1 Takt. ':'6 Kästchen sind 1 Takt. ')+INST.editHint; se.appendChild(hint);
+  const hint=document.createElement('span'); hint.className='lbl'; hint.textContent=`${n} Kästchen sind 1 Takt. `+INST.editHint; se.appendChild(hint);
   INST.editRows(gv).forEach((row,ri)=>{
     const wrap=document.createElement('div'); wrap.className='erow';
     if(row.label){ const l=document.createElement('span'); l.className='lbl'; l.textContent=row.label; wrap.appendChild(l); }
@@ -3058,7 +3125,7 @@ function renderEditor(){
     });
     wrap.appendChild(st);
     const cn=document.createElement('div'); cn.className='counts'; cn.style.gridTemplateColumns=`repeat(${n},minmax(0,1fr))`;
-    cn.innerHTML=(n===8?['1','+','2','+','3','+','4','+']:['1','+','2','+','3','+']).map(x=>`<span>${x}</span>`).join('');
+    cn.innerHTML=Array.from({length:n},(_,i)=>i%2?'+':String(i/2+1)).map(x=>`<span>${x}</span>`).join('');
     wrap.appendChild(cn); se.appendChild(wrap);
   });
 }
@@ -3076,10 +3143,10 @@ $('saveG').onclick=()=>{
   let f=folgen.find(x=>x.name===name);
   if(!f){ f={name,pats:{}}; folgen.push(f); }
   f.chords=normalize(clone(gv.chords)); f.bpm=gv.bpm; f.reps=gv.reps; f.pats=f.pats||{}; f.pats[INST.id]=patOf(gv);
-  const ok=saveFolgen(); delArm=false; $('delG').textContent='Löschen';
+  const ok=saveFolgen(); delArm=false; $('delG').textContent='Löschen'; libTab[INST.id]='mine';
   meta.name=name; meta.saved=true; meta.level=4; $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(4); $('delG').hidden=false;
   song.name=name;
-  $('saveMsg').textContent=ok?'Gespeichert. Die Akkordfolge findest du jetzt bei allen Instrumenten unter „Meine Akkordfolgen“.':'Speichern geht hier nicht. Der Browser erlaubt es nicht.';
+  $('saveMsg').textContent=ok?'Gespeichert. Die Akkordfolge findest du jetzt bei allen Instrumenten im Bereich „Meine“.':'Speichern geht hier nicht. Der Browser erlaubt es nicht.';
 };
 let delArm=false;
 $('delG').onclick=()=>{
@@ -3517,13 +3584,14 @@ seek.addEventListener('change',()=>{ seeking=false; });
 
 function loadFile(file){
   if(!file||!INST) return;
+  if(file.size>2*1024*1024){ const msg='Diese Datei ist zu groß. Eine MIDI-Datei hat meist nur wenige Kilobyte (höchstens 2 MB).'; if($('player').hidden){ $('heroP').textContent=msg; $('heroP').style.color='var(--bad)'; } else notice(msg); return; }
   const rd=new FileReader();
   rd.onload=()=>{
     try{
       const buf=rd.result;
       if(!parseMidi(buf).length) throw new Error('leer');
-      const s={name:file.name.replace(/\.(mid|midi)$/i,''),level:0,hint:'Eigene MIDI-Datei',build:()=>parseMidi(buf)};
-      ownMidi[INST.id].push(s); openMidi(s); hideNotice();
+      const s={name:file.name.replace(/\.(mid|midi)$/i,'').slice(0,60),level:0,hint:'Eigene MIDI-Datei',build:()=>parseMidi(buf)};
+      ownMidi[INST.id].push(s); libTab[INST.id]='mine'; openMidi(s); hideNotice();
     }catch(err){
       const msg='Dieses Lied kann die App nicht öffnen. Nimm eine MIDI-Datei. Sie endet mit „.mid“.';
       if($('player').hidden){ $('heroP').textContent=msg; $('heroP').style.color='var(--bad)'; } else notice(msg);
