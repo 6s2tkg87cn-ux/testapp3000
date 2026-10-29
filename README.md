@@ -87,6 +87,20 @@ dem Link zum Öffnen im eigenen Tab.
   Content-Security-Policy, braucht diese Seite `script-src 'self' 'unsafe-inline'` und
   `style-src 'self' 'unsafe-inline'`.
 
+## Sicherheit
+
+- Die App lädt nichts von fremden Servern und baut keine Verbindungen auf. Eine
+  Sicherheitsrichtlinie (Content-Security-Policy) steht direkt in `index.html` und verbietet
+  das zusätzlich; `.htaccess` und `web.config` senden sie auch als Server-Header, dazu eine
+  Permissions-Policy (Mikrofon und MIDI nur für Bandlauf, Kamera, Standort usw. aus).
+- MIDI-Dateien (höchstens 2 MB), Melodie-Links und -Codes sowie gespeicherte Daten werden
+  geprüft, bevor die App sie verwendet. Namen werden immer als reiner Text angezeigt.
+- **Empfehlung:** Bandlauf möglichst unter einer eigenen Adresse betreiben, z. B.
+  `bandlauf.meine-schule.de`. Browser merken sich die Mikrofon-Freigabe und den Speicher pro
+  Adresse – liegen auf derselben Adresse noch andere Web-Apps, teilen sie sich beides.
+- Einbetten per iframe ist erlaubt (Moodle, WordPress). Wer das einschränken will, aktiviert
+  die Zeile `X-Frame-Options` in der `.htaccess`.
+
 ## Lizenzen
 
 Schriften Unbounded und Lexend: SIL Open Font License 1.1 (siehe `fonts/LICENSE-*.txt`).

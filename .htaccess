@@ -14,6 +14,13 @@ AddDefaultCharset utf-8
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "no-referrer"
+  # Sicherheitsrichtlinie: nur eigene Dateien laden, keine Verbindungen nach außen
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+  # Mikrofon und MIDI nur für Bandlauf selbst, Kamera, Standort usw. ganz aus
+  Header always set Permissions-Policy "microphone=(self), midi=(self), camera=(), geolocation=(), payment=(), usb=()"
+  # Einbetten (iframe) ist überall erlaubt, z. B. in Moodle oder WordPress. Soll das nur eine Seite
+  # unter derselben Adresse (gleiche Domain) dürfen, die nächste Zeile aktivieren:
+  # Header always set X-Frame-Options "SAMEORIGIN"
   # Die App-Datei selbst immer frisch laden, damit Updates sofort ankommen …
   <FilesMatch "\.html$">
     Header set Cache-Control "no-cache"
@@ -31,4 +38,8 @@ AddDefaultCharset utf-8
 #   RewriteEngine On
 #   RewriteCond %{HTTPS} !=on
 #   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+# Läuft alles über https://, kann der Browser sich das merken (erst aktivieren, wenn HTTPS sicher funktioniert):
+# <IfModule mod_headers.c>
+#   Header always set Strict-Transport-Security "max-age=31536000"
 # </IfModule>

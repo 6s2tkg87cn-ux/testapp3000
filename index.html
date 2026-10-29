@@ -2,6 +2,7 @@
 <title>Bandlauf</title>
 <meta name="description" content="Bandlauf – Übe-App für Musik: Gitarre, Bass, Ukulele, Klavierbegleitung und Klaviermelodie mit Laufband, fallenden Noten, Stimmgerät und Mikrofon.">
 <meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: optional instrument picker, then a library (cards with mini previews) and a player: settings strip, foldable chord/pattern builder, running band + instrument view, round transport */
@@ -975,22 +976,23 @@ function parseMidi(buf){
   const vl=()=>{let v=0,c;do{c=b[p++];v=(v<<7)|(c&0x7f);}while(c&0x80&&p<b.length);return v;};
   if(str(4)!=='MThd') throw new Error('kein MIDI');
   const hl=u32(); u16(); const ntr=u16(); const div=u16(); p+=hl-6;
-  let ppq=div, smpte=0;
-  if(div&0x8000){ const fps=256-(div>>8); smpte=1/(fps*(div&0xff)); }
-  const tempos=[], raw=[], names=[];
-  for(let t=0;t<ntr&&p<b.length;t++){
-    const id=str(4), len=u32(), end=p+len;
+  let ppq=div||96, smpte=0;
+  if(div&0x8000){ const fps=256-(div>>8), sub=div&0xff; if(fps>0&&sub>0) smpte=1/(fps*sub); else ppq=96; }
+  /* Grenzen gegen präparierte Dateien: Spuren enden spätestens am Dateiende, höchstens 20 000 Noten und 2 000 Tempowechsel */
+  const tempos=[], raw=[], names=[], MAXN=20000;
+  for(let t=0;t<ntr&&p<b.length&&raw.length<MAXN;t++){
+    const id=str(4), len=u32(), end=Math.min(b.length,p+len);
     if(id!=='MTrk'){p=end;t--;continue;}
     let tick=0, rs=0, name='';
     const open=new Map();
-    while(p<end){
+    while(p<end&&raw.length<MAXN){
       tick+=vl();
       let st=b[p];
       if(st<0x80) st=rs; else p++;
       if(st===0xFF){
         const type=b[p++], l=vl();
-        if(type===0x51&&l===3) tempos.push({tick,uspq:(b[p]<<16)|(b[p+1]<<8)|b[p+2]});
-        else if(type===0x03&&!name){ for(let i=0;i<l;i++) name+=String.fromCharCode(b[p+i]); }
+        if(type===0x51&&l===3&&tempos.length<2000) tempos.push({tick,uspq:(b[p]<<16)|(b[p+1]<<8)|b[p+2]});
+        else if(type===0x03&&!name&&l<=200){ for(let i=0;i<l&&p+i<b.length;i++) name+=String.fromCharCode(b[p+i]); }
         p+=l;
       } else if(st===0xF0||st===0xF7){ p+=vl(); }
       else {
@@ -1003,7 +1005,7 @@ function parseMidi(buf){
         else { const s=open.get(key); if(s&&s.length){ const o=s.shift(); raw.push({trk:t,ch,midi:a,t0:o.tick,t1:tick,vel:o.vel}); } }
       }
     }
-    for(const [key,s] of open) for(const o of s) raw.push({trk:t,ch:key>>7,midi:key&127,t0:o.tick,t1:tick,vel:o.vel});
+    for(const [key,s] of open) for(const o of s) if(raw.length<MAXN) raw.push({trk:t,ch:key>>7,midi:key&127,t0:o.tick,t1:tick,vel:o.vel});
     names[t]=name.trim();
     p=end;
   }
@@ -1886,7 +1888,7 @@ function cleanMel(m){
     bpm:Math.max(40,Math.min(240,Math.round(+(m&&m.bpm))||100)),meter:+(m&&m.meter)===3?3:4,notes};
 }
 let ownMel=[];
-try{ const a=JSON.parse(localStorage.getItem(OWN_KEY)||'[]'); if(Array.isArray(a)) ownMel=a.filter(x=>x&&typeof x==='object').map(cleanMel); }catch(e){}
+try{ const a=JSON.parse(localStorage.getItem(OWN_KEY)||'[]'); if(Array.isArray(a)) ownMel=a.filter(x=>x&&typeof x==='object').slice(0,500).map(cleanMel); }catch(e){}
 function saveOwnAll(){ try{ localStorage.setItem(OWN_KEY,JSON.stringify(ownMel)); return true; }catch(e){ return false; } }
 function storeMel(m){ const i=ownMel.findIndex(x=>x.id===m.id); if(i<0) ownMel.unshift(m); else ownMel[i]=m; return saveOwnAll(); }
 /* Eigene Melodie als Lied zum Üben: ein Takt Einzählen, Schlagzeug zum Zuschalten */
@@ -1915,7 +1917,7 @@ function encodeMel(m){
   return s;
 }
 function decodeMel(str){
-  str=String(str||'').trim(); const i=str.indexOf('melodie='); if(i>=0) str=str.slice(i+8);
+  str=String(str||'').trim(); if(str.length>40000) throw new Error('zu lang'); const i=str.indexOf('melodie='); if(i>=0) str=str.slice(i+8);
   str=str.replace(/[^A-Za-z0-9\-_]/g,''); if(str.length<8) throw new Error('zu kurz');
   const bytes=[]; let acc=0,bits=0;
   for(const ch of str){ acc=(acc<<6)|B64.indexOf(ch); bits+=6; if(bits>=8){ bits-=8; bytes.push((acc>>bits)&255); acc&=(1<<bits)-1; } }
@@ -2254,8 +2256,15 @@ $('shareClose').onclick=()=>{ $('shareDlg').hidden=true; };
 function openImport(pre){
   $('importCode').value=pre||''; $('importMsg').textContent='';
   $('importDesc').textContent=pre?'Du hast eine Melodie bekommen. Tippe auf „Öffnen“, dann wird sie bei dir gespeichert.':'Füge hier den Link oder Code ein, den du bekommen hast.';
-  $('importDlg').hidden=false; setTimeout(()=>(pre?$('importOk'):$('importCode')).focus(),50);
+  $('importDlg').hidden=false; importPreview(); setTimeout(()=>(pre?$('importOk'):$('importCode')).focus(),50);
 }
+/* Vorschau: Was steckt im Code? Erst nach „Öffnen“ wird gespeichert */
+function importPreview(){
+  const v=$('importCode').value.trim(); if(!v){ $('importMsg').textContent=''; return; }
+  try{ const m=decodeMel(v); $('importMsg').textContent=m.notes.length?`Gefunden: „${m.name}“ · ${m.notes.length} Noten · ${m.bpm} BPM`:'In diesem Code sind keine Noten.'; }
+  catch(e){ $('importMsg').textContent='Das ist noch kein gültiger Melodie-Code.'; }
+}
+$('importCode').addEventListener('input',importPreview);
 $('importCancel').onclick=()=>{ $('importDlg').hidden=true; };
 $('importOk').onclick=()=>{
   let m; try{ m=decodeMel($('importCode').value); }catch(e){ $('importMsg').textContent='Das ist kein gültiger Melodie-Code. Prüf, ob du alles kopiert hast.'; return; }
@@ -2766,21 +2775,45 @@ $('switchInst').onclick=()=>{ setVars(PICK_THEME); document.title='Bandlauf'; sh
 const FOLGEN_KEY='bandlauf-folgen', PAT_KEYS=['steps','rh','lh','voicing','kind','drums','pad','drumsOn','padOn'];
 let best={}, folgen=[];
 function patOf(g){ const o={}; for(const k of PAT_KEYS) if(g[k]!==undefined) o[k]=clone(g[k]); return o; }
+/* Gespeicherte Akkordfolgen prüfen: kaputte oder fremde Daten (z. B. von einer anderen Web-App auf demselben Server) dürfen die App nicht lahmlegen */
+const PAT_OK={bass:{steps:/^[-135678]$/},piano:{rh:/^[-A1358]$/,lh:/^[-A13568]$/},uke:{steps:/^[-DUGCEA]$/},guitar:{steps:/^[-DUBWGHe]$/}};
+function cleanFolge(f){
+  if(!f||typeof f!=='object') return null;
+  const chords=(Array.isArray(f.chords)?f.chords:[]).slice(0,64).filter(c=>c&&Number.isInteger(c.pc)&&c.pc>=0&&c.pc<12&&Object.prototype.hasOwnProperty.call(TYPES,c.type)).map(c=>({pc:c.pc,type:c.type,bars:1,hi:!!c.hi}));
+  if(!chords.length) return null;
+  const out={name:String(f.name||'Meine Akkordfolge').slice(0,40),chords,bpm:Math.max(40,Math.min(180,Math.round(+f.bpm)||80)),reps:[1,2,4].includes(+f.reps)?+f.reps:2,pats:{}};
+  const pats=f.pats&&typeof f.pats==='object'?f.pats:{};
+  for(const id of Object.keys(PAT_OK)){
+    const q=pats[id]; if(!q||typeof q!=='object') continue;
+    const r={};
+    for(const [k,re] of Object.entries(PAT_OK[id])){ const a=q[k]; if(Array.isArray(a)&&[4,6,8].includes(a.length)&&a.every(v=>typeof v==='string'&&re.test(v))) r[k]=a.slice(); }
+    if(id==='piano'&&!(r.rh&&r.lh&&r.rh.length===r.lh.length)){ delete r.rh; delete r.lh; }
+    if(['root','near'].includes(q.voicing)) r.voicing=q.voicing;
+    if(['s','p'].includes(q.kind)) r.kind=q.kind;
+    if(['simple','rock','off'].includes(q.drums)) r.drums=q.drums;
+    for(const k of ['pad','drumsOn','padOn']) if(typeof q[k]==='boolean') r[k]=q[k];
+    out.pats[id]=r;
+  }
+  return out;
+}
 function loadFolgen(){
   folgen=[];
-  try{ folgen=JSON.parse(localStorage.getItem(FOLGEN_KEY)||'[]')||[]; }catch(e){}
+  try{ const a=JSON.parse(localStorage.getItem(FOLGEN_KEY)||'[]'); if(Array.isArray(a)) folgen=a; }catch(e){}
   let moved=false; try{ moved=!!localStorage.getItem(FOLGEN_KEY+'-alt'); }catch(e){}
   if(!moved){
     for(const [inst,key] of [['bass','basslauf'],['piano','tastenlauf'],['uke','ukulauf'],['guitar','gitarrenlauf']]){
       let old=[]; try{ old=JSON.parse(localStorage.getItem(key+'-mine')||'[]')||[]; }catch(e){}
-      for(const m of old){ if(!m||!m.gv) continue; let f=folgen.find(x=>x.name===m.name); if(!f){ f={name:m.name,chords:normalize(m.gv.chords),bpm:m.gv.bpm,reps:m.gv.reps,pats:{}}; folgen.push(f); } f.pats[inst]=patOf(m.gv); }
+      if(!Array.isArray(old)) continue;
+      for(const m of old){ try{ if(!m||!m.gv||!Array.isArray(m.gv.chords)) continue; let f=folgen.find(x=>x&&x.name===m.name); if(!f){ f={name:m.name,chords:normalize(m.gv.chords),bpm:m.gv.bpm,reps:m.gv.reps,pats:{}}; folgen.push(f); } f.pats[inst]=patOf(m.gv); }catch(e){} }
     }
+    folgen=folgen.map(cleanFolge).filter(Boolean);
     try{ localStorage.setItem(FOLGEN_KEY,JSON.stringify(folgen)); localStorage.setItem(FOLGEN_KEY+'-alt','1'); }catch(e){}
   }
+  folgen=folgen.map(cleanFolge).filter(Boolean).slice(0,200);
 }
 function loadStore(){
-  best={};
-  try{ best=JSON.parse(localStorage.getItem(INST.store+'-best')||'{}')||{}; }catch(e){}
+  best=Object.create(null);
+  try{ const o=JSON.parse(localStorage.getItem(INST.store+'-best')||'{}'); if(o&&typeof o==='object') for(const [k,v] of Object.entries(o)) if(k.length<=80&&Number.isInteger(v)&&v>=0&&v<=3) best[k]=v; }catch(e){}
   loadFolgen();
 }
 function folgeGv(f){ return {...INST.defaultGv(),...(f.pats&&f.pats[INST.id]?clone(f.pats[INST.id]):{}),chords:clone(f.chords),bpm:f.bpm||80,reps:f.reps||2}; }
@@ -3551,12 +3584,13 @@ seek.addEventListener('change',()=>{ seeking=false; });
 
 function loadFile(file){
   if(!file||!INST) return;
+  if(file.size>2*1024*1024){ const msg='Diese Datei ist zu groß. Eine MIDI-Datei hat meist nur wenige Kilobyte (höchstens 2 MB).'; if($('player').hidden){ $('heroP').textContent=msg; $('heroP').style.color='var(--bad)'; } else notice(msg); return; }
   const rd=new FileReader();
   rd.onload=()=>{
     try{
       const buf=rd.result;
       if(!parseMidi(buf).length) throw new Error('leer');
-      const s={name:file.name.replace(/\.(mid|midi)$/i,''),level:0,hint:'Eigene MIDI-Datei',build:()=>parseMidi(buf)};
+      const s={name:file.name.replace(/\.(mid|midi)$/i,'').slice(0,60),level:0,hint:'Eigene MIDI-Datei',build:()=>parseMidi(buf)};
       ownMidi[INST.id].push(s); libTab[INST.id]='mine'; openMidi(s); hideNotice();
     }catch(err){
       const msg='Dieses Lied kann die App nicht öffnen. Nimm eine MIDI-Datei. Sie endet mit „.mid“.';
