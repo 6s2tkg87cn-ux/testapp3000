@@ -2,7 +2,7 @@
 
 Übe-App für Musik mit sechs Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
 (Laufband mit Akkorden, Akkord-Baukasten), Klaviermelodie (fallende Noten, rechte und
-linke Hand) und Gesang (mitlaufender Liedtext mit Akkorden). Dazu Stimmgerät,
+linke Hand) und Gesang (Liedtext Zeile für Zeile mit Akkorden). Dazu Stimmgerät,
 Mikrofon-Erkennung und MIDI.
 
 **Klassenband:** 14 Lieder gibt es bei allen Instrumenten – bei Klaviermelodie die Melodie,
