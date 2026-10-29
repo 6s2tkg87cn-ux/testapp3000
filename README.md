@@ -20,10 +20,16 @@ Wiederholungen und englische und deutsche Akkordnamen (B/H). Dur, Moll, 7, maj7 
 erhalten, ebenso ein eigener Basston (C/G, D/F#): Bass und linke Hand am Klavier spielen dann
 diesen Ton. Andere Sonderakkorde (sus4, add9 …) werden vereinfacht.
 Wie lange jeder Akkord dauert, steht in keinem Akkordblatt: Das stellt man im Schritt „Takte“
-ein (− / +, „Alle 2 Takte“). Unpassende Akkorde oder ganze Zeilen lassen sich entfernen, und eine
-fertige Strophe bzw. ein fertiger Refrain wird mit einem Tipp auf alle gleichartigen Abschnitte
-übertragen. Danach gibt es das Lied bei Gesang (aktuelle Zeile mit Akkorden, die App spielt die
-Band) und bei allen Begleit-Instrumenten.
+ein (− / +, „Alle 2 Takte“). Unpassende Akkorde oder ganze Zeilen lassen sich entfernen, eigene
+Akkorde über einem Wort einfügen („+ Akkord“), und eine fertige Strophe bzw. ein fertiger Refrain
+wird mit einem Tipp auf alle gleichartigen Abschnitte übertragen. Im Schritt „Begleitung“ legt man
+Stil, Schlagzeug und das Muster für Gitarre, Ukulele, Bass und Klavier fest – so spielt die Band bei
+Gesang, und so öffnet sich das Lied bei den Instrumenten. Danach gibt es das Lied bei Gesang (aktuelle
+Zeile mit Akkorden, die App spielt die Band) und bei allen Begleit-Instrumenten.
+
+**Transponieren:** Bei importierten Liedern, Klassenband und Popsongs gibt es im Spieler „Tonart − / +“.
+Ein Halbton höher oder tiefer gilt sofort für alle Instrumente (bei der Klassenband auch für die
+Klaviermelodie), damit alle zusammen in derselben Tonart spielen.
 
 **Teile anspringen:** Bei importierten Liedern stehen die Teile (Intro, Strophe, Refrain …) über
 dem Laufband. Ein Tipp springt dorthin; steht das Lied, zählt die App beim Start einen Takt ein.
@@ -39,10 +45,15 @@ Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofor
 Liedtexte sind urheberrechtlich geschützt: importierte Lieder nur im Unterricht mit der eigenen
 Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
 
-**Beamer:** „Vollbild“ zeigt nur Text und Akkorde ohne Bedienelemente (z. B. beim Spiegeln per
-AirPlay). Am Laptop/PC mit Beamer als zweitem Bildschirm öffnet „Beamer-Fenster“ ein eigenes,
-synchron laufendes Fenster für den Beamer – wie der Präsentationsmodus von PowerPoint. Hinweis:
-Über AirPlay kann eine Web-App kein eigenes zweites Bild erzeugen, AirPlay spiegelt das iPad.
+**Beamer:** Den ganzen Beamer nutzt das „Beamer-Fenster“: Ist der Beamer ein zweiter Bildschirm
+(Laptop/PC oder iPad mit M-Chip per Kabel, Bildschirm „Erweitern“), läuft dort ein eigenes,
+synchrones Fenster nur mit Text und Akkorden – wie der Präsentationsmodus von PowerPoint.
+„Vollbild“ zeigt Text und Akkorde ohne Bedienelemente auf dem eigenen Gerät, z. B. beim Spiegeln per
+AirPlay. Über AirPlay kann eine Web-App kein eigenes Beamer-Bild senden (das dürfen nur Apps aus dem
+App Store), AirPlay spiegelt dann das iPad im iPad-Format.
+**Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das
+Bild, stellt man die Verzögerung einmal ein (Regler mit Blink-Test oder automatisch durch Tippen im
+Takt). Das Bild wartet dann auf den Ton.
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
