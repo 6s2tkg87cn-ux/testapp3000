@@ -16,12 +16,23 @@ Popsongs und „Meine“ (bei Klaviermelodie: alle Lieder, Klassenband, „Meine
 
 **Lieder importieren:** Ein Lied mit Akkorden einfügen – Akkorde in einer eigenen Zeile über
 dem Text (wie auf Akkordseiten) oder im ChordPro-Format. Die App erkennt Abschnitte,
-Wiederholungen, englische und deutsche Akkordnamen (B/H) und vereinfacht Sonderakkorde.
+Wiederholungen und englische und deutsche Akkordnamen (B/H). Dur, Moll, 7, maj7 und m7 bleiben
+erhalten, ebenso ein eigener Basston (C/G, D/F#): Bass und linke Hand am Klavier spielen dann
+diesen Ton. Andere Sonderakkorde (sus4, add9 …) werden vereinfacht.
 Wie lange jeder Akkord dauert, steht in keinem Akkordblatt: Das stellt man im Schritt „Takte“
 ein (− / +, „Alle 2 Takte“). Unpassende Akkorde oder ganze Zeilen lassen sich entfernen, und eine
 fertige Strophe bzw. ein fertiger Refrain wird mit einem Tipp auf alle gleichartigen Abschnitte
 übertragen. Danach gibt es das Lied bei Gesang (aktuelle Zeile mit Akkorden, die App spielt die
 Band) und bei allen Begleit-Instrumenten.
+
+**Teile anspringen:** Bei importierten Liedern stehen die Teile (Intro, Strophe, Refrain …) über
+dem Laufband. Ein Tipp springt dorthin; steht das Lied, zählt die App beim Start einen Takt ein.
+Im Laufband zeigt eine Linie, wo der nächste Teil beginnt. Im Vollbild gehen auch die Pfeiltasten
+oder eine Präsentations-Fernbedienung (Bild auf/ab).
+
+**Akkordsymbole:** Überall einheitlich – Dur groß (D), Moll klein mit m (dm), Vorzeichen als
+# und b (C#, Eb), dazu G7, Cmaj7, am7 und C/G. Wie im Deutschen üblich ist H das englische B
+und B das englische Bb.
 
 **Teilen per QR-Code:** Beim Teilen zeigt die App einen QR-Code (auch groß für den Beamer).
 Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofort loslegen.
