@@ -19,6 +19,8 @@ dem Text (wie auf Akkordseiten) oder im ChordPro-Format. Die App erkennt Abschni
 Wiederholungen und englische und deutsche Akkordnamen (B/H). Dur, Moll, 7, maj7 und m7 bleiben
 erhalten, ebenso ein eigener Basston (C/G, D/F#): Bass und linke Hand am Klavier spielen dann
 diesen Ton. Andere Sonderakkorde (sus4, add9 …) werden vereinfacht.
+Taktarten: 4/4, 3/4, 2/4 und 6/8 (bei 6/8 zählt das Tempo die punktierte Viertel); beim Wechsel
+der Taktart bleiben die Längen in Takten gleich. Den Melodie-Editor gibt es ebenfalls mit allen vier Taktarten.
 Wie lange jeder Akkord dauert, steht in keinem Akkordblatt: Das stellt man im Schritt „Takte“
 ein (− / +, „Alle 2 Takte“). Unpassende Akkorde oder ganze Zeilen lassen sich entfernen, eigene
 Akkorde über einem Wort einfügen („+ Akkord“), und eine fertige Strophe bzw. ein fertiger Refrain
