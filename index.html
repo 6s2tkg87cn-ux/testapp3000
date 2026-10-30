@@ -961,7 +961,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <h2 id="mixTitle">Mischpult</h2>
     <p class="lenote">Stell ein, wie laut jedes Instrument spielt – auch während das Lied läuft. Die Einstellung merkt sich dieses Gerät.</p>
     <div class="mixrows" id="mixRows"></div>
-    <div class="mixrow mixlat"><span>Ton-Ausgleich<small>bei AirPlay, Bluetooth oder Beamer-Lautsprechern</small></span><span></span><button class="btn small" id="latBtn">0 ms</button></div>
+    <div class="mixrow mixlat"><span>Ton-Ausgleich<small id="latInfo">bei AirPlay oder Bluetooth</small></span><span></span><button class="btn small" id="latBtn">0 ms</button></div>
     <div class="end"><button class="btn" id="mixReset">Alle auf 100 %</button><button class="btn primary" id="mixDone">Fertig</button></div>
   </div>
 </div>
@@ -1969,7 +1969,8 @@ function isBlackKey(m){ return [1,3,6,8,10].includes(m%12); }
 /* =====================================================================
    KLAVIERMELODIE (Tastenfall: fallende Noten, rechte und linke Hand)
    ===================================================================== */
-const MRC='#3ee6c4', MLC='#ff7eb6', MVIS=3.2;
+const MRC='#3ee6c4', MLC='#ff7eb6', MVIS0=3.2;
+const mvis=()=>MVIS0/laneZoom;
 /* Lieder (alle gemeinfrei). „band“: Akkord pro Takt – dieselben Lieder gibt es bei Gitarre, Ukulele, Bass und Klavierbegleitung als Begleitung. */
 const MSONGS=(()=>{
   const RH=seq=>({name:'Rechte Hand',seq});
@@ -2141,7 +2142,7 @@ const MELODY={
     x.globalAlpha=1;
   },
   /* Wischen: Die Noten folgen dem Finger nach oben oder unten */
-  scrubPos(p0,dx,dy){ return p0+dy/((GEO.fallH||H)/MVIS); },
+  scrubPos(p0,dx,dy){ return p0+dy/((GEO.fallH||H)/mvis()); },
   layout(){
     const L=GEO;
     let lo=127,hi=0; if(song) for(const it of song.items){ lo=Math.min(lo,it.midi); hi=Math.max(hi,it.midi); }
@@ -2162,15 +2163,15 @@ const MELODY={
     return {x:k.x+k.w/2,y:L.kbTop+(k.black?L.kh*0.42:L.kh*0.72),col:q.hand==='L'?MLC:MRC};
   },
   draw(){
-    const L=GEO, T=TH.canvas, fallH=L.fallH, pps=fallH/MVIS, its=song.items;
+    const L=GEO, T=TH.canvas, fallH=L.fallH, pps=fallH/mvis(), its=song.items;
     // Spuren der Tasten
     for(const m of L.whites) if(m%12===0){ g.fillStyle='rgba(255,255,255,0.06)'; g.fillRect(Math.round(L.keys[m].x),0,1,fallH); }
     for(let m=0;m<128;m++){ const k=L.keys[m]; if(k&&k.black){ g.fillStyle='rgba(0,0,0,0.18)'; g.fillRect(k.x,0,k.w,fallH); } }
     // Taktstriche bei Klassenband-Liedern
     if(song.kind==='groove'){
-      for(let b=Math.max(0,Math.floor(pos/song.bar));b*song.bar<=Math.min(pos+MVIS,song.duration+0.01);b++){ const y=fallH-(b*song.bar-pos)*pps; if(y<0||y>fallH) continue; g.fillStyle='rgba(255,255,255,0.07)'; g.fillRect(0,Math.round(y),W,1); }
+      for(let b=Math.max(0,Math.floor(pos/song.bar));b*song.bar<=Math.min(pos+mvis(),song.duration+0.01);b++){ const y=fallH-(b*song.bar-pos)*pps; if(y<0||y>fallH) continue; g.fillStyle='rgba(255,255,255,0.07)'; g.fillRect(0,Math.round(y),W,1); }
     }
-    const active=new Map(), tEnd=pos+MVIS, labelOn=L.ww>16;
+    const active=new Map(), tEnd=pos+mvis(), labelOn=L.ww>16;
     g.textAlign='center'; g.textBaseline='bottom'; g.font=`600 ${Math.max(9,Math.min(13,L.ww*0.42))}px ${FB}`;
     const j0=lowerBound(its,pos-song.maxDur-0.1,n=>n.start);
     for(let pass=0;pass<2;pass++){
@@ -3410,7 +3411,10 @@ async function decodeLied(str){
 /* =====================================================================
    GESANG: aktuelle Zeile des Liedtexts mit Akkorden, die App spielt die Band
    ===================================================================== */
-let voiceScale=1;
+/* Zoom (Pinch): Schriftgröße bei Gesang, Zeitachse beim Laufband und bei Klaviermelodie */
+let voiceScale=1, laneZoom=1;
+try{ const z=JSON.parse(localStorage.getItem('bandlauf-zoom')||'{}'); if(z&&Number.isFinite(z.v)) voiceScale=Math.max(0.6,Math.min(3,z.v)); if(z&&Number.isFinite(z.l)) laneZoom=Math.max(0.4,Math.min(3,z.l)); }catch(e){}
+function saveZoom(){ try{ localStorage.setItem('bandlauf-zoom',JSON.stringify({v:voiceScale,l:laneZoom})); }catch(e){} }
 function lyrX(text,pos){ if(pos<=text.length) return g.measureText(text.slice(0,pos)).width; return g.measureText(text).width+(pos-text.length)*g.measureText(' ').width; }
 /* Liedblatt für Gesang: Höhe jeder Zeile und die Zeit, zu der sie dran ist */
 function voiceLay(Ly){
@@ -4498,7 +4502,7 @@ let scrub=null, scrubbing=false;
 function scrubPos(p0,dx,dy){ return INST.scrubPos?INST.scrubPos(p0,dx,dy):p0-dx/pps; }
 cv.addEventListener('pointerdown',e=>{
   const r=cv.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
-  if(BRX) return;
+  if(BRX||pinch) return;
   if(presenting()) presBar();
   if(presenting()||!INST.pointerDown(x,y,e.pointerId)){ if(!song) return; scrub={id:e.pointerId,x0:x,y0:y,pos0:Math.max(0,pos),moved:false}; }
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
@@ -4523,6 +4527,7 @@ cv.addEventListener('pointerup',e=>{ if(scrub&&scrub.id===e.pointerId){ scrubEnd
 let wheelT=0;
 cv.addEventListener('wheel',e=>{
   if(!song||BRX) return; e.preventDefault(); if(presenting()) presBar();
+  if(e.ctrlKey){ setZoom(curZoom()*Math.exp(-e.deltaY*0.01)); return; }
   const k=e.deltaMode===1?16:e.deltaMode===2?H:1, wx=e.deltaX*k, wy=e.deltaY*k;
   const vert=!!INST.scrubPos, dx=vert?0:-(Math.abs(wx)>Math.abs(wy)?wx:wy), dy=vert?-wy:0;
   if(!scrubbing){ scrubbing=true; countTo=null; finished=false; if(playing) stopScheduled(); }
@@ -4821,7 +4826,15 @@ let partIdx=-2, countTo=null, cntLeft=0;
 /* ---------- Ton-Ausgleich: Das Bild läuft um avLag Sekunden später, damit es zum (verzögerten) Ton passt ---------- */
 const LAT_KEY='bandlauf-latenz'; let avLag=0;
 try{ const v=parseFloat(localStorage.getItem(LAT_KEY)); if(Number.isFinite(v)) avLag=Math.max(-300,Math.min(3000,Math.round(v)))/1000; }catch(e){}
-function lagNow(){ return playing&&!waiting&&!scrubbing&&avLag?avLag*speed:0; }
+/* Ausgleich nur, wenn der Ton über ein Funkgerät läuft (AirPlay, Bluetooth). Der Browser meldet dann eine große
+   Ausgabe-Verzögerung. Kann er das nicht melden, gilt der eingestellte Wert. */
+function routeLag(){
+  if(!ac) return {known:false,ext:false,ms:0};
+  const ol=ac.outputLatency; if(!(typeof ol==='number'&&ol>0)) return {known:false,ext:false,ms:0};
+  const ms=(ol+(ac.baseLatency||0))*1000; return {known:true,ext:ms>120,ms};
+}
+function effLag(){ const r=routeLag(); if(!r.known) return avLag; return r.ext?(avLag||r.ms/1000):0; }
+function lagNow(){ if(!(playing&&!waiting&&!scrubbing)) return 0; const l=effLag(); return l?l*speed:0; }
 function setLag(ms){ ms=Math.max(-300,Math.min(3000,Math.round(ms/10)*10)); avLag=ms/1000; try{ localStorage.setItem(LAT_KEY,String(ms)); }catch(e){}
   $('latOut').textContent=ms+' ms'; $('latRange').value=ms; $('latBtn').textContent=ms+' ms'; }
 const LAT={on:false,next:0,clicks:[],taps:[],raf:0};
@@ -4880,7 +4893,8 @@ function renderMix(){
     row.append(l,r,o); box.appendChild(row);
   });
 }
-function openMix(){ ensureAudio(); renderMix(); $('mixDlg').hidden=false; }
+function openMix(){ ensureAudio(); renderMix(); $('mixDlg').hidden=false;
+  const r=routeLag(); $('latInfo').textContent=!r.known?'automatisch nicht erkennbar – eingestellter Wert gilt':r.ext?`Funkverbindung erkannt (≈${Math.round(r.ms/10)*10} ms) – Ausgleich aktiv`:'Lautsprecher am Gerät – kein Ausgleich nötig'; }
 function closeMix(){ $('mixDlg').hidden=true; }
 $('mixBtn').onclick=openMix; $('mixDone').onclick=closeMix;
 $('mixReset').onclick=()=>{ mixChannels().forEach(([ch])=>mixSet(ch,1)); renderMix(); };
@@ -4952,7 +4966,7 @@ function layout(){
   cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
   g.setTransform(dpr,0,0,dpr,0,0);
   INST.layout();
-  VIS=W<600?3:4; pps=(W-hx)/VIS;
+  VIS=(W<600?3:4)/laneZoom; pps=(W-hx)/VIS;
 }
 new ResizeObserver(layout).observe(stage);
 let rzT=0; addEventListener('resize',()=>{ clearTimeout(rzT); rzT=setTimeout(()=>{ if(!$('lib').hidden) renderLib(); },200); });
@@ -5257,7 +5271,25 @@ $('leDel').onclick=()=>{
 };
 $('leShare').onclick=()=>openShareLied(LE.S);
 $('leHelp').onclick=()=>openHelp(LE_HELP,'Liedtexte sind urheberrechtlich geschützt: Nutze importierte Lieder nur im Unterricht mit deiner Lerngruppe und teile sie nicht öffentlich.');
-document.querySelectorAll('#fontSeg button').forEach(b=>b.onclick=()=>{ voiceScale=+b.dataset.v; document.querySelectorAll('#fontSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); layout(); });
+document.querySelectorAll('#fontSeg button').forEach(b=>b.onclick=()=>{ voiceScale=+b.dataset.v; saveZoom(); document.querySelectorAll('#fontSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); layout(); });
+function setZoom(z){
+  if(INST&&INST.lyrics){ voiceScale=Math.max(0.6,Math.min(3,z)); document.querySelectorAll('#fontSeg button').forEach(x=>x.setAttribute('aria-pressed',Math.abs(+x.dataset.v-voiceScale)<0.05)); }
+  else laneZoom=Math.max(0.4,Math.min(3,z));
+  saveZoom(); layout();
+}
+const curZoom=()=>INST&&INST.lyrics?voiceScale:laneZoom;
+/* Zwei Finger auseinander/zusammen (Touch), Trackpad-Pinch (Safari: gesture…, andere: Strg+Mausrad) */
+const touchPts=new Map(); let pinch=null;
+cv.addEventListener('pointerdown',e=>{ if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(touchPts.size===2){ const [a,b]=[...touchPts.values()]; pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:curZoom()};
+    if(scrub){ if(scrub.moved){ scrubbing=false; resetScore(); if(playing) resyncFrom(pos); } scrub=null; } } },true);
+cv.addEventListener('pointermove',e=>{ if(!touchPts.has(e.pointerId)) return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&touchPts.size>=2){ const [a,b]=[...touchPts.values()]; setZoom(pinch.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0); e.stopImmediatePropagation(); } },true);
+const touchEnd=e=>{ touchPts.delete(e.pointerId); if(touchPts.size<2) pinch=null; };
+cv.addEventListener('pointerup',touchEnd,true); cv.addEventListener('pointercancel',touchEnd,true);
+let gz=1; cv.addEventListener('gesturestart',e=>{ e.preventDefault(); gz=curZoom(); });
+cv.addEventListener('gesturechange',e=>{ e.preventDefault(); setZoom(gz*e.scale); });
+cv.addEventListener('gestureend',e=>e.preventDefault());
 async function openShareLied(S){
   if(!parseLied(S.text).events.length) return;
   if(LE.S===S) leSave();
