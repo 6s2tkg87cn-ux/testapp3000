@@ -52,6 +52,11 @@ Lied-Editor unter „Begleitung“).
 **Klavier – Lage:** Bei „Nah beieinander“ bleiben die Akkorde in der gewählten Lage (tief, mittel,
 hoch) und wandern nicht mehr nach oben.
 
+**Arranger:** Im Lied-Editor (Schritt „Begleitung“) legt eine Tabelle für jeden Teil des Liedes fest,
+welches Instrument spielt („Pause“) und mit welchem Muster. Das gilt für die Band bei Gesang und beim
+Üben an jedem Instrument (in einer Pause gibt es nichts zu spielen). Bei Gesang zeigt rechts eine Liste,
+wer im aktuellen Teil spielt und wer gleich einsetzt oder aufhört – auch im Vollbild.
+
 **Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
 ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
 läuft. Die Einstellung merkt sich das Gerät.
