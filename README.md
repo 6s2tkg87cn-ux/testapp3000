@@ -1,6 +1,6 @@
 # Bandlauf
 
-Übe-App für Musik mit sechs Instrumenten: Gitarre, Ukulele, Bass und Klavierbegleitung
+Übe-App für Musik mit sieben Instrumenten: Gitarre, Ukulele, Bass, Schlagzeug und Klavierbegleitung
 (Laufband mit Akkorden, Akkord-Baukasten), Klaviermelodie (fallende Noten, rechte und
 linke Hand) und Gesang (Liedtext Zeile für Zeile mit Akkorden). Dazu Stimmgerät,
 Mikrofon-Erkennung und MIDI.
@@ -43,6 +43,14 @@ speichern“ übernehmen. Klavier spielt die Akkorde standardmäßig nah beieina
 
 **Wischen:** Mit dem Finger im Bild wischen verschiebt die Stelle im Lied – im Laufband nach links
 und rechts, bei Gesang und Klaviermelodie nach oben und unten. Auf dem Mac geht das auch mit zwei Fingern auf dem Trackpad oder mit dem Mausrad. Gestartet wird nur mit dem Start-Knopf.
+
+**Schlagzeug:** Drei Spuren (Becken, Snare, Bassdrum) laufen auf die Linie zu. Gespielt wird auf
+den Pads unten, mit den Tasten K, J, F oder mit E-Drums/MIDI-Pads am Computer. Übungen von Grundbeat
+bis Funk, eigene Grooves im Baukasten, Klassenband, Popsongs und importierte Lieder (Groove im
+Lied-Editor unter „Begleitung“).
+
+**Klavier – Lage:** Bei „Nah beieinander“ bleiben die Akkorde in der gewählten Lage (tief, mittel,
+hoch) und wandern nicht mehr nach oben.
 
 **Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
 ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
