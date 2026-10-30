@@ -74,7 +74,7 @@ AirPlay. Über AirPlay kann eine Web-App kein eigenes Beamer-Bild senden (das d�
 App Store), AirPlay spiegelt dann das iPad im iPad-Format.
 **Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das
 Bild, stellt man die Verzögerung einmal ein (Regler mit Blink-Test oder automatisch durch Tippen im
-Takt). Das Bild wartet dann auf den Ton.
+Takt; über AirPlay oft 1–2 Sekunden, einstellbar bis 3 Sekunden). Das Bild wartet dann auf den Ton.
 
 **Melodie-Editor (Klaviermelodie):** Eigene Melodien als Balken setzen oder über ein
 MIDI-Keyboard, die Computer-Tastatur oder die Bildschirmtasten aufnehmen – erst die rechte,
