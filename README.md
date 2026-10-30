@@ -29,8 +29,8 @@ Stil, Schlagzeug und das Muster für Gitarre, Ukulele, Bass und Klavier fest –
 Gesang, und so öffnet sich das Lied bei den Instrumenten. Danach gibt es das Lied bei Gesang (aktuelle
 Zeile mit Akkorden, die App spielt die Band) und bei allen Begleit-Instrumenten.
 
-**Schlagzeug:** Fünf Spuren mit Zeichen (Crash ✱, Ride ◆, Hi-Hat ×/○, Snare ●, Bassdrum ⬤) laufen auf
-die Linie zu, darunter ein gezeichnetes Set zum Antippen (Tasten E, R, D, F, J; E-Drums/MIDI-Pads am
+**Schlagzeug:** Ein Raster wie im Drumcomputer zeigt zwei Takte mit Zeichen (Crash ✱, Ride ◆, Hi-Hat ×/○, Snare ●, Bassdrum ⬤), ein Lauflicht wandert durch; neue Muster und Fill-ins kündigt rechts eine Vorschau an. Darunter
+ein gezeichnetes Set zum Antippen (Tasten E, R, D, F, J; E-Drums/MIDI-Pads am
 Computer). Bei Liedern mit Teilen zeigt „FILL-IN“, wo ein Übergang kommt; Crash auf der Eins jedes Teils.
 Übungen von Grundbeat bis Funk, eigene Grooves, Klassenband, Popsongs und importierte Lieder.
 
