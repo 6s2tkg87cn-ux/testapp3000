@@ -37,6 +37,13 @@ neuen Teils und einem Schlussbecken. Andere Lieder bekommen alle acht Takte ein 
 Das Tempo, das man im Spieler einstellt, merkt sich das Lied – es gilt bei allen Instrumenten und
 wird beim Teilen mitgeschickt (Teilen geht auch direkt im Spieler).
 
+**Eigene Muster:** Im Lied-Editor (Schritt „Begleitung“) gibt es bei jedem Instrument „Eigenes Muster …“:
+Kästchen antippen wie im Baukasten. Ein im Spieler geändertes Muster lässt sich mit „Für dieses Lied
+speichern“ übernehmen. Klavier spielt die Akkorde standardmäßig nah beieinander.
+
+**Wischen:** Mit dem Finger im Bild wischen verschiebt die Stelle im Lied – im Laufband nach links
+und rechts, bei Gesang und Klaviermelodie nach oben und unten. Kurz tippen startet wie bisher.
+
 **Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
 ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
 läuft. Die Einstellung merkt sich das Gerät.
