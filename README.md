@@ -29,6 +29,14 @@ Stil, Schlagzeug und das Muster für Gitarre, Ukulele, Bass und Klavier fest –
 Gesang, und so öffnet sich das Lied bei den Instrumenten. Danach gibt es das Lied bei Gesang (aktuelle
 Zeile mit Akkorden, die App spielt die Band) und bei allen Begleit-Instrumenten.
 
+**Schlagzeug:** Klingt wie ein echtes Set (Bassdrum, Snare, Hi-Hat, Ride, Crash, Toms) mit
+natürlichen Lautstärke- und Zeitschwankungen. Bei importierten Liedern spielt es je Teil anders:
+im Intro leise mit Rand-Schlägen, in der Strophe Hi-Hat, im Refrain Ride-Becken und kräftiger, in der
+Bridge im halben Tempo – mit kleinen Fill-ins vor jedem neuen Teil, einem Crash-Becken auf der Eins des
+neuen Teils und einem Schlussbecken. Andere Lieder bekommen alle acht Takte ein kleines Fill-in.
+Das Tempo, das man im Spieler einstellt, merkt sich das Lied – es gilt bei allen Instrumenten und
+wird beim Teilen mitgeschickt (Teilen geht auch direkt im Spieler).
+
 **Transponieren:** Bei importierten Liedern, Klassenband und Popsongs gibt es im Spieler „Tonart − / +“.
 Ein Halbton höher oder tiefer gilt sofort für alle Instrumente (bei der Klassenband auch für die
 Klaviermelodie), damit alle zusammen in derselben Tonart spielen.
