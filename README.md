@@ -29,13 +29,10 @@ Stil, Schlagzeug und das Muster für Gitarre, Ukulele, Bass und Klavier fest –
 Gesang, und so öffnet sich das Lied bei den Instrumenten. Danach gibt es das Lied bei Gesang (aktuelle
 Zeile mit Akkorden, die App spielt die Band) und bei allen Begleit-Instrumenten.
 
-**Schlagzeug:** Klingt wie ein echtes Set (Bassdrum, Snare, Hi-Hat, Ride, Crash, Toms) mit
-natürlichen Lautstärke- und Zeitschwankungen. Bei importierten Liedern spielt es je Teil anders:
-im Intro leise mit Rand-Schlägen, in der Strophe Hi-Hat, im Refrain Ride-Becken und kräftiger, in der
-Bridge im halben Tempo – mit kleinen Fill-ins vor jedem neuen Teil, einem Crash-Becken auf der Eins des
-neuen Teils und einem Schlussbecken. Andere Lieder bekommen alle acht Takte ein kleines Fill-in.
-Das Tempo, das man im Spieler einstellt, merkt sich das Lied – es gilt bei allen Instrumenten und
-wird beim Teilen mitgeschickt (Teilen geht auch direkt im Spieler).
+**Schlagzeug:** Fünf Spuren mit Zeichen (Crash ✱, Ride ◆, Hi-Hat ×/○, Snare ●, Bassdrum ⬤) laufen auf
+die Linie zu, darunter ein gezeichnetes Set zum Antippen (Tasten E, R, D, F, J; E-Drums/MIDI-Pads am
+Computer). Bei Liedern mit Teilen zeigt „FILL-IN“, wo ein Übergang kommt; Crash auf der Eins jedes Teils.
+Übungen von Grundbeat bis Funk, eigene Grooves, Klassenband, Popsongs und importierte Lieder.
 
 **Eigene Muster:** Im Lied-Editor (Schritt „Begleitung“) gibt es bei jedem Instrument „Eigenes Muster …“:
 Kästchen antippen wie im Baukasten. Ein im Spieler geändertes Muster lässt sich mit „Für dieses Lied
@@ -52,10 +49,11 @@ Lied-Editor unter „Begleitung“).
 **Klavier – Lage:** Bei „Nah beieinander“ bleiben die Akkorde in der gewählten Lage (tief, mittel,
 hoch) und wandern nicht mehr nach oben.
 
-**Arranger:** Im Lied-Editor (Schritt „Begleitung“) legt eine Tabelle für jeden Teil des Liedes fest,
-welches Instrument spielt („Pause“) und mit welchem Muster. Das gilt für die Band bei Gesang und beim
-Üben an jedem Instrument (in einer Pause gibt es nichts zu spielen). Bei Gesang zeigt rechts eine Liste,
-wer im aktuellen Teil spielt und wer gleich einsetzt oder aufhört – auch im Vollbild.
+**Arranger:** Im Lied-Editor (Schritt „Begleitung“) eine Matrix Teile × Instrumente: „spielt“/„Pause“
+antippen und das Muster des Teils wählen (★ = Muster des ganzen Liedes); gleiche Teile (alle Refrains)
+ändern sich auf Wunsch gemeinsam, „Alle Teile“ setzt eine ganze Spalte. Das Playback eines Liedes besteht
+aus genau diesen Stimmen – und jedes Instrument spielt beim Üben dasselbe. Bei Gesang zeigt rechts eine
+Liste, wer im aktuellen Teil spielt und wer gleich einsetzt oder aufhört – auch im Vollbild.
 
 **Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
 ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
