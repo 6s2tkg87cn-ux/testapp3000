@@ -116,6 +116,28 @@ button,input,select{font-family:inherit}
 /* ---------- Spieler ---------- */
 #player{display:flex;flex-direction:column;gap:10px;overflow:hidden}
 #player>.ptop,#player>.transport,#player>.notice{flex:none}
+/* Breite Bildschirme (iPad, Computer): Einstellungen in einer Zeile, „Muster ändern“ klappt darunter auf */
+@media (min-width:700px){
+  #player .strip{flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:7px;padding:7px 8px;scrollbar-width:none}
+  #player .strip::-webkit-scrollbar{display:none}
+  #player .pctl>.strip{flex:none}
+  #player .strip .group{flex:none;flex-direction:row;align-items:center;gap:5px}
+  #player .strip .group>.lbl{display:none}
+  #player .strip #mixBtn{font-size:0;gap:0;padding:0 12px} #player .strip #mixBtn svg{width:16px;height:16px}
+  #player .strip #micLbl{display:none} #player .strip .stepper output{min-width:54px}
+  #player .strip .stepper button{width:32px;height:32px;font-size:16px}
+  #player .strip .stepper output{min-width:62px;font-size:14px}
+  #player .strip .seg button,#player .strip .chipt,#player .strip .btn,#player .strip .micbtn,#player .strip .switch{min-height:38px;font-size:13.5px}
+  #player .strip .chipt{padding:0 11px}
+  #player .strip #wait::before{content:"Warten";margin-left:4px}
+  #player .strip #waitLbl{display:none}
+  #player .builder .bhead{display:none}
+  #player .builder[data-open="false"]{display:none}
+  #player:not(.building) #bQuick{opacity:.95}
+}
+#bQuick svg{width:14px;height:14px;fill:currentColor}
+#bQuick[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+.mixlat{margin-bottom:6px}
 .parts{flex:none;display:flex;align-items:center;gap:8px;min-width:0}
 .parts>.lbl{flex:none}
 .pchips{display:flex;gap:6px;overflow-x:auto;min-width:0;padding:2px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -466,6 +488,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
 #latDlg .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 body.present .screen:not(#player){display:none!important}
 body.present #player{padding:0;gap:0}
+html:has(body.present),body.present{overscroll-behavior:none;overflow:hidden}
 body.present #player>*:not(#stage){display:none!important}
 body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0;z-index:30}
 .presbar{position:fixed;right:12px;bottom:12px;z-index:50;display:flex;gap:8px}
@@ -687,13 +710,13 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
         <button class="chipt" id="accBtn" aria-pressed="true">Begleitung</button>
       </div>
     </div>
-    <div class="group" id="mixGroup"><span class="lbl">Lautstärke</span><button class="btn small" id="mixBtn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h1.6v6.2a2 2 0 010 3.6v3.2H3v-3.2a2 2 0 010-3.6zM7.2 1.5h1.6v2.2a2 2 0 010 3.6v7.2H7.2V7.3a2 2 0 010-3.6zM11.4 1.5H13v8.2a2 2 0 010 3.6v1.2h-1.6v-1.2a2 2 0 010-3.6z"/></svg>Mischpult</button></div>
-    <div class="group" id="latGroup"><span class="lbl">Ton-Ausgleich</span><button class="btn small" id="latBtn">0 ms</button></div>
+    <div class="group" id="bQuickGroup" hidden><span class="lbl">Muster</span><button class="btn small" id="bQuick" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg><span id="bQuickT">Muster</span></button></div>
+    <div class="group" id="mixGroup"><span class="lbl">Lautstärke</span><button class="btn small" id="mixBtn" title="Mischpult" aria-label="Mischpult"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h1.6v6.2a2 2 0 010 3.6v3.2H3v-3.2a2 2 0 010-3.6zM7.2 1.5h1.6v2.2a2 2 0 010 3.6v7.2H7.2V7.3a2 2 0 010-3.6zM11.4 1.5H13v8.2a2 2 0 010 3.6v1.2h-1.6v-1.2a2 2 0 010-3.6z"/></svg>Mischpult</button></div>
     <div class="group" id="fontGroup" hidden><span class="lbl">Schrift</span><div class="seg" id="fontSeg"><button data-v="1" aria-pressed="true">Normal</button><button data-v="1.4" aria-pressed="false">Groß</button></div></div>
     <div class="group">
       <span class="lbl" id="micGroupLbl">Echtes Instrument</span>
       <div class="row">
-        <button class="micbtn" id="mic" aria-pressed="false">
+        <button class="micbtn" id="mic" aria-pressed="false" title="App hört zu (Mikrofon)">
           <svg viewBox="0 0 16 16"><path d="M8 1a2.5 2.5 0 012.5 2.5v4a2.5 2.5 0 01-5 0v-4A2.5 2.5 0 018 1zm-4.5 6.5h1.5a3 3 0 006 0h1.5a4.5 4.5 0 01-3.75 4.44V14h2v1.5h-5.5V14h2v-2.06A4.5 4.5 0 013.5 7.5z"/></svg>
           <span id="micLbl">App hört zu</span><span class="meter"><i id="meter"></i></span>
         </button>
@@ -938,6 +961,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <h2 id="mixTitle">Mischpult</h2>
     <p class="lenote">Stell ein, wie laut jedes Instrument spielt – auch während das Lied läuft. Die Einstellung merkt sich dieses Gerät.</p>
     <div class="mixrows" id="mixRows"></div>
+    <div class="mixrow mixlat"><span>Ton-Ausgleich<small>bei AirPlay, Bluetooth oder Beamer-Lautsprechern</small></span><span></span><button class="btn small" id="latBtn">0 ms</button></div>
     <div class="end"><button class="btn" id="mixReset">Alle auf 100 %</button><button class="btn primary" id="mixDone">Fertig</button></div>
   </div>
 </div>
@@ -3419,8 +3443,8 @@ function voiceScrollToPos(Z,s){
 }
 const VOICE={
   id:'voice', app:'Singlauf', label:'Gesang', store:'singlauf', file:'', lyrics:true,
-  theme:{'--bg':'#1a0d14','--bg-2':'#26121d','--fg':'#fdf1f5','--muted':'#c9a9b8','--accent':'#ff9e7a','--accent-ink':'#2b0e04','--glow1':'rgba(255,158,122,.18)','--glow2':'rgba(255,94,160,.14)'},
-  canvas:{top:'#2a1220',bot:'#12070d',panel:'rgba(38,16,28,0.94)',dark:'#1a0d14',muted:'#c9a9b8',soft:'#ecd3dd',accent:'#ff9e7a',ink:'#2b0e04'},
+  theme:{'--bg':'#0b1522','--bg-2':'#122033','--fg':'#f0f6ff','--muted':'#a8bad0','--accent':'#8fd0ff','--accent-ink':'#062038','--glow1':'rgba(143,208,255,.18)','--glow2':'rgba(110,160,255,.14)'},
+  canvas:{top:'#12223a',bot:'#070e18',panel:'rgba(14,28,46,0.94)',dark:'#0b1522',muted:'#a8bad0',soft:'#d6e4f5',accent:'#8fd0ff',ink:'#062038'},
   pick:{tag:'Singlauf',text:'Liedtext Zeile für Zeile mit Akkorden – die App spielt die Band.'},
   hero:'Was singt ihr <em>heute?</em>',
   heroP:'Importiere ein Lied mit Akkorden – du siehst die aktuelle Zeile, die App spielt die Begleitung.',
@@ -3512,7 +3536,7 @@ const VOICE={
     ['Zusammen spielen','Das Lied gibt es dann auch bei Gitarre, Ukulele, Bass und Klavierbegleitung (Bereich „Meine“). Hier spielt die App die Band – Schlagzeug und Band lassen sich ausschalten.']
   ],
   helpTip:'Tipp: Für den Beamer gibt es oben bei „Schrift“ eine große Ansicht. Liedtexte sind geschützt – nutze importierte Lieder nur im Unterricht.',
-  art:'<svg viewBox="0 0 220 110"><g font-family="sans-serif" font-weight="700"><text x="34" y="38" font-size="15" fill="#ff9e7a">G</text><text x="104" y="38" font-size="15" fill="#ff9e7a">H</text><text x="160" y="38" font-size="15" fill="#ff9e7a">C</text></g><rect x="30" y="48" width="160" height="10" rx="5" fill="#fdf1f5"/><rect x="30" y="48" width="92" height="10" rx="5" fill="#ff9e7a"/><rect x="30" y="72" width="130" height="8" rx="4" fill="rgba(253,241,245,.45)"/><rect x="30" y="90" width="100" height="8" rx="4" fill="rgba(253,241,245,.3)"/></svg>'
+  art:'<svg viewBox="0 0 220 110"><g font-family="sans-serif" font-weight="700"><text x="34" y="38" font-size="15" fill="#8fd0ff">G</text><text x="104" y="38" font-size="15" fill="#8fd0ff">H</text><text x="160" y="38" font-size="15" fill="#8fd0ff">C</text></g><rect x="30" y="48" width="160" height="10" rx="5" fill="#f0f6ff"/><rect x="30" y="48" width="92" height="10" rx="5" fill="#8fd0ff"/><rect x="30" y="72" width="130" height="8" rx="4" fill="rgba(253,241,245,.45)"/><rect x="30" y="90" width="100" height="8" rx="4" fill="rgba(253,241,245,.3)"/></svg>'
 };
 
 /* ---------- Lied-Editor: 1 Text einfügen · 2 Takte einstellen ---------- */
@@ -4089,7 +4113,7 @@ function setSong(s,reset){
   if(reset) pos=leadPos();
   $('seek').max=song.duration.toFixed(2); $('dur').textContent=fmt(song.duration);
   $('bpmOut').textContent=(gv?gv.bpm:meta&&meta.bpm||'')+(gv&&gv.compound&&INST.meter(gv)===6||meta&&meta.kind==='melody'&&meta.src&&meta.src.meter===6?' ♩.':' BPM');
-  rebuildPractice(); layout(); renderParts(); updTr(); $('pShare').hidden=!(meta&&meta.lied); mixApply();
+  rebuildPractice(); layout(); renderParts(); updTr(); $('bQuickGroup').hidden=$('builder').hidden; $('bQuick').title=$('bTitle').textContent; $('pShare').hidden=!(meta&&meta.lied); mixApply();
   if(!reset&&was) playing=true;
   beamerSendSong();
 }
@@ -4137,8 +4161,9 @@ function placeChord(c,btn){
   selSlot++; if(selSlot>=slotN) selSlot=-1; else if(selSlot>gv.chords.length) selSlot=gv.chords.length;
   changed();
 }
-function setBuilderOpen(o){ $('builder').dataset.open=o; $('bToggle').setAttribute('aria-expanded',o); $('player').classList.toggle('building',o); requestAnimationFrame(layout); }
+function setBuilderOpen(o){ $('builder').dataset.open=o; $('bToggle').setAttribute('aria-expanded',o); $('bQuick').setAttribute('aria-expanded',o); $('player').classList.toggle('building',o); requestAnimationFrame(layout); }
 $('bToggle').onclick=()=>setBuilderOpen($('builder').dataset.open!=='true');
+$('bQuick').onclick=()=>setBuilderOpen($('builder').dataset.open!=='true');
 $('bDone').onclick=()=>{ setBuilderOpen(false); $('player').scrollTop=0; try{ document.querySelector('.pctl').scrollTop=0; }catch(e){} };
 function renderKeyArea(){
   const ks=$('keySeg'); ks.innerHTML='';
@@ -4801,7 +4826,7 @@ function setLag(ms){ ms=Math.max(-300,Math.min(3000,Math.round(ms/10)*10)); avLa
   $('latOut').textContent=ms+' ms'; $('latRange').value=ms; $('latBtn').textContent=ms+' ms'; }
 const LAT={on:false,next:0,clicks:[],taps:[],raf:0};
 function openLat(){
-  if(playing) stopPlayback(); ensureAudio(); $('beamerDlg').hidden=true; $('latDlg').hidden=false; setLag(avLag*1000);
+  $('mixDlg').hidden=true; if(playing) stopPlayback(); ensureAudio(); $('beamerDlg').hidden=true; $('latDlg').hidden=false; setLag(avLag*1000);
   LAT.on=true; LAT.next=ac.currentTime+0.3; LAT.clicks=[]; LAT.taps=[]; $('latMsg').textContent='';
   const ol=(ac.outputLatency||0)+(ac.baseLatency||0); if(ol>0.06){ $('latMsg').textContent=`Das Gerät meldet etwa ${Math.round(ol*1000)} ms Verzögerung.`; if(!avLag) setLag(ol*1000); }
   cancelAnimationFrame(LAT.raf); latLoop();
@@ -5285,6 +5310,9 @@ function exitPresent(){ document.body.classList.remove('present'); $('presBar').
 ['fullscreenchange','webkitfullscreenchange'].forEach(t=>document.addEventListener(t,()=>{ if(!document.fullscreenElement&&!document.webkitFullscreenElement){ if(presenting()&&!BRX) exitPresent(); if(!$('qrBig').hidden) $('qrBig').hidden=true; } }));
 addEventListener('pointermove',()=>{ if(presenting()&&!BRX) presBar(); });
 $('presentBtn').onclick=enterPresent;
+/* Im Vollbild gehören Wischen und Scrollen der App – nicht dem Browser (sonst beendet Safari das Vollbild) */
+document.addEventListener('wheel',e=>{ if(presenting()&&e.target!==cv){ e.preventDefault(); } },{passive:false});
+document.addEventListener('touchmove',e=>{ if(presenting()) e.preventDefault(); },{passive:false});
 $('beamerFull').onclick=enterPresent;
 $('beamerCancel').onclick=()=>{ $('beamerDlg').hidden=true; };
 $('beamerLat').onclick=openLat;
