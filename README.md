@@ -104,6 +104,14 @@ web.config          optionale Einstellungen für Windows-Server (IIS)
 Läuft der Server ohne Internetzugang (nur im Schulnetz), funktioniert die App trotzdem:
 Sie lädt nichts von fremden Servern nach.
 
+## MIDI-Keyboards am iPhone und iPad
+
+Safari auf iPhone und iPad (und alle anderen Browser dort) lässt Webseiten nicht auf MIDI-Geräte
+zugreifen – das ist eine Grenze von Apple, Apps wie GarageBand dürfen es. Am Mac, PC oder
+Chromebook funktioniert das Keyboard in Chrome, Edge oder Firefox. Am iPhone/iPad helfen
+Browser-Apps mit Web-MIDI-Unterstützung aus dem App Store, die Bildschirmtasten oder
+„App hört zu“ über das Mikrofon. Die App zeigt dazu einen Hinweis.
+
 ## Wichtig: HTTPS für Mikrofon und MIDI
 
 Browser erlauben Mikrofon (Stimmgerät, „App hört zu“) und MIDI-Geräte nur auf sicheren
