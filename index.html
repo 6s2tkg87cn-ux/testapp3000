@@ -2549,7 +2549,7 @@ function openEditor(m,isNew){
   Object.assign(ED,{m,sel:null,undo:[],play:null,rec:null,ph:0,sx:0,lastTap:null,lastLen:1,delArm:false,isNew:!!isNew});
   showScreen('editor'); setVars(MELODY.theme);
   $('edName').value=m.name; $('edDelMel').textContent='Löschen';
-  edStatus(isNew?'Neu – wird beim ersten Ändern gespeichert':'');
+  edStatus(!navigator.requestMIDIAccess&&IS_IOS?'MIDI-Keyboards gehen in Safari auf iPhone/iPad nicht – spiel auf den Bildschirmtasten (Details unter „So geht’s“).':isNew?'Neu – wird beim ersten Ändern gespeichert':'');
   setEdSettings(false); edLayout();
   const ps=m.notes.map(n=>n.p).sort((a,b)=>a-b), mid=ps.length?ps[ps.length>>1]:62;
   ED.sy=(PMAX-mid)*ED.rh-(ED.H-ED.rulerH)/2; edClamp(); edBtns();
@@ -2571,6 +2571,7 @@ const ED_HELP=[
   ['Noten setzen','Tippe ins Raster: Es entsteht ein Balken. Zieh nach rechts, dann wird er länger. Die Farbe zeigt die Hand: rosa ist links, türkis ist rechts. Unten wählst du, für welche Hand du schreibst.'],
   ['Ändern','Zieh einen Balken nach oben, unten oder zur Seite. Am rechten Ende ziehst du ihn länger oder kürzer. Zweimal schnell tippen löscht ihn. Mit zwei Fingern verschiebst und zoomst du.'],
   ['Aufnehmen','Wähl unten die Hand und drück ●. Nach dem Einzählen spielst du – auf dem Keyboard am Kabel, der Computer-Tastatur (<kbd>A</kbd> bis <kbd>K</kbd>) oder links auf den Tasten. Mit ■ hörst du auf. Eine neue Aufnahme ersetzt die Noten dieser Hand an dieser Stelle.'],
+  ['MIDI am iPhone/iPad','Safari auf iPhone und iPad lässt Webseiten nicht auf MIDI-Keyboards zugreifen – das ist eine Grenze von Apple, nicht der App (GarageBand darf es als App). Am Mac oder PC mit Chrome, Edge oder Firefox funktioniert das Keyboard. Am iPhone/iPad gehen Browser-Apps mit Web-MIDI aus dem App Store (z. B. „Web MIDI Browser“) oder die Bildschirmtasten.'],
   ['Beide Hände','Nimm zuerst die rechte Hand auf. Dann wähl „Links“ und nimm noch einmal auf: Du hörst die rechte Hand dabei.'],
   ['Quantisieren','„Quantisieren“ rückt alle Noten genau aufs Raster. So klingt eine Aufnahme ordentlich. „Ans Raster rücken“ macht das gleich beim Aufnehmen.'],
   ['Teilen','Mit „Teilen“ bekommst du einen Link und einen Code. Wer ihn in Bandlauf öffnet, hat deine Melodie.']
@@ -4033,7 +4034,7 @@ document.querySelectorAll('#filters .filter').forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- Öffnen ---------- */
-function showPlayer(name,level){ showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); }
+function showPlayer(name,level){ showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); setTimeout(midiInfo,0); }
 function openGroove(p,editable){
   meta={name:p.name,level:p.level,kind:'groove',saved:!!p.saved,lied:p.lied||null,trKey:p.trKey||null};
   gv=clone(p.gv); gv.chords=normalize(gv.chords);
@@ -4519,6 +4520,10 @@ try{
   }
 }catch(e){}
 
+/* Safari auf iPhone und iPad kennt kein Web-MIDI (Apple erlaubt es Webseiten nicht, auch nicht in Chrome auf dem iPhone) */
+let midiHinted=false;
+const MIDI_IOS='MIDI-Keyboards erkennt Safari auf iPhone und iPad nicht – Apple lässt Webseiten nicht auf MIDI zugreifen (Apps wie GarageBand dürfen das). Am Mac oder PC mit Chrome, Edge oder Firefox geht MIDI. Am iPhone/iPad: Browser-Apps mit Web-MIDI-Unterstützung aus dem App Store nutzen (z. B. „Web MIDI Browser“) oder mit „App hört zu“ über das Mikrofon spielen.';
+function midiInfo(){ if(midiHinted||navigator.requestMIDIAccess||!IS_IOS||!INST||!['piano','melody'].includes(INST.id)) return; midiHinted=true; notice(MIDI_IOS); }
 /* ---------- Mikrofon ---------- */
 let inFrame=false; try{ inFrame=window.self!==window.top; }catch(e){ inFrame=true; }
 const IOS_DEV=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
