@@ -3387,6 +3387,35 @@ async function decodeLied(str){
    ===================================================================== */
 let voiceScale=1;
 function lyrX(text,pos){ if(pos<=text.length) return g.measureText(text.slice(0,pos)).width; return g.measureText(text).width+(pos-text.length)*g.measureText(' ').width; }
+/* Liedblatt für Gesang: Höhe jeder Zeile und die Zeit, zu der sie dran ist */
+function voiceLay(Ly){
+  const f=GEO.fs||22, key=W+'|'+f+'|'+H;
+  if(Ly._lay&&Ly._lay.key===key) return Ly._lay;
+  const P=Ly.P, rows=[]; let y=0;
+  const first=new Map(); Ly.ev.forEach((e,i)=>{ if(!first.has(e.line)) first.set(e.line,Ly.evT[i]); });
+  Ly.vis.forEach((li,k)=>{
+    const L=P.lines[li], head=L.secHead?(L.secHead+(L.secNote?' · '+L.secNote:'')):'';
+    const chords=L.chords.some((c,j)=>Ly.act.has(li+':'+j));
+    let sc=1; if(L.kind==='lyric'&&L.text){ g.font=`600 ${Math.round(f)}px ${FB}`; const tw=g.measureText(L.text).width; if(tw>W-40) sc=Math.max(0.6,(W-40)/tw); }
+    const h=(head?f*1.2:0)+(L.kind==='inst'?f*1.6:(chords?f*sc*1.15:0)+(L.text?f*sc*1.35:0))+f*0.45;
+    rows.push({y,h,head,chords,sc,t:first.has(li)?first.get(li):null}); y+=h;
+  });
+  // Zeilen ohne Akkord bekommen eine Zeit zwischen den Nachbarn
+  const end=Ly.evEnd[Ly.evEnd.length-1]||0;
+  for(let k=0;k<rows.length;k++) if(rows[k].t==null){ let a=k-1; while(a>=0&&rows[a].t==null) a--; let b=k+1; while(b<rows.length&&rows[b].t==null) b++;
+    const ta=a>=0?rows[a].t:0, tb=b<rows.length?rows[b].t:end; rows[k].t=ta+(tb-ta)*(k-a)/(b-a); }
+  return Ly._lay={key,rows,f,total:y,end,focus:0.22};
+}
+function voicePosToScroll(Z,p){
+  const R=Z.rows; if(!R.length) return 0; if(p<=R[0].t) return R[0].y;
+  for(let k=0;k<R.length;k++){ const t1=k+1<R.length?R[k+1].t:Z.end; if(p<t1||k===R.length-1){ const fr=t1>R[k].t?Math.min(1,(p-R[k].t)/(t1-R[k].t)):0; return R[k].y+fr*R[k].h; } }
+  return Z.total;
+}
+function voiceScrollToPos(Z,s){
+  const R=Z.rows; if(!R.length) return 0; if(s<=R[0].y) return R[0].t;
+  for(let k=0;k<R.length;k++){ if(s<R[k].y+R[k].h||k===R.length-1){ const t1=k+1<R.length?R[k+1].t:Z.end; return R[k].t+Math.min(1,(s-R[k].y)/R[k].h)*(t1-R[k].t); } }
+  return Z.end;
+}
 const VOICE={
   id:'voice', app:'Singlauf', label:'Gesang', store:'singlauf', file:'', lyrics:true,
   theme:{'--bg':'#1a0d14','--bg-2':'#26121d','--fg':'#fdf1f5','--muted':'#c9a9b8','--accent':'#ff9e7a','--accent-ink':'#2b0e04','--glow1':'rgba(255,158,122,.18)','--glow2':'rgba(255,94,160,.14)'},
@@ -3419,16 +3448,8 @@ const VOICE={
   pressVoice(m,vel){ return pianoVoice(m,ac.currentTime,null,vel); },
   playItem(){}, fxPos(){ return null; },
   pointerDown(){ return false; }, pointerMove(){}, pointerUp(){},
-  /* Mit dem Finger durch den Text: eine Zeile pro Fingerbreite, nach oben wischen = weiter im Lied */
-  scrubPos(p0,dx,dy){
-    const Ly=song.lyric; if(!Ly||!Ly.ev.length) return p0;
-    const e0=Math.max(0,lowerBound(Ly.evT,p0+1e-6,x=>x)-1), ci=Ly.visIdx.get(Ly.ev[e0].line)??0, step=(GEO.fs||22)*2.3, k=Math.round(-dy/step);
-    if(!k) return p0;
-    const tgt=Math.max(0,Math.min(Ly.vis.length-1,ci+k));
-    let j=Ly.ev.findIndex(ev=>(Ly.visIdx.get(ev.line)??-1)>=tgt); if(j<0) j=Ly.ev.length-1;
-    if(k<0&&(Ly.visIdx.get(Ly.ev[j].line)??0)>tgt){ for(let i=j;i>=0;i--){ if((Ly.visIdx.get(Ly.ev[i].line)??0)<=tgt){ j=i; while(j>0&&Ly.ev[j-1].line===Ly.ev[i].line) j--; break; } } }
-    return Ly.evT[j];
-  },
+  /* Der ganze Text als Liedblatt, das weich mitläuft. Wischen schiebt das Blatt (und die Stelle im Lied) */
+  scrubPos(p0,dx,dy){ const Ly=song.lyric; if(!Ly||!Ly.ev.length) return p0; const Z=voiceLay(Ly); return voiceScrollToPos(Z,voicePosToScroll(Z,p0)-dy); },
   keyDown(){ return false; }, keyUp(){},
   waitLines(){ return []; },
   idleHint(){ return 'Die Band spielt. Erst wird ein Takt eingezählt.'; },
@@ -3446,62 +3467,45 @@ const VOICE={
   },
   draw(){
     const Ly=song.lyric, T=TH.canvas; if(!Ly||!Ly.ev.length) return;
-    const P=Ly.P, ev=Ly.ev, fs=GEO.fs||22, tr=Ly.tr||0, pres=document.body.classList.contains('present');
+    const Z=voiceLay(Ly), P=Ly.P, ev=Ly.ev, tr=Ly.tr||0, f=Z.f;
     let e=lowerBound(Ly.evT,pos+1e-6,x=>x)-1; if(e>=ev.length) e=ev.length-1;
-    const cur=e>=0?ev[e]:null, curLine=cur?cur.line:ev[0].line, ci=Ly.visIdx.get(curLine)??0;
-    const frac=cur?Math.max(0,Math.min(1,(pos-Ly.evT[e])/Math.max(0.01,Ly.evEnd[e]-Ly.evT[e]))):0;
-    // Kopfzeile: Abschnitt links, Akkord jetzt und danach rechts
-    let secLbl=''; for(let li=curLine;li>=0;li--){ if(P.lines[li].secHead){ secLbl=P.lines[li].secHead; break; } }
-    g.textBaseline='middle'; g.textAlign='left'; g.font=`600 ${Math.round(fs*0.62)}px ${FB}`; g.fillStyle=T.muted;
-    if(secLbl) g.fillText(secLbl.toUpperCase(),16,8+fs*0.8);
-    if(cur&&(playing||pos>0)){
-      const lab=liedLabel(cur.c,tr), nx=ev[e+1]?liedLabel(ev[e+1].c,tr):'';
-      g.font=`800 ${Math.round(fs*1.1)}px ${FD}`; const w=g.measureText(lab).width+24, x=W-16-w;
-      g.fillStyle=T.accent; rr(x,8,w,fs*1.6,fs*0.8); g.fill(); g.fillStyle=T.ink; g.textAlign='center'; g.fillText(lab,x+w/2,8+fs*0.8+1);
-      if(nx){ g.font=`500 ${Math.round(fs*0.6)}px ${FB}`; g.fillStyle=T.soft; g.textAlign='right'; g.fillText('dann '+nx,x-10,8+fs*0.8); }
-      const nb=Math.round((Ly.evEnd[e]-Ly.evT[e])*gv.bpm/60), done=Math.min(nb,Math.floor(frac*nb+1e-6)), dr=Math.max(3.5,fs*0.13);
-      if(nb>1&&nb<=16) for(let k=0;k<nb;k++){ g.fillStyle=k<done?rgba(T.accent,0.9):'rgba(255,255,255,0.18)'; g.beginPath(); g.arc(x+w-dr-2-(nb-1-k)*dr*3.1,8+fs*1.6+dr*3,dr,0,7); g.fill(); }
-    }
-    // Zeilen: eine davor, die aktuelle groß und hell, danach so viele, wie Platz haben
-    const order=[]; for(let k=Math.max(0,ci-1);k<Math.min(Ly.vis.length,ci+5);k++) order.push(k);
-    let y=Math.max(fs*3.6,H*(pres?0.26:0.3))-(ci>0?fs*2.4:0);
-    for(const k of order){
-      const li=Ly.vis[k], L=P.lines[li], isCur=k===ci, isPrev=k<ci;
-      let f=isCur?fs*1.2:fs*0.85;
-      if(!isCur&&y+f*2.4>H) break;
-      g.globalAlpha=isPrev?0.3:isCur?1:0.6;
-      if(L.secHead&&!isCur){ g.font=`600 ${Math.round(f*0.55)}px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='alphabetic';
-        g.fillText((L.secHead+(L.secNote?' · '+L.secNote:'')).toUpperCase(),20,y+f*0.2); y+=f*0.75; }
+    const cur=e>=0?ev[e]:null, ci=cur?Ly.visIdx.get(cur.line)??-1:-1;
+    const top=voicePosToScroll(Z,pos)-H*Z.focus;
+    // aktueller Akkord oben rechts, nur während das Lied läuft
+    for(let k=0;k<Z.rows.length;k++){
+      const R=Z.rows[k], y=R.y-top; if(y>H) break; if(y+R.h<0) continue;
+      const li=Ly.vis[k], L=P.lines[li], isCur=k===ci, past=ci>=0&&k<ci;
+      g.globalAlpha=past?0.45:1; let yy=y;
+      if(R.head){ g.font=`600 ${Math.round(f*0.62)}px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='top'; g.fillText(R.head.toUpperCase(),20,yy+f*0.3); yy+=f*1.2; }
       if(L.kind==='inst'){
-        g.textBaseline='middle'; g.textAlign='left';
-        let x=20; g.font=`500 ${Math.round(f*0.6)}px ${FB}`; g.fillStyle=T.muted; g.fillText('Zwischenspiel',x,y+f*0.6); x+=g.measureText('Zwischenspiel').width+16;
-        L.chords.forEach((ch,j)=>{ if(!Ly.act.has(li+':'+j)) return; const lab=liedLabel(ch.c,tr); g.font=`700 ${Math.round(f*0.85)}px ${FD}`; const w=g.measureText(lab).width+18, on=isCur&&cur&&cur.line===li&&cur.pos===j;
-          g.fillStyle=on?T.accent:'rgba(255,255,255,0.1)'; rr(x,y+f*0.6-f*0.62,w,f*1.24,f*0.62); g.fill(); g.fillStyle=on?T.ink:'#fff'; g.fillText(lab,x+9,y+f*0.6+1); x+=w+8; });
-        g.globalAlpha=1; y+=f*1.9; continue;
+        g.textBaseline='middle'; g.textAlign='left'; let x=20; const cy=yy+f*0.75;
+        g.font=`500 ${Math.round(f*0.75)}px ${FB}`; g.fillStyle=T.muted; g.fillText('Zwischenspiel',x,cy); x+=g.measureText('Zwischenspiel').width+14;
+        L.chords.forEach((ch,j)=>{ if(!Ly.act.has(li+':'+j)) return; const lab=liedLabel(ch.c,tr); g.font=`700 ${Math.round(f*0.9)}px ${FD}`; const w=g.measureText(lab).width+16, on=isCur&&cur.pos===j&&playing;
+          g.fillStyle=on?T.accent:'rgba(255,255,255,0.1)'; rr(x,cy-f*0.62,w,f*1.24,f*0.62); g.fill(); g.fillStyle=on?T.ink:'#fff'; g.fillText(lab,x+8,cy+1); x+=w+8; });
+        g.globalAlpha=1; continue;
       }
-      const text=L.text||'', tf=()=>`${isCur?600:500} ${Math.round(f)}px ${FB}`, cf=()=>`700 ${Math.round(f*0.72)}px ${FD}`;
-      const chs=L.chords.filter((ch,j)=>Ly.act.has(li+':'+j));
-      g.font=tf(); let tw=g.measureText(text).width, cw=0;
-      chs.forEach(ch=>{ g.font=tf(); const cx=lyrX(text,ch.pos); g.font=cf(); cw=Math.max(cw,cx+g.measureText(liedLabel(ch.c,tr)).width+4); });
-      const full=Math.max(tw,cw); if(full>W-40){ f=Math.max(11,f*(W-40)/full); }
-      const x0=20, yChord=y+f*0.55, yText=y+f*1.75;
-      // Akkorde über den Silben – der gerade klingende hervorgehoben
-      let lastEnd=-99;
-      chs.forEach(ch=>{ g.font=tf(); let cx=x0+lyrX(text,ch.pos); if(cx<lastEnd+6) cx=lastEnd+6;
-        const lab=liedLabel(ch.c,tr); g.font=cf(); const w=g.measureText(lab).width;
-        const on=isCur&&cur&&cur.line===li&&cur.pos===ch.pos, past=isCur&&cur&&cur.line===li&&ch.pos<cur.pos;
-        if(on){ g.fillStyle=T.accent; rr(cx-6,yChord-f*0.5,w+12,f*1.0,f*0.5); g.fill(); g.fillStyle=T.ink; }
-        else g.fillStyle=past?rgba(T.accent,0.5):T.accent;
-        g.textAlign='left'; g.textBaseline='middle'; g.fillText(lab,cx,yChord+1); lastEnd=cx+w; });
-      g.font=tf(); g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=isCur?'#ffffff':T.soft; g.fillText(text,x0,yText);
+      const fs=f*R.sc, text=L.text||'', tf=`${isCur?600:500} ${Math.round(fs)}px ${FB}`, cf=`700 ${Math.round(fs*0.78)}px ${FD}`;
+      if(R.chords){ let lastEnd=-99; const yc=yy+fs*0.55;
+        L.chords.forEach((ch,j)=>{ if(!Ly.act.has(li+':'+j)) return; g.font=tf; let cx=20+lyrX(text,ch.pos); if(cx<lastEnd+6) cx=lastEnd+6;
+          const lab=liedLabel(ch.c,tr); g.font=cf; const w=g.measureText(lab).width, on=isCur&&playing&&cur.pos===ch.pos;
+          if(on){ g.fillStyle=T.accent; rr(cx-5,yc-fs*0.48,w+10,fs*0.96,fs*0.48); g.fill(); g.fillStyle=T.ink; } else g.fillStyle=T.accent;
+          g.textAlign='left'; g.textBaseline='middle'; g.fillText(lab,cx,yc+1); lastEnd=cx+w; });
+        yy+=fs*1.15; }
+      if(text){ g.font=tf; g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=isCur?'#ffffff':T.soft; g.fillText(text,20,yy+fs*0.65); }
       g.globalAlpha=1;
-      y+=f*2.75;
+    }
+    if(cur&&playing&&pos>0){
+      const lab=liedLabel(cur.c,tr), nx=ev[e+1]?liedLabel(ev[e+1].c,tr):'', hf=Math.round(f*0.95);
+      g.font=`800 ${hf}px ${FD}`; const w=g.measureText(lab).width+20, x=W-12-w;
+      g.fillStyle=rgba(T.top||'#2a1220',0.92); rr(nx?x-g.measureText(nx).width-60:x-6,4,W,hf*1.6+8,12); g.fill();
+      g.fillStyle=T.accent; rr(x,8,w,hf*1.6,hf*0.8); g.fill(); g.fillStyle=T.ink; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,x+w/2,8+hf*0.8+1);
+      if(nx){ g.font=`500 ${Math.round(hf*0.6)}px ${FB}`; g.fillStyle=T.soft; g.textAlign='right'; g.fillText('dann '+nx,x-8,8+hf*0.8); }
     }
   },
   help:[
     ['Lied importieren','Tippe auf „Lied importieren“ und füge den Text mit den Akkorden ein – zum Beispiel von einer Akkordseite kopiert. Die Akkorde stehen in einer eigenen Zeile über dem Text.'],
     ['Takte einstellen','Im Schritt „Takte“ wählst du die Taktart (4/4, 3/4, 2/4, 6/8) und legst fest, wie lange jeder Akkord dauert, entfernst Akkorde, die nicht passen, und fügst mit „+ Akkord“ eigene über einem Wort ein. Eine fertige Strophe überträgst du mit einem Tipp auf alle Strophen.'],
-    ['Singen','Drück auf Start. Nach dem Einzählen steht die aktuelle Zeile groß und hell da, der klingende Akkord ist hervorgehoben. Darunter siehst du schon die nächsten Zeilen. Mit dem Finger nach oben oder unten wischen springt zeilenweise durch den Text.'],
+    ['Singen','Drück auf Start. Nach dem Einzählen steht die aktuelle Zeile groß und hell da, der klingende Akkord ist hervorgehoben. Darunter siehst du schon die nächsten Zeilen. Mit dem Finger schiebst du den Text weich nach oben oder unten – auch ohne Band, einfach zum Lesen. Tippen startet nichts; dafür ist der Start-Knopf da.'],
     ['Teile anspringen','Über dem Bild stehen die Teile des Liedes (Strophe, Refrain …). Tippe auf einen Teil, dann geht es dort weiter. Steht das Lied, wird beim Start ein Takt eingezählt. Am Beamer gehen auch die Pfeiltasten oder eine Präsentations-Fernbedienung.'],
     ['Begleitung und Tonart','Im Lied-Editor legst du unter „Begleitung“ Stil, Schlagzeug und die Muster der Instrumente fest. Im Spieler schiebt „Tonart − / +“ das Lied einen Halbton höher oder tiefer – für alle Instrumente.'],
     ['Zusammen spielen','Das Lied gibt es dann auch bei Gitarre, Ukulele, Bass und Klavierbegleitung (Bereich „Meine“). Hier spielt die App die Band – Schlagzeug und Band lassen sich ausschalten.']
@@ -4485,7 +4489,7 @@ cv.addEventListener('pointermove',e=>{
 });
 function scrubEnd(e){
   const s=scrub; scrub=null;
-  if(!s.moved){ if(e.type==='pointerup'&&song&&!playing) $('play').click(); return; }
+  if(!s.moved) return;
   scrubbing=false; resetScore(); if(playing) resyncFrom(pos);
 }
 cv.addEventListener('pointerup',e=>{ if(scrub&&scrub.id===e.pointerId){ scrubEnd(e); return; } INST.pointerUp(e.pointerId); });
@@ -5021,7 +5025,7 @@ function draw(){
     if(tot) for(let i=0;i<3;i++){ starPath(W/2+(i-1)*42,top+14+34+24,16); g.fillStyle=i<st?'#ffd166':'rgba(255,255,255,0.14)'; g.fill(); }
   } else if(!playing&&!song.items.length&&!song.timeline.length){
     panel([{t:'Noch keine Akkorde',f:`700 18px ${FD}`,c:'#fff',h:28},{t:'Tippe oben auf ein Kästchen und dann auf einen Akkord.',f:`400 14px ${FB}`,c:T.muted,h:22}],hwTop+6);
-  } else if(!playing){
+  } else if(!playing&&!INST.lyrics){
     panel([{t:pos<=0?'Drück auf Start':'Pause',f:`700 18px ${FD}`,c:'#fff',h:28},{t:INST.idleHint(),f:`400 14px ${FB}`,c:T.muted,h:22}],hwTop+6);
   }
 }
