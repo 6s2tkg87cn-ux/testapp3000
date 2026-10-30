@@ -4493,6 +4493,16 @@ function scrubEnd(e){
   scrubbing=false; resetScore(); if(playing) resyncFrom(pos);
 }
 cv.addEventListener('pointerup',e=>{ if(scrub&&scrub.id===e.pointerId){ scrubEnd(e); return; } INST.pointerUp(e.pointerId); });
+/* Trackpad (zwei Finger) und Mausrad: wie Wischen. Laufband waagerecht (Mausrad geht auch), Gesang und Klaviermelodie senkrecht */
+let wheelT=0;
+cv.addEventListener('wheel',e=>{
+  if(!song||BRX||presenting()) return; e.preventDefault();
+  const k=e.deltaMode===1?16:e.deltaMode===2?H:1, wx=e.deltaX*k, wy=e.deltaY*k;
+  const vert=!!INST.scrubPos, dx=vert?0:-(Math.abs(wx)>Math.abs(wy)?wx:wy), dy=vert?-wy:0;
+  if(!scrubbing){ scrubbing=true; countTo=null; finished=false; if(playing) stopScheduled(); }
+  pos=Math.max(leadPos(),Math.min(song.duration,scrubPos(Math.max(0,pos),dx,dy))); $('seek').value=Math.max(0,pos); $('cur').textContent=fmt(Math.max(0,pos));
+  clearTimeout(wheelT); wheelT=setTimeout(()=>{ scrubbing=false; resetScore(); if(playing) resyncFrom(pos); },180);
+},{passive:false});
 cv.addEventListener('pointercancel',e=>{ if(scrub&&scrub.id===e.pointerId){ scrubEnd(e); return; } INST.pointerUp(e.pointerId); });
 $('strD').onclick=()=>strumIn('D','touch'); $('strU').onclick=()=>strumIn('U','touch');
 

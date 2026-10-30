@@ -42,7 +42,7 @@ Kästchen antippen wie im Baukasten. Ein im Spieler geändertes Muster lässt si
 speichern“ übernehmen. Klavier spielt die Akkorde standardmäßig nah beieinander.
 
 **Wischen:** Mit dem Finger im Bild wischen verschiebt die Stelle im Lied – im Laufband nach links
-und rechts, bei Gesang und Klaviermelodie nach oben und unten. Kurz tippen startet wie bisher.
+und rechts, bei Gesang und Klaviermelodie nach oben und unten. Auf dem Mac geht das auch mit zwei Fingern auf dem Trackpad oder mit dem Mausrad. Gestartet wird nur mit dem Start-Knopf.
 
 **Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
 ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
