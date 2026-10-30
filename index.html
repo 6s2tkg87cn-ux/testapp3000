@@ -946,10 +946,10 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="latTitle">
     <h2 id="latTitle">Ton-Verzögerung ausgleichen</h2>
     <p class="lenote">Über AirPlay, Bluetooth oder die Lautsprecher am Beamer kommt der Ton oft später als das Bild. Stell hier ein, wie viel später – dann wartet das Bild auf den Ton, und alle sehen den Akkord genau dann, wenn sie ihn hören. Die Einstellung gilt für alle Lieder auf diesem Gerät.</p>
-    <div class="lattest"><div class="latdot" id="latDot"></div><span class="lbl">Jede Sekunde klickt es, und der Kreis blinkt.</span></div>
-    <div class="latrow"><div class="stepper"><button id="latDown" aria-label="Weniger">−</button><output id="latOut">0 ms</output><button id="latUp" aria-label="Mehr">+</button></div><input type="range" id="latRange" min="-300" max="800" step="10" value="0" aria-label="Verzögerung in Millisekunden"></div>
+    <div class="lattest"><div class="latdot" id="latDot"></div><span class="lbl">Es klickt in unregelmäßigen Abständen, und der Kreis blinkt. Über AirPlay sind oft 1 bis 2 Sekunden Verzögerung normal.</span></div>
+    <div class="latrow"><div class="stepper"><button id="latDown" aria-label="Weniger">−</button><output id="latOut">0 ms</output><button id="latUp" aria-label="Mehr">+</button></div><input type="range" id="latRange" min="-300" max="3000" step="10" value="0" aria-label="Verzögerung in Millisekunden"></div>
     <p class="lbl">Verschieb den Regler, bis Blinken und Klick genau zusammen passen – am besten dort ansehen und anhören, wo die Klasse sitzt.</p>
-    <div class="row"><button class="btn" id="latTap">Automatisch messen: im Takt tippen</button><span class="lbl" id="latMsg" role="status"></span></div>
+    <div class="row"><button class="btn" id="latTap">Automatisch messen: beim Klick tippen</button><span class="lbl" id="latMsg" role="status"></span></div>
     <div class="end"><button class="btn" id="latZero">Auf 0</button><button class="btn primary" id="latDone">Fertig</button></div>
   </div>
 </div>
@@ -4795,20 +4795,21 @@ seek.addEventListener('change',()=>{ seeking=false; });
 let partIdx=-2, countTo=null, cntLeft=0;
 /* ---------- Ton-Ausgleich: Das Bild läuft um avLag Sekunden später, damit es zum (verzögerten) Ton passt ---------- */
 const LAT_KEY='bandlauf-latenz'; let avLag=0;
-try{ const v=parseFloat(localStorage.getItem(LAT_KEY)); if(Number.isFinite(v)) avLag=Math.max(-300,Math.min(800,Math.round(v)))/1000; }catch(e){}
+try{ const v=parseFloat(localStorage.getItem(LAT_KEY)); if(Number.isFinite(v)) avLag=Math.max(-300,Math.min(3000,Math.round(v)))/1000; }catch(e){}
 function lagNow(){ return playing&&!waiting&&!scrubbing&&avLag?avLag*speed:0; }
-function setLag(ms){ ms=Math.max(-300,Math.min(800,Math.round(ms/10)*10)); avLag=ms/1000; try{ localStorage.setItem(LAT_KEY,String(ms)); }catch(e){}
+function setLag(ms){ ms=Math.max(-300,Math.min(3000,Math.round(ms/10)*10)); avLag=ms/1000; try{ localStorage.setItem(LAT_KEY,String(ms)); }catch(e){}
   $('latOut').textContent=ms+' ms'; $('latRange').value=ms; $('latBtn').textContent=ms+' ms'; }
 const LAT={on:false,next:0,clicks:[],taps:[],raf:0};
 function openLat(){
   if(playing) stopPlayback(); ensureAudio(); $('beamerDlg').hidden=true; $('latDlg').hidden=false; setLag(avLag*1000);
   LAT.on=true; LAT.next=ac.currentTime+0.3; LAT.clicks=[]; LAT.taps=[]; $('latMsg').textContent='';
-  const ol=ac.outputLatency||0; if(ol>0.04&&!avLag) $('latMsg').textContent=`Das Gerät meldet etwa ${Math.round(ol*1000)} ms.`;
+  const ol=(ac.outputLatency||0)+(ac.baseLatency||0); if(ol>0.06){ $('latMsg').textContent=`Das Gerät meldet etwa ${Math.round(ol*1000)} ms Verzögerung.`; if(!avLag) setLag(ol*1000); }
   cancelAnimationFrame(LAT.raf); latLoop();
 }
 function latLoop(){
   if(!LAT.on||!ac) return;
-  while(LAT.next<ac.currentTime+0.25){ drum('stick',LAT.next); LAT.clicks.push(LAT.next); LAT.next+=1; }
+  // Unregelmäßige Abstände (2,6–3,6 s): so passt jeder Blink und jeder Tipp eindeutig zu einem Klick, auch bei 2 Sekunden Verzögerung
+  while(LAT.next<ac.currentTime+0.25){ drum('stick',LAT.next,1.2); LAT.clicks.push(LAT.next); LAT.next+=2.6+Math.random(); }
   if(LAT.clicks.length>8) LAT.clicks.splice(0,LAT.clicks.length-8);
   const t=ac.currentTime-avLag, lit=LAT.clicks.some(c=>t>=c&&t<c+0.14);
   $('latDot').classList.toggle('on',lit);
@@ -4816,20 +4817,20 @@ function latLoop(){
 }
 function closeLat(){ LAT.on=false; cancelAnimationFrame(LAT.raf); $('latDlg').hidden=true; }
 $('latRange').addEventListener('input',()=>setLag(+$('latRange').value));
-$('latDown').onclick=()=>setLag(avLag*1000-10); $('latUp').onclick=()=>setLag(avLag*1000+10);
+$('latDown').onclick=()=>setLag(avLag*1000-50); $('latUp').onclick=()=>setLag(avLag*1000+50);
 $('latZero').onclick=()=>setLag(0); $('latDone').onclick=closeLat;
 $('latDlg').addEventListener('click',e=>{ if(e.target.id==='latDlg') closeLat(); });
-/* Automatisch: Wer im Takt mit dem gehörten Klick tippt, zeigt, wie spät der Ton ankommt */
+/* Automatisch: Sobald man den Klick hört, tippen. Abzüglich der üblichen Reaktionszeit (~0,2 s) ergibt das die Verzögerung */
 $('latTap').addEventListener('pointerdown',e=>{
   e.preventDefault(); if(!LAT.on||!ac) return;
-  const now=ac.currentTime; let d=null;
-  for(const c of LAT.clicks){ let x=now-c; if(x>=-0.25&&x<0.85){ d=x; } }
-  if(d==null) return; LAT.taps.push(d);
-  const need=8, n=LAT.taps.length;
-  if(n<need){ $('latMsg').textContent=`Tippe auf jeden Klick, den du hörst … ${n} von ${need}`; return; }
-  const v=LAT.taps.slice(-need).sort((a,b)=>a-b), med=(v[3]+v[4])/2, spread=v[6]-v[1]; LAT.taps=[];
-  if(spread>0.15){ $('latMsg').textContent='Die Taps waren zu unregelmäßig – versuch es noch einmal ganz ruhig.'; return; }
-  setLag(Math.max(0,med*1000)); $('latMsg').textContent=`Gemessen: ${Math.round(Math.max(0,med*1000))} ms. Prüf mit dem Blinken und stell bei Bedarf nach.`;
+  const now=ac.currentTime; let c=null;
+  for(const x of LAT.clicks) if(now-x>=0.05&&now-x<2.55) c=x;
+  if(c==null||LAT.used===c) return; LAT.used=c; LAT.taps.push(now-c);
+  const need=5, n=LAT.taps.length;
+  if(n<need){ $('latMsg').textContent=`Tippe immer sofort, wenn du den Klick hörst … ${n} von ${need}`; return; }
+  const v=LAT.taps.slice(-need).sort((a,b)=>a-b), med=v[2], spread=v[3]-v[1]; LAT.taps=[];
+  if(spread>0.25){ $('latMsg').textContent='Die Taps waren zu unterschiedlich – versuch es noch einmal.'; return; }
+  const ms=Math.max(0,(med-0.2)*1000); setLag(ms); $('latMsg').textContent=`Gemessen: etwa ${Math.round(ms/10)*10} ms. Prüf mit dem Blinken und stell bei Bedarf nach.`;
 });
 /* Mischpult: nur die Stimmen, die im aktuellen Lied vorkommen */
 function mixChannels(){
