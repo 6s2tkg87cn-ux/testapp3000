@@ -37,6 +37,10 @@ neuen Teils und einem Schlussbecken. Andere Lieder bekommen alle acht Takte ein 
 Das Tempo, das man im Spieler einstellt, merkt sich das Lied – es gilt bei allen Instrumenten und
 wird beim Teilen mitgeschickt (Teilen geht auch direkt im Spieler).
 
+**Mischpult:** Im Spieler unter „Lautstärke“ stellt man für jedes Instrument eine eigene Lautstärke
+ein (0–150 %): das eigene Instrument, Gitarre, Bass, Klavier und Schlagzeug – auch während das Lied
+läuft. Die Einstellung merkt sich das Gerät.
+
 **Transponieren:** Bei importierten Liedern, Klassenband und Popsongs gibt es im Spieler „Tonart − / +“.
 Ein Halbton höher oder tiefer gilt sofort für alle Instrumente (bei der Klassenband auch für die
 Klaviermelodie), damit alle zusammen in derselben Tonart spielen.

@@ -449,6 +449,15 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
 .recvbtn b{font:700 15px var(--font-display);color:var(--iac);text-align:center;hyphens:manual;overflow-wrap:anywhere;max-width:100%}
 .bopt{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px}
 .bopt span{color:var(--muted);font-size:14px;line-height:1.45}
+.mixrows{display:flex;flex-direction:column;gap:6px;margin:14px 0 6px}
+.mixrow{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 56px;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--border);border-radius:12px}
+.mixrow span{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mixrow small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.mixrow input{width:100%;accent-color:var(--accent);min-height:32px}
+.mixrow output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.mixrow.off output{color:var(--bad,#ff8f9a)}
+#mixBtn svg{width:15px;height:15px;fill:currentColor}
+@media (max-width:480px){ .mixrow{grid-template-columns:minmax(0,1fr) 50px;gap:2px 12px;padding:8px 12px 4px} .mixrow input{grid-column:1/-1;grid-row:2} }
 .lattest{display:flex;align-items:center;gap:16px;margin:14px 0}
 .latdot{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.12);flex:none;transition:none}
 .latdot.on{background:var(--accent);box-shadow:0 0 40px var(--accent)}
@@ -676,6 +685,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
         <button class="chipt" id="accBtn" aria-pressed="true">Begleitung</button>
       </div>
     </div>
+    <div class="group" id="mixGroup"><span class="lbl">Lautstärke</span><button class="btn small" id="mixBtn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h1.6v6.2a2 2 0 010 3.6v3.2H3v-3.2a2 2 0 010-3.6zM7.2 1.5h1.6v2.2a2 2 0 010 3.6v7.2H7.2V7.3a2 2 0 010-3.6zM11.4 1.5H13v8.2a2 2 0 010 3.6v1.2h-1.6v-1.2a2 2 0 010-3.6z"/></svg>Mischpult</button></div>
     <div class="group" id="latGroup"><span class="lbl">Ton-Ausgleich</span><button class="btn small" id="latBtn">0 ms</button></div>
     <div class="group" id="fontGroup" hidden><span class="lbl">Schrift</span><div class="seg" id="fontSeg"><button data-v="1" aria-pressed="true">Normal</button><button data-v="1.4" aria-pressed="false">Groß</button></div></div>
     <div class="group">
@@ -921,6 +931,15 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   </div>
 </div>
 
+<div class="help" id="mixDlg" hidden>
+  <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
+    <h2 id="mixTitle">Mischpult</h2>
+    <p class="lenote">Stell ein, wie laut jedes Instrument spielt – auch während das Lied läuft. Die Einstellung merkt sich dieses Gerät.</p>
+    <div class="mixrows" id="mixRows"></div>
+    <div class="end"><button class="btn" id="mixReset">Alle auf 100 %</button><button class="btn primary" id="mixDone">Fertig</button></div>
+  </div>
+</div>
+
 <div class="help" id="latDlg" hidden>
   <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="latTitle">
     <h2 id="latTitle">Ton-Verzögerung ausgleichen</h2>
@@ -1093,6 +1112,17 @@ function stopScheduled(){
     return false;
   });
 }
+/* ---------- Mischpult: jede Stimme läuft über einen eigenen Lautstärkeregler ---------- */
+const MIX_KEY='bandlauf-mix'; let mixVol={}, mixBus={}, curOut=null;
+try{ const o=JSON.parse(localStorage.getItem(MIX_KEY)||'{}'); if(o&&typeof o==='object'&&!Array.isArray(o)) for(const [k,v] of Object.entries(o).slice(0,40)) if(/^[a-z:]{2,16}$/.test(k)&&Number.isFinite(v)) mixVol[k]=Math.max(0,Math.min(1.5,v)); }catch(e){}
+const mixKey=ch=>ch==='inst'&&INST?'inst:'+INST.id:ch;
+function mixGet(ch){ const v=mixVol[mixKey(ch)]; return v==null?1:v; }
+function bus(ch){ if(!ac) return master; let b=mixBus[ch]; if(!b||b.context!==ac){ b=ac.createGain(); b.gain.value=mixGet(ch); b.connect(master); mixBus[ch]=b; } return b; }
+const OUT=()=>curOut||master;
+function viaBus(ch,fn){ const o=curOut; curOut=bus(ch); try{ return fn(); } finally{ curOut=o; } }
+function mixSet(ch,v){ v=Math.max(0,Math.min(1.5,v)); mixVol[mixKey(ch)]=v; try{ localStorage.setItem(MIX_KEY,JSON.stringify(mixVol)); }catch(e){}
+  const b=mixBus[ch]; if(b&&ac&&b.context===ac) b.gain.setTargetAtTime(v,ac.currentTime,0.03); }
+function mixApply(){ if(!ac) return; for(const ch of Object.keys(mixBus)){ const b=mixBus[ch]; if(b.context===ac) b.gain.setTargetAtTime(mixGet(ch),ac.currentTime,0.03); } }
 function bassVoice(m,when,dur,vel){
   if(!okArgs(m,when)) return dummyVoice(); if(dur!=null&&!Number.isFinite(dur)) dur=0.3;
   const f=freq(m);
@@ -1104,7 +1134,7 @@ function bassVoice(m,when,dur,vel){
   const gn=ac.createGain(); const peak=0.42*(0.4+0.6*vel);
   gn.gain.setValueAtTime(0,when); gn.gain.linearRampToValueAtTime(peak,when+0.004);
   gn.gain.setTargetAtTime(peak*0.45,when+0.01,0.25);
-  o.connect(fl); fl.connect(gn); s.connect(sg); sg.connect(gn); gn.connect(master);
+  o.connect(fl); fl.connect(gn); s.connect(sg); sg.connect(gn); gn.connect(OUT());
   o.start(when); s.start(when);
   const v=track([o,s],gn,Infinity,when);
   if(dur!=null) release(v,when+dur);
@@ -1116,7 +1146,7 @@ function keysVoice(m,when,dur,vel){
   const gn=ac.createGain(); const peak=0.07*(0.5+vel);
   gn.gain.setValueAtTime(0,when); gn.gain.linearRampToValueAtTime(peak,when+0.03);
   gn.gain.setTargetAtTime(peak*0.5,when+0.05,0.6);
-  o.connect(gn); gn.connect(master); o.start(when);
+  o.connect(gn); gn.connect(OUT()); o.start(when);
   const v=track([o],gn,Infinity,when); release(v,when+dur); return v;
 }
 function pianoVoice(m,when,dur,vel){
@@ -1131,7 +1161,7 @@ function pianoVoice(m,when,dur,vel){
   gn.gain.linearRampToValueAtTime(peak,when+0.005);
   gn.gain.setTargetAtTime(peak*0.3,when+0.01,0.18);
   gn.gain.setTargetAtTime(0.0001,when+0.35,Math.max(0.6,2.6-(m-40)*0.035));
-  o.connect(fl); fl.connect(gn); gn.connect(master);
+  o.connect(fl); fl.connect(gn); gn.connect(OUT());
   o.start(when);
   const v=track([o],gn,Infinity,when);
   if(dur!=null) release(v,when+dur);
@@ -1152,7 +1182,7 @@ function pluck(m,when,vel,dur){
   const src=ac.createBufferSource(); src.buffer=ksBuffer(m);
   const fl=ac.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=4200;
   const gn=ac.createGain(); gn.gain.value=0.55*vel;
-  src.connect(fl); fl.connect(gn); gn.connect(master); src.start(when);
+  src.connect(fl); fl.connect(gn); gn.connect(OUT()); src.start(when);
   const v=track([src],gn,when+1.8,when);
   if(dur!=null) release(v,when+Math.max(0.2,dur));
   return v;
@@ -1201,7 +1231,7 @@ function drum(k,when,v=1){
   const S=drumSamples(), b=S[k]||S.stick, src=ac.createBufferSource(), gn=ac.createGain();
   src.buffer=b; if(k!=='stick') src.playbackRate.value=1+(Math.random()-0.5)*0.02;
   gn.gain.value=(DRUM_GAIN[k]||0.4)*Math.max(0.05,Math.min(1.25,v));
-  src.connect(gn); gn.connect(master); src.start(when);
+  src.connect(gn); gn.connect(k==='stick'?master:bus('drums')); src.start(when);
   const end=when+b.duration/src.playbackRate.value+0.02; src.stop(end); track([src],gn,end,when);
 }
 
@@ -2955,7 +2985,7 @@ function makeFretted(C){
 function strumIn(dir,src){
   ensureAudio();
   const sh=INST.shapeNow()||INST.defaultShape;
-  if(src!=='mic') INST.strumSound(sh,dir,ac.currentTime,dir==='D'?0.9:0.7,1.2);
+  if(src!=='mic') viaBus('inst',()=>INST.strumSound(sh,dir,ac.currentTime,dir==='D'?0.9:0.7,1.2));
   GEO.strumT=performance.now();
   strumInput(dir,src);
 }
@@ -3990,7 +4020,7 @@ function setSong(s,reset){
   if(reset) pos=leadPos();
   $('seek').max=song.duration.toFixed(2); $('dur').textContent=fmt(song.duration);
   $('bpmOut').textContent=(gv?gv.bpm:meta&&meta.bpm||'')+(gv&&gv.compound&&INST.meter(gv)===6||meta&&meta.kind==='melody'&&meta.src&&meta.src.meter===6?' ♩.':' BPM');
-  rebuildPractice(); layout(); renderParts(); updTr(); $('pShare').hidden=!(meta&&meta.lied);
+  rebuildPractice(); layout(); renderParts(); updTr(); $('pShare').hidden=!(meta&&meta.lied); mixApply();
   if(!reset&&was) playing=true;
   beamerSendSong();
 }
@@ -4238,9 +4268,9 @@ function schedule(){
   let limit=pos+0.2*speed;
   if(waitMode&&chordIdx<chords.length) limit=Math.min(limit,chords[chordIdx].time-1e-4);
   const its=song.items;
-  while(schedIdx<its.length&&its[schedIdx].start<limit){ const n=its[schedIdx++]; if(n.start<pos-0.15) continue; if(!isPractice(n)) INST.playItem(n,at(n.start)); }
+  while(schedIdx<its.length&&its[schedIdx].start<limit){ const n=its[schedIdx++]; if(n.start<pos-0.15) continue; if(!isPractice(n)) viaBus('inst',()=>INST.playItem(n,at(n.start))); }
   const A=song.acc;
-  while(accIdx<A.length&&A[accIdx].start<limit){ const a=A[accIdx++]; if(a.start<pos-0.15||!accOn) continue; if(a.v==='strum') GUITAR.strumSound(a.shape,a.dir,at(a.start),a.vel,(a.ring||0.4)/speed); else if(a.v==='pluck') pluck(a.midi,at(a.start),a.vel,a.dur/speed+0.3); else (a.v==='bass'?bassVoice:keysVoice)(a.midi,at(a.start),a.dur/speed,a.vel); }
+  while(accIdx<A.length&&A[accIdx].start<limit){ const a=A[accIdx++]; if(a.start<pos-0.15||!accOn) continue; if(a.v==='strum') viaBus('gtr',()=>GUITAR.strumSound(a.shape,a.dir,at(a.start),a.vel,(a.ring||0.4)/speed)); else if(a.v==='pluck') viaBus('gtr',()=>pluck(a.midi,at(a.start),a.vel,a.dur/speed+0.3)); else if(a.v==='bass') viaBus('bass',()=>bassVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else viaBus('keys',()=>keysVoice(a.midi,at(a.start),a.dur/speed,a.vel)); }
   const ds=song.drums;
   while(drumIdx<ds.length&&ds[drumIdx].start<limit){ const d=ds[drumIdx++]; if(d.start<pos-0.15) continue; if(d.k==='stick'||drumsOn) drum(d.k,at(d.start),d.v); }
 }
@@ -4335,7 +4365,7 @@ function press(m,vel=0.85,src='touch',where){
   if(held.has(m)) return;
   ensureAudio();
   if(edOn()){ held.set(m,pianoVoice(m,ac.currentTime,null,vel)); edRecOn(m); return; }
-  held.set(m,INST.pressVoice(m,vel));
+  held.set(m,viaBus('inst',()=>INST.pressVoice(m,vel)));
   if(where) heldPos.set(m,where);
   noteInput(m,src,where);
 }
@@ -4345,6 +4375,7 @@ addEventListener('keydown',e=>{
   if(!$('shareDlg').hidden||!$('importDlg').hidden){ if(e.key==='Escape'){ $('shareDlg').hidden=true; $('importDlg').hidden=true; } return; }
   if(!$('help').hidden){ if(e.key==='Escape'||e.key==='Enter') closeHelp(); return; }
   if(!$('latDlg').hidden){ if(e.key==='Escape') closeLat(); return; }
+  if(!$('mixDlg').hidden){ if(e.key==='Escape') closeMix(); return; }
   if(!$('liedEd').hidden) return;
   if(BRX) return;
   if(presenting()&&e.key==='Escape'){ exitPresent(); return; }
@@ -4691,6 +4722,34 @@ $('latTap').addEventListener('pointerdown',e=>{
   if(spread>0.15){ $('latMsg').textContent='Die Taps waren zu unregelmäßig – versuch es noch einmal ganz ruhig.'; return; }
   setLag(Math.max(0,med*1000)); $('latMsg').textContent=`Gemessen: ${Math.round(Math.max(0,med*1000))} ms. Prüf mit dem Blinken und stell bei Bedarf nach.`;
 });
+/* Mischpult: nur die Stimmen, die im aktuellen Lied vorkommen */
+function mixChannels(){
+  if(!song) return [];
+  const A=song.acc||[], has=v=>A.some(a=>a.v===v), out=[];
+  if(INST!==VOICE&&(song.items.length||who!=='app')) out.push(['inst',INST.label,who==='app'?'spielt die App':'dein Instrument']);
+  if(has('strum')||has('pluck')) out.push(['gtr','Gitarre','Band']);
+  if(has('bass')) out.push(['bass','Bass','Begleitung']);
+  if(has('keys')) out.push(['keys','Klavier','Akkorde']);
+  if((song.drums||[]).some(d=>d.k!=='stick')) out.push(['drums','Schlagzeug','']);
+  return out;
+}
+function renderMix(){
+  const box=$('mixRows'); box.innerHTML='';
+  const chs=mixChannels(); if(!chs.length){ box.innerHTML='<p class="lenote">In diesem Lied spielt nur ein Instrument.</p>'; return; }
+  chs.forEach(([ch,name,sub])=>{
+    const row=document.createElement('label'); row.className='mixrow'; row.id='mix-'+ch;
+    const l=document.createElement('span'); l.textContent=name; if(sub){ const sm=document.createElement('small'); sm.textContent=sub; l.appendChild(sm); }
+    const r=document.createElement('input'); r.type='range'; r.min=0; r.max=150; r.step=5; r.value=Math.round(mixGet(ch)*100); r.setAttribute('aria-label','Lautstärke '+name);
+    const o=document.createElement('output'); const upd=()=>{ o.textContent=r.value==='0'?'aus':r.value+' %'; row.classList.toggle('off',r.value==='0'); };
+    r.addEventListener('input',()=>{ mixSet(ch,+r.value/100); upd(); }); upd();
+    row.append(l,r,o); box.appendChild(row);
+  });
+}
+function openMix(){ ensureAudio(); renderMix(); $('mixDlg').hidden=false; }
+function closeMix(){ $('mixDlg').hidden=true; }
+$('mixBtn').onclick=openMix; $('mixDone').onclick=closeMix;
+$('mixReset').onclick=()=>{ mixChannels().forEach(([ch])=>mixSet(ch,1)); renderMix(); };
+$('mixDlg').addEventListener('click',e=>{ if(e.target.id==='mixDlg') closeMix(); });
 $('latBtn').onclick=openLat; $('latBtn').textContent=Math.round(avLag*1000)+' ms';
 function renderParts(){
   const S=song&&song.secs||[], box=$('partChips'); box.innerHTML=''; partIdx=-2;
