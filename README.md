@@ -66,12 +66,9 @@ Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofor
 Liedtexte sind urheberrechtlich geschützt: importierte Lieder nur im Unterricht mit der eigenen
 Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
 
-**Beamer:** Den ganzen Beamer nutzt das „Beamer-Fenster“: Ist der Beamer ein zweiter Bildschirm
-(Laptop/PC oder iPad mit M-Chip per Kabel, Bildschirm „Erweitern“), läuft dort ein eigenes,
-synchrones Fenster nur mit Text und Akkorden – wie der Präsentationsmodus von PowerPoint.
-„Vollbild“ zeigt Text und Akkorde ohne Bedienelemente auf dem eigenen Gerät, z. B. beim Spiegeln per
-AirPlay. Über AirPlay kann eine Web-App kein eigenes Beamer-Bild senden (das dürfen nur Apps aus dem
-App Store), AirPlay spiegelt dann das iPad im iPad-Format.
+**Vollbild:** Der Knopf „Vollbild“ im Spieler zeigt sofort nur Text und Akkorde bzw. das Laufband –
+z. B. für den Beamer per AirPlay. Wischen, Trackpad und Mausrad funktionieren dort wie sonst; Tippen
+zeigt die Knöpfe (Start/Pause, Teile, Beenden), Esc beendet.
 **Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das
 Bild, stellt man die Verzögerung einmal ein (Regler mit Blink-Test oder automatisch durch Tippen im
 Takt; über AirPlay oft 1–2 Sekunden, einstellbar bis 3 Sekunden). Das Bild wartet dann auf den Ton.
