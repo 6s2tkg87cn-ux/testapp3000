@@ -637,6 +637,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <button class="btn" id="back" aria-label="Alle Übungen"><svg viewBox="0 0 16 16"><path d="M10.5 2L4.5 8l6 6 1.4-1.4L7.3 8l4.6-4.6z"/></svg><span class="bt">Alle Übungen</span></button>
     <div class="ptitle"><h2 id="pName"></h2><span id="pLevel"></span></div>
     <button class="btn" id="presentBtn" aria-label="Beamer"><svg viewBox="0 0 16 16"><path d="M1.5 2.5h13v8.5h-13zm1.6 1.6v5.3h9.8V4.1zM5 13h6v1.5H5z"/></svg><span class="bt">Beamer</span></button>
+    <button class="btn" id="pShare" hidden aria-label="Teilen"><svg viewBox="0 0 16 16"><path d="M8 1l3.5 3.5-1.1 1.1L8.8 4v6.5H7.2V4L5.6 5.6 4.5 4.5zM2.5 8h1.6v5.4h7.8V8h1.6v7h-11z"/></svg><span class="bt">Teilen</span></button>
     <button class="btn" id="editMel" hidden aria-label="Bearbeiten"><svg viewBox="0 0 16 16"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg><span class="bt">Bearbeiten</span></button>
     <button class="btn" id="setToggle" aria-expanded="false" aria-label="Einstellungen"><svg viewBox="0 0 16 16"><path d="M2 3.5h7.2a2 2 0 013.6 0H14v1.5h-1.2a2 2 0 01-3.6 0H2zm0 7.5h1.2a2 2 0 013.6 0H14v1.5H6.8a2 2 0 01-3.6 0H2z"/></svg><span class="bt">Einstellungen</span></button>
     <button class="btn" id="helpBtn2" aria-label="So geht's"><span class="q" aria-hidden="true">?</span><span class="bt">So geht's</span></button>
@@ -1004,6 +1005,7 @@ function ensureAudio(){
     noise=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);
     const d=noise.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
     voices=[]; ksCache.clear();
+    try{ drumSamples(); }catch(e){}
     if(needReattach){ needReattach=false; if(typeof afterAudioReset==='function') try{ afterAudioReset(); }catch(e){} }
   }
   if(ac.state==='suspended'){ try{ ac.resume().catch(()=>{}); }catch(e){} }
@@ -1155,22 +1157,52 @@ function pluck(m,when,vel,dur){
   if(dur!=null) release(v,when+Math.max(0.2,dur));
   return v;
 }
-function drum(k,when){
-  const gn=ac.createGain(); gn.connect(master);
-  if(k==='kick'){
-    const o=ac.createOscillator(); o.frequency.setValueAtTime(150,when); o.frequency.exponentialRampToValueAtTime(45,when+0.12);
-    gn.gain.setValueAtTime(0.9,when); gn.gain.exponentialRampToValueAtTime(0.001,when+0.32);
-    o.connect(gn); o.start(when); o.stop(when+0.35); track([o],gn,when+0.35,when);
-  } else {
-    const n=ac.createBufferSource(); n.buffer=noise;
-    const fl=ac.createBiquadFilter();
-    let a=0.3,dk=0.12;
-    if(k==='snare'){ fl.type='highpass'; fl.frequency.value=1400; a=0.32; dk=0.16; }
-    else if(k==='hat'){ fl.type='highpass'; fl.frequency.value=7500; a=0.1; dk=0.05; }
-    else { fl.type='bandpass'; fl.frequency.value=2600; fl.Q.value=4; a=0.55; dk=0.04; }
-    gn.gain.setValueAtTime(a,when); gn.gain.exponentialRampToValueAtTime(0.001,when+dk);
-    n.connect(fl); fl.connect(gn); n.start(when); n.stop(when+dk+0.02); track([n],gn,when+dk+0.02,when);
-  }
+/* ---------- Schlagzeug: Klänge werden einmal berechnet (Bass-, Snare-, Toms, Becken), dann nur noch abgespielt ---------- */
+let DS=null;
+function biq(d,type,f0,Q,sr){
+  const w=2*Math.PI*Math.min(f0,sr*0.45)/sr, c=Math.cos(w), s=Math.sin(w), a=s/(2*Q);
+  let b0,b1,b2; if(type==='hp'){ b0=(1+c)/2; b1=-(1+c); b2=b0; } else if(type==='lp'){ b0=(1-c)/2; b1=1-c; b2=b0; } else { b0=a; b1=0; b2=-a; }
+  const a0=1+a, a1=-2*c, a2=1-a; let x1=0,x2=0,y1=0,y2=0;
+  for(let i=0;i<d.length;i++){ const x=d[i], y=(b0*x+b1*x1+b2*x2-a1*y1-a2*y2)/a0; x2=x1; x1=x; y2=y1; y1=y; d[i]=y; }
+}
+function drumSamples(){
+  if(DS&&DS.ac===ac) return DS;
+  const sr=ac.sampleRate; let seed=20251; const rnd=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/2147483648-1; };
+  const noiseArr=n=>{ const a=new Float32Array(n); for(let i=0;i<n;i++) a[i]=rnd(); return a; };
+  // Metallischer Klang aus sechs Rechteckschwingungen (wie bei klassischen Drumcomputern)
+  const metal=(n,base)=>{ const a=new Float32Array(n); [1,1.483,1.8,2.546,2.63,3.897].forEach((r,j)=>{ const f=base*r/sr; let ph=j*0.17; for(let i=0;i<n;i++){ ph+=f; if(ph>=1) ph-=1; a[i]+=ph<0.5?1:-1; } }); return a; };
+  const mk=(sec,fn)=>{ const n=Math.round(sec*sr), b=ac.createBuffer(1,n,sr), d=b.getChannelData(0); fn(d,n);
+    let pk=0; for(let i=0;i<n;i++) pk=Math.max(pk,Math.abs(d[i])); if(pk>0) for(let i=0;i<n;i++) d[i]/=pk;
+    const fo=Math.min(n,Math.round(0.004*sr)); for(let i=0;i<fo;i++) d[n-1-i]*=i/fo; return b; };
+  const tom=(f1,f0,dec)=>mk(dec*2.4,(d,n)=>{ const nz=noiseArr(n); biq(nz,'bp',f1*4,1.2,sr); let ph=0;
+    for(let i=0;i<n;i++){ const t=i/sr, f=f0+(f1-f0)*Math.exp(-t/0.05); ph+=2*Math.PI*f/sr; d[i]=Math.sin(ph)*Math.exp(-t/dec)+0.25*nz[i]*Math.exp(-t/0.02); } });
+  DS={ac,
+    kick:mk(0.5,(d,n)=>{ const nz=noiseArr(n); biq(nz,'lp',3000,0.7,sr); let ph=0;
+      for(let i=0;i<n;i++){ const t=i/sr, f=46+120*Math.exp(-t/0.028); ph+=2*Math.PI*f/sr; d[i]=Math.tanh(1.8*Math.sin(ph)*Math.exp(-t/0.16))+0.5*nz[i]*Math.exp(-t/0.004); } }),
+    snare:mk(0.4,(d,n)=>{ const nz=noiseArr(n); biq(nz,'hp',1200,0.7,sr); biq(nz,'lp',9000,0.7,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=0.6*(Math.sin(2*Math.PI*185*t)*Math.exp(-t/0.055)+0.5*Math.sin(2*Math.PI*330*t)*Math.exp(-t/0.03))+nz[i]*(0.9*Math.exp(-t/0.11)+0.4*Math.exp(-t/0.02)); } }),
+    rim:mk(0.15,(d,n)=>{ const nz=noiseArr(n); biq(nz,'bp',2000,3,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=Math.sin(2*Math.PI*820*t)*Math.exp(-t/0.018)+0.8*nz[i]*Math.exp(-t/0.01); } }),
+    hat:mk(0.15,(d,n)=>{ const m=metal(n,420), nz=noiseArr(n); biq(m,'hp',7000,0.7,sr); biq(m,'hp',7000,0.7,sr); biq(nz,'hp',8000,0.7,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=(0.75*m[i]+0.35*nz[i])*Math.exp(-t/0.025); } }),
+    ohat:mk(0.7,(d,n)=>{ const m=metal(n,420), nz=noiseArr(n); biq(m,'hp',6500,0.7,sr); biq(m,'hp',6500,0.7,sr); biq(nz,'hp',7500,0.7,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=(0.75*m[i]+0.35*nz[i])*Math.exp(-t/0.2); } }),
+    ride:mk(1.8,(d,n)=>{ const m=metal(n,560), nz=noiseArr(n); biq(m,'bp',6000,0.9,sr); biq(m,'hp',3200,0.7,sr); biq(nz,'hp',6000,0.7,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=m[i]*(0.5*Math.exp(-t/0.7)+0.5*Math.exp(-t/0.04))+0.12*nz[i]*Math.exp(-t/0.3)+0.2*Math.sin(2*Math.PI*3550*t)*Math.exp(-t/0.45); } }),
+    crash:mk(2.4,(d,n)=>{ const m=metal(n,300), nz=noiseArr(n); biq(m,'hp',4000,0.7,sr); biq(nz,'hp',3500,0.7,sr); biq(nz,'lp',12000,0.7,sr);
+      for(let i=0;i<n;i++){ const t=i/sr; d[i]=(0.45*m[i]+0.8*nz[i])*(1-Math.exp(-t/0.002))*(0.7*Math.exp(-t/0.8)+0.3*Math.exp(-t/0.08)); } }),
+    tomH:tom(240,175,0.17), tomM:tom(175,125,0.2), tomL:tom(125,88,0.26),
+    stick:mk(0.08,(d,n)=>{ const nz=noiseArr(n); biq(nz,'bp',2600,4,sr); for(let i=0;i<n;i++) d[i]=nz[i]*Math.exp(-i/sr/0.015); })
+  };
+  return DS;
+}
+const DRUM_GAIN={kick:0.5,snare:0.42,rim:0.32,hat:0.17,ohat:0.13,ride:0.1,crash:0.2,tomH:0.22,tomM:0.21,tomL:0.21,stick:0.4};
+function drum(k,when,v=1){
+  const S=drumSamples(), b=S[k]||S.stick, src=ac.createBufferSource(), gn=ac.createGain();
+  src.buffer=b; if(k!=='stick') src.playbackRate.value=1+(Math.random()-0.5)*0.02;
+  gn.gain.value=(DRUM_GAIN[k]||0.4)*Math.max(0.05,Math.min(1.25,v));
+  src.connect(gn); gn.connect(master); src.start(when);
+  const end=when+b.duration/src.playbackRate.value+0.02; src.stop(end); track([src],gn,end,when);
 }
 
 /* ---------- MIDI-Dateien lesen ---------- */
@@ -1331,6 +1363,80 @@ function assignFrets(notes,open,maxF){
 }
 function lenOf(steps,i,st){ let j=i+1; while(j<steps.length&&steps[j]==='-') j++; return Math.min(j-i,4)*st*0.92; }
 function resize(arr,n){ const a=arr.slice(0,n); while(a.length<n) a.push('-'); return a; }
+/* ---------- Schlagzeug-Spur: Groove je Teil, kleine Fill-ins vor neuen Teilen, Becken zum Refrain ---------- */
+function secKind(name){
+  const s=String(name||'').toLowerCase();
+  if(/vor-?refrain|pre-?chorus/.test(s)) return 'pre';
+  if(/refrain|chorus/.test(s)) return 'chorus';
+  if(/intro|anfang|einleitung/.test(s)&&!/^anfang$/.test(s)) return 'intro';
+  if(/bridge|mittelteil/.test(s)) return 'bridge';
+  if(/outro|schluss|ende|coda/.test(s)) return 'outro';
+  if(/zwischenspiel|solo|instrumental|interlude/.test(s)) return 'inter';
+  return 'verse';
+}
+/* Ein Takt Groove. n: Achtel pro Takt, cmp: 6/8. Liefert [Klang, Achtel, Lautstärke] */
+function grooveBar(kind,n,cmp,rock,odd){
+  const H=[], add=(k,i,v)=>H.push([k,i,v]);
+  const beats=cmp?[0,3]:n===8?[0,2,4,6]:n===6?[0,2,4]:[0,2], back=cmp?[3]:n===8?[2,6]:n===6?[2,4]:[2];
+  const cym=kind==='chorus'||kind==='inter'||kind==='outro'?'ride':'hat';
+  // Becken bzw. Hi-Hat
+  if(kind==='intro') beats.forEach(i=>add('hat',i,i===0?0.55:0.42));
+  else for(let i=0;i<n;i++){ const on=beats.includes(i); add(cym,i,(kind==='bridge'?0.7:1)*(i===0?0.72:on?0.6:(rock?0.5:0.36))); }
+  if(kind==='chorus'&&odd&&!cmp&&n>=6){ const i=n-1; H.splice(H.findIndex(h=>h[1]===i),1); add('ohat',i,0.45); }
+  // Bassdrum
+  add('kick',0,kind==='intro'?0.75:0.95);
+  if(n===8&&kind!=='intro'&&kind!=='bridge') add('kick',4,0.82);
+  if(kind==='pre') beats.forEach(i=>{ if(i) add('kick',i,0.7); });
+  if(kind==='chorus'||kind==='outro'){ if(n===8) add('kick',3,0.62); else if(cmp) add('kick',5,0.5); else if(n===4) add('kick',3,0.55); }
+  if((kind==='verse'||kind==='inter')&&odd){ if(n===8) add('kick',rock?5:3,0.55); else if(cmp) add('kick',5,0.45); }
+  if(kind==='bridge'){ if(n===8) add('kick',5,0.55); }
+  // Snare (im Intro nur Rand, in der Bridge halbes Tempo)
+  if(kind==='intro') back.forEach(i=>add('rim',i,0.5));
+  else if(kind==='bridge'&&n===8) add('snare',4,0.9);
+  else back.forEach(i=>add('snare',i,n===6&&!cmp?(kind==='chorus'?0.6:0.45):kind==='chorus'||kind==='outro'?0.95:0.85));
+  if(kind==='verse'&&odd&&n===8) add('snare',7,0.14);
+  return H;
+}
+/* Fill-in am Taktende: von Schritt from bis Taktende, mal Snare, mal Toms, lauter werdend */
+function fillHits(n,cmp,from,variant){
+  const H=[], inc=cmp?1:0.5, slots=[]; for(let x=from;x<n-1e-6;x+=inc) slots.push(x);
+  const T=['snare','tomH','tomM','tomL'];
+  slots.forEach((x,j)=>{ const p=j/slots.length, v=0.55+0.4*p;
+    if(variant===2&&!cmp&&x%1) return;
+    const k=variant===0?'snare':variant===1?(p<0.5?'snare':p<0.75?'tomH':'tomL'):variant===2?T[1+Math.min(2,Math.floor(p*3))]:(x%1?'snare':p<0.5?'snare':'tomM');
+    H.push([k,x,v]); });
+  H.push(['kick',from,0.7]);
+  return H;
+}
+function drumTrack(o){
+  const {n,st,bar,total,cmp,rock,secs}=o, drums=[], B=Math.ceil(total/n-1e-9), has=secs.length>0;
+  let seed=7; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff-0.5; };
+  // Teile in Takten (ohne Teile ist das ganze Lied eine Strophe)
+  const parts=has?secs.map(s=>({bar:Math.floor(s.step/n+1e-9),step:s.step,kind:secKind(s.name)})):[{bar:0,step:0,kind:'verse'}];
+  const partAt=b=>{ let k=0; for(let i=0;i<parts.length;i++) if(parts[i].bar<=b) k=i; return k; };
+  const beatLen=cmp?3:2;
+  for(let b=0;b<B;b++){
+    const pi=partAt(b), P=parts[pi], nx=parts[pi+1], inBar=b-P.bar, lim=Math.min(n,total-b*n), t0=b*bar;
+    let hits=grooveBar(P.kind,n,cmp,rock,inBar%2===1);
+    // Schluss: Becken und Bassdrum, dann klingt es aus
+    if(has&&b===B-1&&lim===n&&P.kind!=='intro'){ hits=[['crash',0,0.85],['kick',0,1]]; }
+    else {
+      const lastOfPart=nx&&nx.bar===b+1, phrase=!lastOfPart&&inBar%8===7&&b<B-1;
+      if(lastOfPart||phrase){
+        const big=lastOfPart&&(nx.kind==='chorus'||nx.kind==='outro'||P.kind==='pre');
+        const from=Math.max(0,n-(big&&!cmp&&n>=6?2*beatLen:beatLen)), variant=big?(1+(b%2)):(b%3===0?0:3);
+        hits=hits.filter(h=>h[1]<from).concat(fillHits(n,cmp,from,variant));
+      }
+      // Becken auf der Eins eines neuen Teils (nicht beim ruhigen Anfang)
+      const start=parts.find(p=>p.bar===b&&(b>0||p.kind!=='intro'&&has));
+      if(start){ const s=start.step-b*n; hits=hits.filter(h=>!(h[1]===s&&(h[0]==='hat'||h[0]==='ride'||h[0]==='ohat'))); hits.push(['crash',s,start.kind==='chorus'?0.9:0.7]); if(!hits.some(h=>h[0]==='kick'&&h[1]===s)) hits.push(['kick',s,0.95]); }
+    }
+    for(const [k,x,v] of hits){ if(x>=lim) continue;
+      const jt=k==='crash'||(k==='kick'&&x===0)?0:rnd()*0.008;
+      drums.push({k,start:t0+x*st+jt,v:Math.max(0.08,v*(1+rnd()*0.12))}); }
+  }
+  return drums;
+}
 /* Jeder Akkord dauert einen Takt – außer er hat eine eigene Länge in Schlägen (importierte Lieder).
    Dann wird der Takt in Abschnitte geteilt: perBar(c,t,st,bar,i0,i1) bekommt nur die Kästchen i0 … i1-1. */
 function grooveFrame(gv,n,perBar){
@@ -1343,22 +1449,14 @@ function grooveFrame(gv,n,perBar){
   const total=s, rock=gv.drums==='rock';
   for(const sg of segs){
     const c=sg.c, third=TYPES[c.type].third;
-    if(c.sec) secs.push({start:sg.s0*st,name:c.sec});
+    if(c.sec) secs.push({start:sg.s0*st,name:c.sec,step:sg.s0});
     for(let b=Math.floor(sg.s0/n);b*n<sg.s1;b++){
       const t=b*bar, i0=Math.max(sg.s0,b*n)-b*n, i1=Math.min(sg.s1,(b+1)*n)-b*n;
       timeline.push({start:t+i0*st,end:t+i1*st,label:chordLabel(c),pc:c.pc,type:c.type,third,c});
       perBar(c,t,st,bar,i0,i1);
     }
   }
-  for(let b=0;b*n<total;b++){
-    const t=b*bar, lim=Math.min(n,total-b*n);
-    for(let i=0;i<lim;i++){
-      if(cmp){ drums.push({k:'hat',start:t+i*st}); if(i===0||(rock&&i===5)) drums.push({k:'kick',start:t+i*st}); if(i===3) drums.push({k:'snare',start:t+i*st}); continue; }
-      if(rock||i%2===0) drums.push({k:'hat',start:t+i*st});
-      if(i===0||(n===8&&i===4)||(rock&&n===8&&i===5)) drums.push({k:'kick',start:t+i*st});
-      if(n===8?(i===2||i===6):(i===2||i===4)) drums.push({k:'snare',start:t+i*st});
-    }
-  }
+  drums.push(...drumTrack({n,st,bar,total,cmp,rock,secs:secs.length>1?secs:[]}));
   const bpb=cmp?2:n/2;
   for(let k=1;k<=bpb;k++) drums.push({k:'stick',start:-k*beat});
   drums.sort((a,b)=>a.start-b.start);
@@ -2547,6 +2645,7 @@ $('edSetToggle').onclick=()=>setEdSettings(!$('editor').classList.contains('set-
 $('edHelp').onclick=openEdHelp;
 $('edPractice').onclick=()=>{ edStop(true); if(!ED.m.notes.length){ edStatus('Setz zuerst ein paar Noten.'); return; } storeMel(ED.m); ED.isNew=false; openMelody(ED.m); };
 $('editMel').onclick=()=>{ stopPlayback(); if(meta&&meta.lied){ openLiedEd(meta.lied,false); return; } editCurrent(); };
+$('pShare').onclick=()=>{ if(meta&&meta.lied){ stopPlayback(); openShareLied(meta.lied); } };
 
 /* ---------- Teilen und Empfangen ---------- */
 function openShare(){
@@ -3891,7 +3990,7 @@ function setSong(s,reset){
   if(reset) pos=leadPos();
   $('seek').max=song.duration.toFixed(2); $('dur').textContent=fmt(song.duration);
   $('bpmOut').textContent=(gv?gv.bpm:meta&&meta.bpm||'')+(gv&&gv.compound&&INST.meter(gv)===6||meta&&meta.kind==='melody'&&meta.src&&meta.src.meter===6?' ♩.':' BPM');
-  rebuildPractice(); layout(); renderParts(); updTr();
+  rebuildPractice(); layout(); renderParts(); updTr(); $('pShare').hidden=!(meta&&meta.lied);
   if(!reset&&was) playing=true;
   beamerSendSong();
 }
@@ -4143,7 +4242,7 @@ function schedule(){
   const A=song.acc;
   while(accIdx<A.length&&A[accIdx].start<limit){ const a=A[accIdx++]; if(a.start<pos-0.15||!accOn) continue; if(a.v==='strum') GUITAR.strumSound(a.shape,a.dir,at(a.start),a.vel,(a.ring||0.4)/speed); else if(a.v==='pluck') pluck(a.midi,at(a.start),a.vel,a.dur/speed+0.3); else (a.v==='bass'?bassVoice:keysVoice)(a.midi,at(a.start),a.dur/speed,a.vel); }
   const ds=song.drums;
-  while(drumIdx<ds.length&&ds[drumIdx].start<limit){ const d=ds[drumIdx++]; if(d.start<pos-0.15) continue; if(d.k==='stick'||drumsOn) drum(d.k,at(d.start)); }
+  while(drumIdx<ds.length&&ds[drumIdx].start<limit){ const d=ds[drumIdx++]; if(d.start<pos-0.15) continue; if(d.k==='stick'||drumsOn) drum(d.k,at(d.start),d.v); }
 }
 function checkWait(){
   if(!waiting) return;
@@ -4509,12 +4608,16 @@ document.querySelectorAll('#tempo button').forEach(b=>b.onclick=()=>{
 function bpmStep(d){
   if(meta&&meta.kind==='melody'){
     const old=meta.bpm; meta.bpm=Math.max(40,Math.min(180,old+d)); if(meta.bpm===old) return;
+    if(meta.src&&meta.src.notes){ meta.src.bpm=meta.bpm; storeMel(meta.src); }
     const keep=pos*old/meta.bpm, was=playing, reset=!playing&&pos<=0;
     setSong(melodySong(meta.src,meta.bpm),reset);
     if(!reset){ pos=Math.min(keep,song.duration); if(was) resyncFrom(pos); resetScore(); }
     return;
   }
-  if(!gv) return; gv.bpm=Math.max(40,Math.min(180,gv.bpm+d)); rebuild(!playing&&pos<=0);
+  if(!gv) return; gv.bpm=Math.max(40,Math.min(180,gv.bpm+d));
+  // Importierte Lieder merken sich das Tempo – es gilt dann bei allen Instrumenten und wird beim Teilen mitgeschickt
+  if(meta&&meta.lied){ meta.lied.bpm=gv.bpm; if(!meta.lied.demo) storeLied(meta.lied); }
+  rebuild(!playing&&pos<=0);
 }
 $('bpmDown').onclick=()=>bpmStep(-5); $('bpmUp').onclick=()=>bpmStep(5);
 /* Transponieren: Halbton höher oder tiefer – gespeichert, damit alle Instrumente in derselben Tonart spielen */
@@ -4967,7 +5070,8 @@ async function openShareLied(S){
   let code; try{ code=await encodeLied(S); }catch(e){ leStatus('Teilen geht in diesem Browser nicht.'); return; }
   shareName=S.name; shareKind='Lied';
   $('shareTitle').textContent='Lied teilen'; $('shareNote').hidden=false; $('shareMidi').hidden=true;
-  const link=location.href.split('#')[0]+'#lied='+code; $('shareLink').value=link; $('shareCode').value=code; $('shareMsg').textContent=''; showShareQR(link,`Lied „${S.name}“`);
+  const link=location.href.split('#')[0]+'#lied='+code; $('shareLink').value=link; $('shareCode').value=code; showShareQR(link,`Lied „${S.name}“`);
+  $('shareMsg').textContent=`Mitgeschickt: Tempo ${S.bpm}${S.meter===6?' ♩.':' BPM'}, ${meterName(S.meter)}-Takt, Tonart ${(S.tr>0?'+':S.tr<0?'−':'±')+Math.abs(S.tr)}, Takte und Begleitung.`;
   $('shareNative').hidden=!navigator.share; $('shareDlg').hidden=false; $('shareCopyLink').focus();
 }
 
