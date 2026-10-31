@@ -78,6 +78,12 @@ jedes Mal schneller → aus. Springt man woandershin, wird der neue Teil wiederh
 # und b (C#, Eb), dazu G7, Cmaj7, am7 und C/G. Wie im Deutschen üblich ist H das englische B
 und B das englische Bb.
 
+**Arbeitsblatt drucken:** Im Lied-Editor („Drucken“) und beim Teilen eines Liedes gibt es ein
+Arbeitsblatt für die Klasse (A4, auch als PDF sicherbar): Seite 1 das Liedblatt mit Akkorden über
+dem Text (in der eingestellten Tonart, entfernte Akkorde fehlen), danach die Griffbilder für Gitarre
+und Ukulele, die Schlagzeug-Grooves je Teil als Raster und die Arranger-Übersicht „Wer spielt wann?“
+mit den Mustern (Gitarre und Ukulele mit Schlagrichtung).
+
 **Teilen per QR-Code:** Beim Teilen zeigt die App einen QR-Code (auch groß für den Beamer).
 Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofort loslegen.
 Liedtexte sind urheberrechtlich geschützt: importierte Lieder nur im Unterricht mit der eigenen
