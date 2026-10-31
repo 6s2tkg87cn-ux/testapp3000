@@ -68,6 +68,12 @@ dem Laufband. Ein Tipp springt dorthin; steht das Lied, zählt die App beim Star
 Im Laufband zeigt eine Linie, wo der nächste Teil beginnt. Im Vollbild gehen auch die Pfeiltasten
 oder eine Präsentations-Fernbedienung (Bild auf/ab).
 
+**Teil wiederholen:** Einen Teil antippen (z. B. den Refrain) und „Teil wiederholen“ wählen – der Teil
+läuft dann endlos, ohne Lücke beim Rücksprung. Mit „Schneller werden“ beginnt er bei 70 % und wird
+bei jedem Durchgang 10 % schneller, bis das normale Tempo erreicht ist. Im Laufband ist abgedunkelt,
+was nach dem Teil käme. Am Smartphone quer und im Vollbild schaltet ein Knopf durch: wiederholen →
+jedes Mal schneller → aus. Springt man woandershin, wird der neue Teil wiederholt.
+
 **Akkordsymbole:** Überall einheitlich – Dur groß (D), Moll klein mit m (dm), Vorzeichen als
 # und b (C#, Eb), dazu G7, Cmaj7, am7 und C/G. Wie im Deutschen üblich ist H das englische B
 und B das englische Bb.
