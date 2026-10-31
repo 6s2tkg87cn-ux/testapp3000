@@ -78,11 +78,11 @@ jedes Mal schneller → aus. Springt man woandershin, wird der neue Teil wiederh
 # und b (C#, Eb), dazu G7, Cmaj7, am7 und C/G. Wie im Deutschen üblich ist H das englische B
 und B das englische Bb.
 
-**Arbeitsblatt drucken:** Im Lied-Editor („Drucken“) und beim Teilen eines Liedes gibt es ein
-Arbeitsblatt für die Klasse (A4, auch als PDF sicherbar): Seite 1 das Liedblatt mit Akkorden über
-dem Text (in der eingestellten Tonart, entfernte Akkorde fehlen), danach die Griffbilder für Gitarre
-und Ukulele, die Schlagzeug-Grooves je Teil als Raster und die Arranger-Übersicht „Wer spielt wann?“
-mit den Mustern (Gitarre und Ukulele mit Schlagrichtung).
+**Exportieren und drucken:** Im Lied-Editor („Export“) und beim Teilen eines Liedes wählt man aus,
+was aufs Blatt soll (A4, auch als PDF sicherbar): Kopf mit Name/Klasse/Datum, Liedtext mit Akkorden
+(in der eingestellten Tonart), Akkordfolge ohne Text, Griffbilder für Gitarre und/oder Ukulele, die
+Muster je Teil für Gitarre, Ukulele, Bass, Klavier und Schlagzeug (als Raster mit den Zeichen aus
+der App) und die Arranger-Übersicht „Wer spielt wann?“. Die Auswahl merkt sich das Gerät.
 
 **Teilen per QR-Code:** Beim Teilen zeigt die App einen QR-Code (auch groß für den Beamer).
 Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofort loslegen.
@@ -92,6 +92,9 @@ Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
 **Vollbild:** Der Knopf „Vollbild“ im Spieler zeigt sofort nur Text und Akkorde bzw. das Laufband –
 z. B. für den Beamer per AirPlay. Wischen, Trackpad und Mausrad funktionieren dort wie sonst; Tippen
 zeigt die Knöpfe (Start/Pause, Teile, Beenden), Esc beendet.
+**Sperrbildschirm am iPhone:** Klingt 30 Sekunden nichts oder wird das Gerät gesperrt, schaltet die
+App den Ton schlafen – dann verschwindet die Wiedergabe-Anzeige im Sperrbildschirm. Beim nächsten
+Tippen ist der Ton sofort wieder da.
 **Smartphone quer:** Bass, Klavier und die anderen Instrumente rücken auf niedrigen Bildschirmen
 enger zusammen; „Muster ändern“ ist dann ein Knopf in der oberen Leiste statt einer eigenen Zeile.
 **Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das

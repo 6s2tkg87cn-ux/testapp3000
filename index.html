@@ -182,6 +182,19 @@ button,input,select{font-family:inherit}
 #printSheet .ps-arr td.off{color:#888;font-style:italic;background:repeating-linear-gradient(135deg,#fff 0 2mm,#f1f1f1 2mm 4mm)}
 #printSheet .ps-arr small{display:block;color:#444;letter-spacing:.08em}
 #printSheet .ps-legend{font-size:8.5pt;color:#444;margin-top:2mm}
+/* Export-Auswahl */
+.prgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 18px;margin:6px 0 10px}
+.prgrp{display:flex;flex-direction:column;gap:2px}
+.prgrp b{font:600 13px var(--font-body);color:var(--muted);margin-bottom:2px}
+.prgrp label{display:flex;align-items:center;gap:10px;min-height:36px;font-size:15px;cursor:pointer}
+.prgrp input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+#prGo:disabled{opacity:.45;cursor:default}
+#printSheet .ps-chart{display:flex;flex-direction:column;gap:2mm}
+#printSheet .ps-crow{display:flex;gap:3mm;align-items:flex-start;break-inside:avoid}
+#printSheet .ps-cn{flex:none;width:28mm;font:700 9pt var(--font-body);text-transform:uppercase;letter-spacing:.04em;padding-top:2mm}
+#printSheet .ps-cb{display:flex;flex-wrap:wrap;gap:1.2mm}
+#printSheet .ps-box{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:14mm;min-height:9mm;padding:0 1.5mm;border:.3mm solid #444;font-weight:700;font-size:11pt}
+#printSheet .ps-box sub{font-weight:400;font-size:7pt;color:#444;vertical-align:baseline}
 #printSheet .ps-foot{margin-top:6mm;font-size:8pt;color:#666;border-top:.25mm solid #bbb;padding-top:1.5mm}
 
 /* Wenig Höhe (Smartphone quer, iPad quer): „Muster ändern“ als Knopf in der oberen Leiste statt eigener Zeile */
@@ -936,7 +949,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <button class="btn" id="leBack" aria-label="Zurück"><svg viewBox="0 0 16 16"><path d="M10.5 2L4.5 8l6 6 1.4-1.4L7.3 8l4.6-4.6z"/></svg><span class="bt">Zurück</span></button>
     <div class="ptitle"><input type="text" id="leName" maxlength="60" aria-label="Name des Liedes"><span class="lbl" id="leStatus" role="status"></span></div>
     <span class="sp"></span>
-    <button class="btn" id="lePrint" aria-label="Arbeitsblatt drucken"><svg viewBox="0 0 16 16"><path d="M4 1.5h8V5H4zM2 6h12a1 1 0 011 1v5h-3v2.5H4V12H1V7a1 1 0 011-1zm3.5 4.5V13h5v-2.5z"/></svg><span class="bt">Drucken</span></button>
+    <button class="btn" id="lePrint" aria-label="Exportieren und drucken"><svg viewBox="0 0 16 16"><path d="M4 1.5h8V5H4zM2 6h12a1 1 0 011 1v5h-3v2.5H4V12H1V7a1 1 0 011-1zm3.5 4.5V13h5v-2.5z"/></svg><span class="bt">Export</span></button>
     <button class="btn" id="leShare" aria-label="Teilen"><svg viewBox="0 0 16 16"><path d="M8 1l3.5 3.5-1.1 1.1L8.8 4v6.5H7.2V4L5.6 5.6 4.5 4.5zM2.5 8h1.6v5.4h7.8V8h1.6v7h-11z"/></svg><span class="bt">Teilen</span></button>
     <button class="btn primary" id="lePlay" aria-label="Abspielen"><svg viewBox="0 0 16 16"><path d="M4.5 2.5l9 5.5-9 5.5z"/></svg><span class="bt">Abspielen</span></button>
     <button class="btn" id="leHelp" aria-label="So geht's"><span class="q" aria-hidden="true">?</span><span class="bt">So geht's</span></button>
@@ -1001,7 +1014,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <div class="sgroup qrbox" id="shareQRBox" hidden><span class="lbl">QR-Code – mit der Handy-Kamera scannen</span><canvas id="shareQR" aria-label="QR-Code zum Teilen"></canvas>
       <div class="row"><button class="btn small primary" id="shareQRBig">QR-Code groß zeigen (Beamer)</button></div></div>
     <span class="lbl" id="shareMsg" role="status"></span>
-    <div class="end"><button class="btn" id="sharePrint" hidden><svg class="ic" viewBox="0 0 16 16"><path d="M4 1.5h8V5H4zM2 6h12a1 1 0 011 1v5h-3v2.5H4V12H1V7a1 1 0 011-1zm3.5 4.5V13h5v-2.5z"/></svg>Arbeitsblatt drucken</button><button class="btn primary" id="shareClose">Fertig</button></div>
+    <div class="end"><button class="btn" id="sharePrint" hidden><svg class="ic" viewBox="0 0 16 16"><path d="M4 1.5h8V5H4zM2 6h12a1 1 0 011 1v5h-3v2.5H4V12H1V7a1 1 0 011-1zm3.5 4.5V13h5v-2.5z"/></svg>Exportieren / Drucken</button><button class="btn primary" id="shareClose">Fertig</button></div>
   </div>
 </div>
 
@@ -1027,6 +1040,16 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <div class="recvgrid" id="recvGrid"></div>
     <span class="lbl" id="recvMsg" role="status"></span>
     <div class="end"><button class="btn" id="recvCancel">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="help" id="printDlg" hidden>
+  <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="prTitle">
+    <h2 id="prTitle">Exportieren und drucken</h2>
+    <p class="sdesc">Wähle aus, was aufs Blatt soll. Im Druckfenster kannst du es auch als PDF sichern.</p>
+    <div class="prgrid" id="prGrid"></div>
+    <div class="row"><button class="btn small" id="prAll">Alles</button><button class="btn small" id="prLyr">Nur Liedtext</button></div>
+    <div class="end"><button class="btn" id="prCancel">Abbrechen</button><button class="btn primary" id="prGo">Drucken / PDF</button></div>
   </div>
 </div>
 
@@ -1108,9 +1131,11 @@ function rgba(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},$
 function shade(hex,f){ const n=parseInt(hex.slice(1),16); return `rgb(${Math.round((n>>16)*f)},${Math.round(((n>>8)&255)*f)},${Math.round((n&255)*f)})`; }
 
 /* ---------- Ton ---------- */
+let acIdle=false, lastActive=performance.now();
 let ac=null, master=null, keyWave=null, pianoWave=null, noise=null, voices=[];
 const ksCache=new Map();
 function ensureAudio(){
+  acIdle=false; lastActive=performance.now();
   if(ac&&(ac.state==='closed'||ac.state==='interrupted')) hardResetAudio();
   if(!ac){
     ac=new (window.AudioContext||window.webkitAudioContext)();
@@ -1139,6 +1164,7 @@ function setAudioSession(t){ try{ if(navigator.audioSession&&navigator.audioSess
 let iosEl=null;
 const IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function unlockIOS(){
+  if(iosEl&&iosEl.paused){ try{ const pr=iosEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){} return; }
   if(!IS_IOS||navigator.audioSession||iosEl) return;
   try{
     const sr=8000,n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b);
@@ -1161,14 +1187,27 @@ function hardResetAudio(){
   if(ac) needReattach=true;
   ac=null; voices=[]; held.clear(); if(typeof ksCache!=='undefined') ksCache.clear();
 }
+/* Ruhezustand: Klingt nichts mehr (oder ist das Gerät gesperrt), wird die Tonausgabe angehalten.
+   Sonst zeigt das iPhone die Seite dauerhaft als „spielt gerade“ im Sperrbildschirm an. */
+function audioBusy(){ return playing||held.size>0||!!mic||(typeof tun!=='undefined'&&!!tun.an)||(typeof edOn==='function'&&edOn())||voices.some(v=>v.end>ac.currentTime); }
+function audioSleep(){
+  if(!ac) return; acIdle=true;
+  try{ if(ac.state==='running') ac.suspend().catch(()=>{}); }catch(e){}
+  if(iosEl) try{ iosEl.pause(); }catch(e){}
+  setAudioSession('auto');
+  try{ if(navigator.mediaSession){ navigator.mediaSession.playbackState='none'; navigator.mediaSession.metadata=null; } }catch(e){}
+}
+try{ if(navigator.mediaSession) for(const a of ['pause','stop']) navigator.mediaSession.setActionHandler(a,()=>{ if(playing) stopPlayback(); audioSleep(); }); }catch(e){}
 function wakeAudio(){
   if(!ac) return;
+  if(acIdle){ acIdle=false; lastActive=performance.now(); audioMode(); unlockIOS(); }
   if(ac.state==='closed'||ac.state==='interrupted'){ hardResetAudio(); ensureAudio(); return; }
   if(ac.state==='suspended'){ try{ ac.resume().catch(()=>{ hardResetAudio(); }); }catch(e){} }
 }
 ['pointerdown','keydown','touchend'].forEach(t=>document.addEventListener(t,wakeAudio,true));
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ try{ for(const m of [...held.keys()]) unpress(m); }catch(e){} if(playing) stopPlayback(); try{ edStop(); }catch(e){} }
+  if(document.hidden){ try{ for(const m of [...held.keys()]) unpress(m); }catch(e){} if(playing) stopPlayback(); try{ edStop(); }catch(e){} audioSleep(); }
+  else if(ac&&(mic||(typeof tun!=='undefined'&&tun.an))) wakeAudio();
 });
 let lastClock=-1, stallN=0, silentN=0, recoveries=0, lastRecover=-1e9;
 /* Startet die Tonausgabe neu und hängt Mikrofon/Stimmgerät wieder an */
@@ -1184,11 +1223,12 @@ function audioWatch(){
   for(const v of voices){ if(v.end===Infinity&&v.t0<t-20&&![...held.values()].includes(v)) release(v,t); }
   if(ac.state!=='running'){
     stallN=0; silentN=0;
-    if(!document.hidden){ try{ ac.resume().catch(()=>{}); }catch(e){} }
+    if(!document.hidden&&!acIdle){ try{ ac.resume().catch(()=>{}); }catch(e){} }
     if(playing){ stopPlayback(); if(!audioWarned){ audioWarned=true; notice('Der Ton wurde vom Gerät unterbrochen. Tippe auf Start, dann geht es weiter.'); } }
     return;
   }
   audioWarned=false;
+  if(audioBusy()) lastActive=now; else if(now-lastActive>30000){ audioSleep(); return; }
   // 1) Uhr steht still, obwohl die Tonausgabe angeblich läuft
   stallN=(!document.hidden&&lastClock>=0&&Math.abs(t-lastClock)<0.01)?stallN+1:0; lastClock=t;
   // 2) Es sollte etwas klingen, aber am Ausgang kommt nichts an (oder ungültige Werte)
@@ -5705,7 +5745,7 @@ const LE_HELP=[
   ['Tempo, Takt, Tonart','Stell das Tempo ein oder tippe „Tempo antippen“ im Takt des Liedes. „Tonart verschieben“ setzt alle Akkorde höher oder tiefer – z. B. in eine leichtere Tonart.'],
   ['Takte','Im Schritt „Takte“ steht jeder Akkord mit seiner Länge. Mit − und + änderst du sie, mit × entfernst du einen Akkord (↺ holt ihn zurück). „Alle 1 Takt“ und „Alle 2 Takte“ setzen alle auf einmal.'],
   ['Übertragen','Hast du eine Strophe oder einen Refrain fertig eingestellt, tippe auf „Auf alle Strophen übertragen“ bzw. „Auf alle Refrains übertragen“. Die anderen Abschnitte übernehmen Längen und entfernte Akkorde.'],
-  ['Arbeitsblatt drucken','„Drucken“ macht ein Arbeitsblatt für die Klasse: Liedtext mit Akkorden, Griffbilder für Gitarre und Ukulele, die Schlagzeug-Grooves je Teil und eine Übersicht, wer wann spielt. Im Druckfenster kannst du es auch als PDF sichern.']
+  ['Exportieren','„Export“ macht ein Blatt für die Klasse. Du wählst aus, was darauf steht: Liedtext mit Akkorden, Akkordfolge ohne Text, Griffbilder für Gitarre oder Ukulele, die Muster jedes Instruments je Teil und die Übersicht, wer wann spielt. Im Druckfenster kannst du es auch als PDF sichern.']
 ];
 document.querySelectorAll('#leTabs button').forEach(b=>b.onclick=()=>leTab(b.dataset.v));
 let leTimer=0;
@@ -5805,71 +5845,117 @@ function printPat(S,parts,k,id){
 }
 const cutM=(a,S)=>S.meter===2&&a.length===8?a.slice(0,4):a;
 function countRow(n,S){ return Array.from({length:n},(_,i)=>S.meter===6?String(i+1):i%2?'+':String(i/2+1)); }
-function grooveTable(pt,S){
-  const rows=[['Becken',pt.hh,{x:'×',o:'○',r:'◆',c:'✱'}],['Snare',pt.sn,{x:'●',g:'·',r:'⊘'}],['Bassdrum',pt.bd,{x:'●'}]];
-  const n=cutM(pt.hh,S).length, grp=S.meter===6?3:2;
+/* Muster eines Instruments als Raster (gleiche Zeichen wie im Instrument) */
+function patGv(I,pt){ const g=I.defaultGv(); if(pt.own){ for(const f of ['steps','rh','lh','hh','sn','bd']) if(pt[f]) g[f]=pt[f].slice(); if(pt.kind) g.kind=pt.kind; } else I.applyPattern(g,pt); return g; }
+function patTable(I,pt,S,used){
+  const rows=I.editRows(patGv(I,pt)), n=cutM(rows[0].arr,S).length, grp=S.meter===6?3:2;
   let h='<table class="ps-dt"><tr><th></th>'+countRow(n,S).map(c=>`<td>${c}</td>`).join('')+'</tr>';
-  for(const [nm,arr,gl] of rows) h+=`<tr><th>${nm}</th>`+cutM(arr,S).map((v,i)=>`<td${i%grp===0?' class="b"':''}>${gl[v]||''}</td>`).join('')+'</tr>';
+  for(const r of rows){ h+=`<tr><th>${escH(r.label||I.label)}</th>`+cutM(r.arr,S).map((v,i)=>{ if(v!=='-'&&r.words&&r.words[v]) used.set(r.glyph(v),r.words[v]); return `<td${i%grp===0?' class="b"':''}>${v==='-'?'':escH(r.glyph(v))}</td>`; }).join('')+'</tr>'; }
   return h+'</table>';
 }
-function printHTML(S){
+const PRINT_OPTS=[
+  ['Liedblatt',[['head','Kopf mit Name, Klasse, Datum'],['lyrics','Liedtext mit Akkorden'],['chart','Akkordfolge ohne Text']]],
+  ['Griffbilder',[['gshape','Gitarre'],['ushape','Ukulele']]],
+  ['Muster je Teil',[['guitar','Gitarre'],['uke','Ukulele'],['bass','Bass'],['piano','Klavier'],['drums','Schlagzeug']]],
+  ['Arrangement',[['arr','Wer spielt wann?']]]
+];
+const PRINT_KEY='bandlauf-druck';
+function printOpts(){ const all={}; PRINT_OPTS.forEach(([,l])=>l.forEach(([k])=>all[k]=true)); try{ const o=JSON.parse(localStorage.getItem(PRINT_KEY)||'null'); if(o&&typeof o==='object') for(const k in all) if(typeof o[k]==='boolean') all[k]=o[k]; }catch(e){} return all; }
+function printHTML(S,opt){
+  opt=opt||printOpts();
   const P=parseLied(S.text), b=liedBeats(S), act=new Set(), tr=S.tr||0;
   P.events.forEach((e,i)=>{ if(b[i]>0) act.add(e.line+':'+e.k); });
-  const lab=c=>escH(liedLabel(c,tr));
+  const lab=c=>escH(liedLabel(c,tr)), secs=[];
   // Liedblatt: Akkorde stehen über der Silbe, bei der sie wechseln
-  let body='', part='', lines=0, longest=0;
-  const close=()=>{ if(part){ body+=`<div class="ps-part">${part}</div>`; part=''; } };
-  P.lines.forEach((L,li)=>{
-    if(L.kind==='sec'){ close(); part+=`<div class="ps-sec">${escH(L.text)}${L.note?` <small>· ${escH(L.note)}</small>`:''}</div>`; return; }
-    if(L.kind==='note'){ part+=`<div class="ps-note">(${escH(L.text)})</div>`; lines++; return; }
-    const cs=L.chords.map((ch,k)=>({...ch,k})).filter(ch=>act.has(li+':'+ch.k)), rep=L.rep>1?`<span class="ps-rep">${L.rep}×</span>`:'';
-    if(L.kind==='inst'){ if(!cs.length) return; part+=`<div class="ps-line ps-inst">${cs.map(ch=>lab(ch.c)).join(' ')}${rep}</div>`; lines++; return; }
-    const t=L.text||''; lines++; longest=Math.max(longest,t.length);
-    if(!cs.length){ part+=`<div class="ps-line"><span>${escH(t)||'&nbsp;'}</span></div>`; return; }
-    cs.sort((x,y)=>x.pos-y.pos); let h=''; const sg=(c,x)=>`<span class="ps-sg"><b>${c||'&nbsp;'}</b><span>${escH(x)||'&nbsp;'}</span></span>`;
-    if(cs[0].pos>0) h+=sg('',t.slice(0,cs[0].pos));
-    cs.forEach((ch,j)=>{ const a=Math.min(ch.pos,t.length), e=j+1<cs.length?Math.min(cs[j+1].pos,t.length):t.length; h+=sg(lab(ch.c),t.slice(a,Math.max(a,e))); });
-    part+=`<div class="ps-line">${h}${rep}</div>`;
-  });
-  close();
-  const two=lines>34&&longest<=46;
+  if(opt.lyrics){
+    let body='', part='', lines=0, longest=0;
+    const close=()=>{ if(part){ body+=`<div class="ps-part">${part}</div>`; part=''; } };
+    P.lines.forEach((L,li)=>{
+      if(L.kind==='sec'){ close(); part+=`<div class="ps-sec">${escH(L.text)}${L.note?` <small>· ${escH(L.note)}</small>`:''}</div>`; return; }
+      if(L.kind==='note'){ part+=`<div class="ps-note">(${escH(L.text)})</div>`; lines++; return; }
+      const cs=L.chords.map((ch,k)=>({...ch,k})).filter(ch=>act.has(li+':'+ch.k)), rep=L.rep>1?`<span class="ps-rep">${L.rep}×</span>`:'';
+      if(L.kind==='inst'){ if(!cs.length) return; part+=`<div class="ps-line ps-inst">${cs.map(ch=>lab(ch.c)).join(' ')}${rep}</div>`; lines++; return; }
+      const t=L.text||''; lines++; longest=Math.max(longest,t.length);
+      if(!cs.length){ part+=`<div class="ps-line"><span>${escH(t)||'&nbsp;'}</span></div>`; return; }
+      cs.sort((x,y)=>x.pos-y.pos); let h=''; const sg=(c,x)=>`<span class="ps-sg"><b>${c||'&nbsp;'}</b><span>${escH(x)||'&nbsp;'}</span></span>`;
+      if(cs[0].pos>0) h+=sg('',t.slice(0,cs[0].pos));
+      cs.forEach((ch,j)=>{ const a=Math.min(ch.pos,t.length), e=j+1<cs.length?Math.min(cs[j+1].pos,t.length):t.length; h+=sg(lab(ch.c),t.slice(a,Math.max(a,e))); });
+      part+=`<div class="ps-line">${h}${rep}</div>`;
+    });
+    close();
+    secs.push({lyr:true,h:`<h2>Liedtext mit Akkorden</h2><div class="${lines>34&&longest<=46?'ps-cols':''}">${body}</div>`});
+  }
+  // Akkordfolge ohne Text: je Teil die Akkorde in Kästchen, mit Länge, wenn sie nicht genau einen Takt dauern
+  if(opt.chart){
+    const bq=barQ(S.meter), len=q=>{ const n=Math.round(q/bq*100)/100; if(n===1) return ''; return n===0.5?'½ Takt':String(n).replace('.',',')+' Takt'+(n>1?'e':''); };
+    let h='', cur=null, row='';
+    const flush=()=>{ if(cur!==null) h+=`<div class="ps-crow"><div class="ps-cn">${escH(cur)}</div><div class="ps-cb">${row}</div></div>`; row=''; };
+    P.events.forEach((e,i)=>{ if(!(b[i]>0)) return; const nm=liedSecName(P,e); if(nm!==cur||(row&&e.secId!==P.events[i-1]?.secId)){ flush(); cur=nm; }
+      const l=len(b[i]); row+=`<span class="ps-box">${lab(e.c)}${l?`<sub>${l}</sub>`:''}</span>`; });
+    flush();
+    secs.push({lyr:true,h:`<h2>Akkordfolge</h2><div class="ps-chart">${h}</div>`});
+  }
   // Griffbilder: jeder Akkord einmal (ohne anderen Basston – gegriffen wird der Akkord)
   const seen=new Map();
   P.events.forEach((e,i)=>{ if(!(b[i]>0)) return; const c=liedTr(e.c,tr), key=c.pc+':'+c.type; if(!seen.has(key)) seen.set(key,{pc:c.pc,type:c.type}); });
   const figs=(I,SN)=>[...seen.values()].map(c=>`<figure><figcaption>${escH(chordLabel(c))}</figcaption>${shapeSvg(I.shape(c),SN)}</figure>`).join('');
-  // Teile und Muster
+  if(opt.gshape) secs.push({h:`<h2>Griffbilder Gitarre</h2><div class="ps-shapes">${figs(GUITAR,['E','A','D','G','H','e'])}</div>`});
+  if(opt.ushape) secs.push({h:`<h2>Griffbilder Ukulele</h2><div class="ps-shapes">${figs(UKE,['G','C','E','A'])}</div>`});
+  // Muster je Teil: gleiche Muster werden zusammengefasst
   const parts=liedParts(P), rowsP=parts.length?parts:[{li:-1,name:'Ganzes Lied'}];
-  const grooves=[];
-  rowsP.forEach((p,k)=>{ const pt=printPat(S,parts,k,'drums'); const key=pt?(pt.own?'own':pt.id):'off'; let g=grooves.find(x=>x.key===key); if(!g){ g={key,pt,names:[]}; grooves.push(g); } if(!g.names.includes(p.name)) g.names.push(p.name); });
-  const steps=pt=>{ if(!pt) return ''; const a=pt.p||pt.steps; if(!a||(pt.k||pt.kind)!=='s') return ''; return `<small>${cutM(a,S).map(v=>v==='-'?'·':strumGlyph(v)).join(' ')}</small>`; };
-  let arr='<table class="ps-arr"><thead><tr><th>Teil</th>'+BAND_INSTS.map(([,n])=>`<th>${n}</th>`).join('')+'</tr></thead><tbody>';
-  rowsP.forEach((p,k)=>{ arr+=`<tr><th>${escH(p.name)}</th>`+BAND_INSTS.map(([id])=>{ const pt=printPat(S,parts,k,id); return pt?`<td>${escH(pt.n)}${id==='guitar'||id==='uke'?steps(pt):''}</td>`:'<td class="off">Pause</td>'; }).join('')+'</tr>'; });
-  arr+='</tbody></table>';
+  for(const [id,name] of BAND_INSTS){ if(!opt[id]) continue;
+    const I=INSTS[id], groups=[], used=new Map();
+    rowsP.forEach((p,k)=>{ const pt=printPat(S,parts,k,id), key=pt?(pt.own?'own':pt.id):'off'; let g=groups.find(x=>x.key===key); if(!g){ g={key,pt,names:[]}; groups.push(g); } if(!g.names.includes(p.name)) g.names.push(p.name); });
+    let h=groups.map(g=>`<div class="ps-groove"><div class="ps-gh"><b>${g.pt?escH(g.pt.n):'Pause'}</b> · ${g.names.map(escH).join(', ')}</div>${g.pt?patTable(I,g.pt,S,used):''}</div>`).join('');
+    if(id==='drums'&&S.drums==='off') h='<p>Das Schlagzeug spielt in diesem Lied nicht mit.</p>';
+    const leg=[...used].map(([gl,w])=>`${escH(gl)} ${escH(w)}`).join(' · ');
+    secs.push({h:`<h2>${name}: Muster</h2><div class="ps-grooves">${h}</div>${leg?`<div class="ps-legend">${leg}${id==='drums'?'<br>Vor jedem neuen Teil spielt das Schlagzeug ein kurzes Fill, auf der Eins des neuen Teils ein Crash-Becken.':''}</div>`:''}`});
+  }
+  if(opt.arr){
+    const steps=pt=>{ if(!pt) return ''; const a=pt.p||pt.steps; if(!a||(pt.k||pt.kind)!=='s') return ''; return `<small>${cutM(a,S).map(v=>v==='-'?'·':strumGlyph(v)).join(' ')}</small>`; };
+    let arr='<table class="ps-arr"><thead><tr><th>Teil</th>'+BAND_INSTS.map(([,n])=>`<th>${n}</th>`).join('')+'</tr></thead><tbody>';
+    rowsP.forEach((p,k)=>{ arr+=`<tr><th>${escH(p.name)}</th>`+BAND_INSTS.map(([id])=>{ const pt=printPat(S,parts,k,id); return pt?`<td>${escH(pt.n)}${id==='guitar'||id==='uke'?steps(pt):''}</td>`:'<td class="off">Pause</td>'; }).join('')+'</tr>'; });
+    secs.push({h:`<h2>Wer spielt wann?</h2>${arr}</tbody></table><div class="ps-legend">↓ Abschlag · ↑ Aufschlag · · Pause</div>`});
+  }
+  // Nach Liedtext oder Akkordfolge beginnt der Rest auf einer neuen Seite
+  const hasLyr=secs.some(x=>x.lyr); let brk=false;
+  const out=secs.map(x=>{ if(hasLyr&&!x.lyr&&!brk){ brk=true; return `<div class="ps-page2">${x.h}</div>`; } return x.h; }).join('\n');
   const meta=[`Tempo ${S.bpm}${S.meter===6?' ♩.':' BPM'}`,`${meterName(S.meter)}-Takt`,`Stil: ${STYLE_NAMES[liedStyle(S)]}`]; if(tr) meta.push(`transponiert: ${tr>0?'+':'−'}${Math.abs(tr)} Halbtöne`);
   return `<h1>${escH(S.name)}</h1><div class="ps-meta">${meta.join(' · ')}</div>
-<div class="ps-who"><span>Name</span><span>Klasse</span><span>Datum</span></div>
-<h2>Liedblatt</h2><div class="${two?'ps-cols':''}">${body}</div>
-<div class="ps-page2"><h2>Griffbilder</h2>
-<div class="ps-label">Gitarre</div><div class="ps-shapes">${figs(GUITAR,['E','A','D','G','H','e'])}</div>
-<div class="ps-label">Ukulele</div><div class="ps-shapes">${figs(UKE,['G','C','E','A'])}</div>
-<h2>Schlagzeug je Teil</h2>
-${S.drums==='off'?'<p>Das Schlagzeug spielt in diesem Lied nicht mit.</p>':`<div class="ps-grooves">${grooves.map(g=>`<div class="ps-groove"><div class="ps-gh"><b>${g.pt?escH(g.pt.n):'Pause'}</b> · ${g.names.map(escH).join(', ')}</div>${g.pt?grooveTable(g.pt,S):''}</div>`).join('')}</div>
-<div class="ps-legend">Becken: × Hi-Hat zu · ○ Hi-Hat offen · ◆ Ride · ✱ Crash &nbsp; Snare: ● Schlag · · leise · ⊘ Rand &nbsp; Bassdrum: ●<br>Vor jedem neuen Teil spielt das Schlagzeug ein kurzes Fill, auf der Eins des neuen Teils ein Crash-Becken.</div>`}
-<h2>Wer spielt wann?</h2>${arr}
-<div class="ps-legend">Die Muster gibt es in Bandlauf beim jeweiligen Instrument. ↓ Abschlag · ↑ Aufschlag · · Pause</div></div>
+${opt.head?'<div class="ps-who"><span>Name</span><span>Klasse</span><span>Datum</span></div>':''}
+${out}
 <div class="ps-foot">Erstellt mit Bandlauf. Liedtexte sind urheberrechtlich geschützt – nur im Unterricht mit der eigenen Lerngruppe verwenden.</div>`;
 }
-function printLied(S){
+/* Export: Erst auswählen, was aufs Blatt soll – die Auswahl merkt sich das Gerät */
+let printFor=null;
+function openPrint(S){
   if(!S) return; if(!parseLied(S.text).events.length){ if(LE.S===S) leStatus('Das Lied hat noch keine Akkorde.'); return; }
   if(LE.S===S) leSave();
-  $('printSheet').innerHTML=printHTML(S);
+  printFor=S; const o=printOpts(), box=$('prGrid'); box.innerHTML='';
+  PRINT_OPTS.forEach(([t,list])=>{ const d=document.createElement('div'); d.className='prgrp'; d.innerHTML=`<b>${t}</b>`;
+    list.forEach(([k,l])=>{ const lb=document.createElement('label'); lb.innerHTML=`<input type="checkbox" data-k="${k}" id="pr-${k}"${o[k]?' checked':''}> ${l}`; d.appendChild(lb); });
+    box.appendChild(d); });
+  box.querySelectorAll('input').forEach(x=>x.onchange=prUpd); prUpd();
+  $('printDlg').hidden=false;
+}
+function prRead(){ const o={}; $('prGrid').querySelectorAll('input').forEach(x=>o[x.dataset.k]=x.checked); return o; }
+function prUpd(){ const o=prRead(); $('prGo').disabled=!Object.entries(o).some(([k,v])=>v&&k!=='head'); }
+function prSet(f){ $('prGrid').querySelectorAll('input').forEach(x=>x.checked=f(x.dataset.k)); prUpd(); }
+$('prAll').onclick=()=>prSet(()=>true);
+$('prLyr').onclick=()=>prSet(k=>k==='head'||k==='lyrics');
+$('prCancel').onclick=()=>{ $('printDlg').hidden=true; };
+$('printDlg').addEventListener('click',e=>{ if(e.target.id==='printDlg') $('printDlg').hidden=true; });
+$('prGo').onclick=()=>{ const o=prRead(); try{ localStorage.setItem(PRINT_KEY,JSON.stringify(o)); }catch(e){} $('printDlg').hidden=true; printLied(printFor,o); };
+function printLied(S,opt){
+  if(!S) return;
+  $('printSheet').innerHTML=printHTML(S,opt);
   document.body.classList.add('printing');
   const done=()=>{ document.body.classList.remove('printing'); removeEventListener('afterprint',done); };
   addEventListener('afterprint',done);
   setTimeout(()=>{ try{ window.print(); }catch(e){ done(); } },80);
 }
-$('lePrint').onclick=()=>printLied(LE.S);
-$('sharePrint').onclick=()=>{ const S=shareLied; $('shareDlg').hidden=true; printLied(S); };
+$('lePrint').onclick=()=>openPrint(LE.S);
+$('sharePrint').onclick=()=>{ const S=shareLied; $('shareDlg').hidden=true; openPrint(S); };
 
 /* ---------- QR-Code beim Teilen ---------- */
 let qrText='', qrTitle='';
@@ -5921,7 +6007,7 @@ $('presPrev').onclick=()=>{ partStep(-1); presBar(); }; $('presNext').onclick=()
 $('partPrev').onclick=()=>partStep(-1); $('partNext').onclick=()=>partStep(1);
 
 /* Nur für automatische Tests: mit localStorage „bandlauf-debug“ ist das aktuelle Lied lesbar */
-try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop}})}; }catch(e){}
+try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop},ac:ac&&ac.state,idle:acIdle})}; }catch(e){}
 /* ---------- Start ---------- */
 renderPick();
 if(ONLY){ setInst(ONLY); showScreen('lib'); renderLib(); maybeHelp(); }
