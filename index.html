@@ -5306,7 +5306,7 @@ $('mixDlg').addEventListener('click',e=>{ if(e.target.id==='mixDlg') closeMix();
 $('latBtn').onclick=openLat; $('latBtn').textContent=Math.round(avLag*1000)+' ms';
 function renderParts(){
   const S=song&&song.secs||[], box=$('partChips'); box.innerHTML=''; partIdx=-2;
-  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length) loop=null; loopUI();
+  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length) loopDrop(); loopUI();
   S.forEach((sc,i)=>{ const b=document.createElement('button'); b.textContent=sc.name; b.dataset.i=i; b.title=sc.name+' – hierhin springen'; b.onclick=()=>jumpPart(i); box.appendChild(b); });
   markPart();
 }
@@ -5337,6 +5337,8 @@ let loop=null; // {i,start,end,pass,ramp,base}
 const RAMP0=0.7, RAMPSTEP=0.1;
 function loopBounds(i){ const S=song.secs; return {start:S[i].start,end:i+1<S.length?S[i+1].start:song.duration}; }
 function loopSpeed(){ return !loop?speed:loop.ramp?loop.base*Math.min(1,RAMP0+RAMPSTEP*loop.pass):loop.base; }
+/* Schleife fällt weg (z. B. das Lied hat keine Teile mehr): normales Tempo zurück */
+function loopDrop(){ if(loop){ speed=loop.base; loop=null; } }
 function loopPct(){ return loop?Math.round(loopSpeed()/loop.base*100):100; }
 /* Tempo mitten im Lauf ändern: alles ab der aktuellen Stelle neu anlegen */
 function setSpeedLive(v){ if(Math.abs(v-speed)<1e-6) return; speed=v; if(playing&&!waiting){ stopScheduled(); resyncFrom(pos); } }
@@ -5357,7 +5359,7 @@ function loopRetarget(k){
 /* Nach dem Neuaufbau (Tempo, Tonart, Muster) passen Anfang und Ende des Teils wieder */
 function loopSync(){
   if(!loop) return;
-  if(!song.secs||!song.secs[loop.i]){ loop=null; loopUI(); return; }
+  if(!song.secs||!song.secs[loop.i]){ loopDrop(); loopUI(); return; }
   Object.assign(loop,loopBounds(loop.i)); loopUI();
 }
 /* Kurz vor dem Ende des Teils: Rücksprung auf den Teilanfang – genau im Takt, ohne Lücke */
