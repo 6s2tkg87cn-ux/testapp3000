@@ -83,6 +83,8 @@ was aufs Blatt soll (A4, auch als PDF sicherbar): Kopf mit Name/Klasse/Datum, Li
 (in der eingestellten Tonart), Akkordfolge ohne Text, Griffbilder für Gitarre und/oder Ukulele, die
 Muster je Teil für Gitarre, Ukulele, Bass, Klavier und Schlagzeug (als Raster mit den Zeichen aus
 der App) und die Arranger-Übersicht „Wer spielt wann?“. Die Auswahl merkt sich das Gerät.
+„PDF teilen“ erzeugt eine PDF-Datei und öffnet am iPhone/iPad das Teilen-Menü (Drucken, In Dateien
+sichern, AirDrop, Mail …); am Computer wird das PDF heruntergeladen. „Drucken“ öffnet das Druckfenster.
 
 **Teilen per QR-Code:** Beim Teilen zeigt die App einen QR-Code (auch groß für den Beamer).
 Schülerinnen und Schüler scannen ihn, wählen ihr Instrument und können sofort loslegen.
@@ -95,7 +97,8 @@ zeigt die Knöpfe (Start/Pause, Teile, Beenden), Esc beendet.
 **Sperrbildschirm am iPhone:** Klingt 30 Sekunden nichts oder wird das Gerät gesperrt, schaltet die
 App den Ton schlafen – dann verschwindet die Wiedergabe-Anzeige im Sperrbildschirm. Beim nächsten
 Tippen ist der Ton sofort wieder da.
-**Smartphone quer:** Bass, Klavier und die anderen Instrumente rücken auf niedrigen Bildschirmen
+**Smartphone:** Hochkant zeigt das Schlagzeug einen Takt pro Raster und den nächsten darunter.
+Quer rücken Bass, Klavier und die anderen Instrumente rücken auf niedrigen Bildschirmen
 enger zusammen; „Muster ändern“ ist dann ein Knopf in der oberen Leiste statt einer eigenen Zeile.
 **Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das
 Bild, stellt man die Verzögerung einmal ein (Regler mit Blink-Test oder automatisch durch Tippen im
