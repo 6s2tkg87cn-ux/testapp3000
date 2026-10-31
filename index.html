@@ -188,7 +188,8 @@ button,input,select{font-family:inherit}
 .prgrp b{font:600 13px var(--font-body);color:var(--muted);margin-bottom:2px}
 .prgrp label{display:flex;align-items:center;gap:10px;min-height:36px;font-size:15px;cursor:pointer}
 .prgrp input{width:20px;height:20px;accent-color:var(--accent);flex:none}
-#prGo:disabled{opacity:.45;cursor:default}
+#prGo:disabled,#prPdf:disabled{opacity:.45;cursor:default}
+#printSheet.pdfmake{display:block!important;position:absolute;left:-12000px;top:0;width:182mm;background:#fff;z-index:-1}
 #printSheet .ps-chart{display:flex;flex-direction:column;gap:2mm}
 #printSheet .ps-crow{display:flex;gap:3mm;align-items:flex-start;break-inside:avoid}
 #printSheet .ps-cn{flex:none;width:28mm;font:700 9pt var(--font-body);text-transform:uppercase;letter-spacing:.04em;padding-top:2mm}
@@ -1046,10 +1047,10 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
 <div class="help" id="printDlg" hidden>
   <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="prTitle">
     <h2 id="prTitle">Exportieren und drucken</h2>
-    <p class="sdesc">Wähle aus, was aufs Blatt soll. Im Druckfenster kannst du es auch als PDF sichern.</p>
+    <p class="sdesc">Wähle aus, was aufs Blatt soll. „PDF teilen“ öffnet das Teilen-Menü (Drucken, Dateien, AirDrop, Mail …), am Computer wird das PDF gespeichert.</p>
     <div class="prgrid" id="prGrid"></div>
     <div class="row"><button class="btn small" id="prAll">Alles</button><button class="btn small" id="prLyr">Nur Liedtext</button></div>
-    <div class="end"><button class="btn" id="prCancel">Abbrechen</button><button class="btn primary" id="prGo">Drucken / PDF</button></div>
+    <div class="end"><button class="btn" id="prCancel">Abbrechen</button><button class="btn" id="prGo">Drucken</button><button class="btn primary" id="prPdf">PDF teilen</button></div>
   </div>
 </div>
 
@@ -2019,8 +2020,10 @@ const PIANO={
       const n=its[j]; if(n.end<tStart) continue;
       const key=n.hand+Math.round(n.start*1000); if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(n);
     }
-    const th=Math.min(L.laneH*0.7,46);
-    for(const grp of groups.values()){
+    const th=Math.min(L.laneH*0.7,46), gl=[...groups.values()], nextX=new Map();
+    // Balken dürfen nicht in den nächsten Anschlag derselben Hand hineinragen (sonst überlappen kurze Noten)
+    { const last={}; for(let k=gl.length-1;k>=0;k--){ const h=gl[k][0].hand; nextX.set(gl[k],last[h]??Infinity); last[h]=tx(gl[k][0].start); } }
+    for(const grp of gl){
       const n0=grp[0], x0=tx(n0.start), x1=tx(Math.max(...grp.map(n=>n.end)));
       const y=n0.hand==='R'?lanes[0].y:lanes[1].y, col=n0.hand==='R'?RHC:LHC;
       const you=isPractice(n0), allHit=grp.every(n=>n.hit), missed=you&&!allHit&&n0.start<pos-WIN;
@@ -2028,13 +2031,15 @@ const PIANO={
       g.globalAlpha=x1<hx?0.35:1;
       g.fillStyle=missed?'rgba(140,150,145,0.4)':rgba(col,you?0.9:0.42);
       if((on||allHit)&&!missed){ g.shadowColor=col; g.shadowBlur=16; }
-      const w=Math.max(th*0.9,x1-x0);
-      rr(x0,y-th/2,w,th,10); g.fill(); g.shadowBlur=0;
+      const w=Math.max(4,Math.min(Math.max(th*0.9,x1-x0),nextX.get(grp)-x0-3));
+      rr(x0,y-th/2,w,th,Math.min(10,w/2)); g.fill(); g.shadowBlur=0;
       if(allHit&&you){ g.fillStyle='rgba(255,255,255,0.3)'; g.fill(); }
       const lab=(grp.length>=3&&n0.label)?n0.label:grp.map(n=>NAMES[mod12(n.midi)]).sort().filter((v,i,a)=>a.indexOf(v)===i).join(' ');
       g.fillStyle=missed?'#e5ece8':T.dark; g.textAlign='left'; g.textBaseline='middle';
       g.font=`700 ${Math.round(Math.min(15,th*0.36))}px ${FD}`;
-      g.save(); g.beginPath(); g.rect(x0,y-th/2,w,th); g.clip(); g.fillText(lab,x0+8,y+1); g.restore();
+      // Name nur, wenn er in den Balken passt (Einzeltöne notfalls nur der tiefste Ton)
+      let lt=lab; if(g.measureText(lt).width+10>w&&!(grp.length>=3&&n0.label)) lt=NAMES[mod12(Math.min(...grp.map(n=>n.midi)))];
+      if(g.measureText(lt).width+8<=w){ g.save(); g.beginPath(); g.rect(x0,y-th/2,w,th); g.clip(); g.fillText(lt,x0+(w<g.measureText(lt).width+16?4:8),y+1); g.restore(); }
       g.globalAlpha=1;
     }
     drawGutter(); lanes.forEach(l=>laneBadge(20,l.y,l.col,l.t,Math.max(8,Math.min(13,L.laneH*0.42))));
@@ -4107,51 +4112,61 @@ const DRUMS={
     const L=GEO, short=H<420;
     L.kitH=Math.round(Math.max(short?120:150,Math.min(300,H*0.4))); L.kitTop=H-L.kitH;
     hwTop=36; hwH=L.kitTop-hwTop-10; L.laneH=hwH/5;
-    hx=Math.max(64,Math.min(120,W*0.13));
+    hx=Math.max(44,Math.min(120,W*0.13));
+    // Schmal (Smartphone hochkant): ein Takt pro Raster, die Vorschau steht darunter statt daneben
+    L.narrow=W-hx<440; L.nb=L.narrow?1:2;
+    L.mainH=L.narrow?Math.round(hwH*0.6):hwH;
     // Set von vorn: Hi-Hat links, Snare, Bassdrum in der Mitte, Ride rechts, Crash oben links
-    const cx=W/2, kb=L.kitTop, kh=L.kitH, u=Math.min(W/9,kh*0.42);
+    const cx=W/2, kb=L.kitTop, kh=L.kitH, u=Math.min(W/(L.narrow?8:9),kh*0.42), nk=L.narrow;
     L.kit=[
       {lane:0,x:cx-u*1.55,y:kb+kh*0.22,rx:u*0.95,ry:u*0.2,cym:true},
-      {lane:1,x:cx+u*2.1,y:kb+kh*0.33,rx:u*1.1,ry:u*0.24,cym:true},
-      {lane:2,x:cx-u*2.75,y:kb+kh*0.47,rx:u*0.8,ry:u*0.18,cym:true},
-      {lane:3,x:cx-u*1.4,y:kb+kh*0.7,rx:u*0.78,ry:u*0.32},
-      {lane:4,x:cx+u*0.35,y:kb+kh*0.66,rx:u*0.95,ry:u*0.95,kick:true}];
+      {lane:1,x:cx+u*2.15,y:kb+kh*0.33,rx:u*(nk?1:1.1),ry:u*0.24,cym:true},
+      {lane:2,x:cx-u*(nk?2.95:2.75),y:kb+kh*0.47,rx:u*(nk?0.72:0.8),ry:u*0.18,cym:true},
+      {lane:3,x:cx-u*(nk?1.6:1.4),y:kb+kh*0.7,rx:u*(nk?0.66:0.78),ry:u*0.3},
+      {lane:4,x:cx+u*(nk?0.6:0.35),y:kb+kh*0.66,rx:u*(nk?0.78:0.95),ry:u*0.95,kick:true}];
   },
-  laneY(l){ return hwTop+l*GEO.laneH+GEO.laneH/2; },
+  laneY(l){ const h=GEO.mainH||hwH; return hwTop+(l+0.5)*h/5; },
   fxPos(q){ const m=q.midi!=null?this.normNote(q.midi):null, l=m!=null?DLANE.indexOf(m):-1; const P=l>=0&&GEO.kit&&GEO.kit[l]; return P?{x:P.x,y:P.y,col:DCOL[l]}:null; },
   /* Ein Raster mit zwei Takten wie im Drumcomputer: Die Schläge stehen still, ein Lauflicht wandert durch.
      Ändert sich das Muster im nächsten Abschnitt, erscheint rechts rechtzeitig eine Vorschau. */
   drawPage(a,x,y,w,h,main){
-    const T=TH.canvas, its=song.items, bar=song.bar||2, win=bar*2, n=gv&&INST.meter?INST.meter(gv):8, st=bar/n, rh=h/5, r0=Math.max(6,Math.min(rh*0.34,16)*(main?1:0.75));
+    const nb=GEO.nb||2, T=TH.canvas, its=song.items, bar=song.bar||2, win=bar*nb, n=gv&&INST.meter?INST.meter(gv):8, st=bar/n, rh=h/5, cw=w/(nb*n), r0=Math.max(4,Math.min(rh*0.34,16,cw*0.36)*(main?1:0.8));
     const X=t=>x+(t-a)/win*w;
     for(let l=0;l<5;l++){ g.fillStyle=rgba(DCOL[l],l%2?0.04:0.07); g.fillRect(x,y+l*rh,w,rh); }
-    for(let i=0;i<=2*n;i++){ const xx=X(a+i*st), bl=i%n===0, beat=i%(gv&&gv.compound?3:2)===0; g.fillStyle=bl?'rgba(255,255,255,0.35)':beat?'rgba(255,255,255,0.13)':'rgba(255,255,255,0.05)'; g.fillRect(xx-(bl?1:0.5),y,bl?2:1,h); }
+    for(let i=0;i<=nb*n;i++){ const xx=X(a+i*st), bl=i%n===0, beat=i%(gv&&gv.compound?3:2)===0; g.fillStyle=bl?'rgba(255,255,255,0.35)':beat?'rgba(255,255,255,0.13)':'rgba(255,255,255,0.05)'; g.fillRect(xx-(bl?1:0.5),y,bl?2:1,h); }
     for(const f of song.fills||[]){ if(f.end<=a||f.start>=a+win) continue; const x0=X(Math.max(a,f.start)), x1=X(Math.min(a+win,f.end));
       g.fillStyle=rgba(T.accent,0.16); g.fillRect(x0,y,x1-x0,h); g.fillStyle=T.accent; g.fillRect(x0,y,x1-x0,3); if(main){ g.font=`700 11px ${FB}`; g.textAlign='left'; g.textBaseline='top'; g.fillText('FILL-IN',x0+4,y+5); } }
-    if(main&&pos>=a&&pos<a+win){ const k=Math.floor((pos-a)/st+1e-6), cx=X(a+k*st); g.fillStyle='rgba(255,255,255,0.10)'; g.fillRect(cx,y,w/(2*n),h); g.fillStyle=T.accent; g.fillRect(X(pos)-1.5,y-4,3,h+8); }
+    if(main&&pos>=a&&pos<a+win){ const k=Math.floor((pos-a)/st+1e-6), cx=X(a+k*st); g.fillStyle='rgba(255,255,255,0.10)'; g.fillRect(cx,y,cw,h); g.fillStyle=T.accent; g.fillRect(X(pos)-1.5,y-4,3,h+8); }
     for(let j=lowerBound(its,a-1e-6,q=>q.start);j<its.length&&its[j].start<a+win-1e-6;j++){
-      const q=its[j], xx=X(q.start)+w/(4*n), yy=y+q.lane*rh+rh/2, you=isPractice(q), missed=main&&you&&!q.hit&&q.start<pos-WIN, past=main&&q.start<pos-0.02;
+      const q=its[j], xx=X(q.start)+cw/2, yy=y+q.lane*rh+rh/2, you=isPractice(q), missed=main&&you&&!q.hit&&q.start<pos-WIN, past=main&&q.start<pos-0.02;
       const col=missed?'#8a8296':DCOL[q.lane]; g.globalAlpha=main?(past&&!q.hit?0.55:1):0.85;
       const now=main&&q.start<=pos+0.02&&q.start>pos-0.12; if((now||q.hit)&&!missed){ g.shadowColor=col; g.shadowBlur=16; }
       drumSym(q.k,xx,yy,r0*(q.vel<0.3?0.62:1)*(now?1.25:1),col,T.dark); g.shadowBlur=0; g.globalAlpha=1;
     }
   },
   draw(){
-    const L=GEO, T=TH.canvas, its=song.items, bar=song.bar||2, win=bar*2, p0=Math.max(0,pos), w0=Math.floor(p0/win+1e-9)*win, next=[1e9,1e9,1e9,1e9,1e9];
+    const L=GEO, T=TH.canvas, its=song.items, bar=song.bar||2, nb=L.nb||2, win=bar*nb, p0=Math.max(0,pos), w0=Math.floor(p0/win+1e-9)*win, next=[1e9,1e9,1e9,1e9,1e9];
     for(let j=lowerBound(its,pos-0.02,q=>q.start);j<its.length&&its[j].start<pos+1;j++){ const q=its[j]; if(q.start<next[q.lane]) next[q.lane]=q.start; }
     const sig=a=>{ let r=''; for(let j=lowerBound(its,a-1e-6,q=>q.start);j<its.length&&its[j].start<a+win-1e-6;j++) r+=its[j].k+Math.round((its[j].start-a)*50)+','; return r; };
-    const nw=w0+win, showNext=nw<song.duration-1e-6&&(pos>=w0+win*0.5||pos<0)&&sig(nw)!==sig(w0);
-    const gx=hx, gw=(showNext?(W-hx)*0.6:(W-hx))-12;
+    const nw=w0+win, differs=nw<song.duration-1e-6&&sig(nw)!==sig(w0), showNext=differs&&(pos>=w0+win*0.5||pos<0);
+    const gx=hx, gw=(showNext&&!L.narrow?(W-hx)*0.6:(W-hx))-12, mh=L.mainH||hwH;
     // Kopfzeile: Takte, Teil, Vorschau
     const secAt=t=>{ let nm=''; for(const sc of song.secs||[]) if(sc.start<=t+1e-6) nm=sc.name; return nm; }, b0=Math.round(w0/bar)+1;
     g.font=`600 12px ${FB}`; g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=T.muted;
-    g.fillText(`Takt ${b0}–${b0+1}`+(secAt(w0+0.01)?' · '+secAt(w0+0.01):''),gx,hwTop-12);
-    this.drawPage(w0,gx,hwTop,gw,hwH,true);
-    if(showNext){ const px=gx+gw+18, pw=W-px-8, ns=(song.secs||[]).find(sc=>sc.start>=nw-1e-6&&sc.start<nw+win-1e-6), nf=(song.fills||[]).some(f=>f.start<nw+win&&f.end>nw);
+    g.fillText((nb>1?`Takt ${b0}–${b0+1}`:`Takt ${b0}`)+(secAt(w0+0.01)?' · '+secAt(w0+0.01):''),gx,hwTop-12);
+    this.drawPage(w0,gx,hwTop,gw,mh,true);
+    if(L.narrow){
+      // Darunter immer der nächste Takt zum Vorauslesen – hervorgehoben, wenn sich etwas ändert
+      if(nw<song.duration-1e-6){ const py=hwTop+mh+26, ph=hwH-mh-26, ns=(song.secs||[]).find(sc=>sc.start>=nw-1e-6&&sc.start<nw+win-1e-6), nf=(song.fills||[]).some(f=>f.start<nw+win&&f.end>nw);
+        g.font=`700 12px ${FB}`; g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=differs?T.accent:T.muted;
+        g.fillText(differs?'Gleich: '+(ns?ns.name:nf?'Fill-in':'neues Muster'):`Danach: Takt ${b0+1}`,gx,py-12);
+        if(differs){ g.strokeStyle=rgba(T.accent,0.6); g.lineWidth=1.5; rr(gx-4,py-2,gw+8,ph+4,10); g.stroke(); }
+        g.globalAlpha=differs?1:0.6; this.drawPage(nw,gx,py,gw,ph,false); g.globalAlpha=1; }
+    } else if(showNext){ const px=gx+gw+18, pw=W-px-8, ns=(song.secs||[]).find(sc=>sc.start>=nw-1e-6&&sc.start<nw+win-1e-6), nf=(song.fills||[]).some(f=>f.start<nw+win&&f.end>nw);
       g.fillStyle=T.accent; g.font=`700 12px ${FB}`; g.textAlign='left'; g.fillText('Gleich: '+(ns?ns.name:nf?'Fill-in':'neues Muster'),px,hwTop-12);
       g.strokeStyle=rgba(T.accent,0.6); g.lineWidth=1.5; rr(px-4,hwTop-2,pw+8,hwH+4,10); g.stroke();
-      this.drawPage(nw,px,hwTop,pw,hwH,false); }
-    for(let l=0;l<5;l++){ const y=this.laneY(l); drumSym(['crash','ride','hat','snare','kick'][l],20,y,Math.min(11,L.laneH*0.32),DCOL[l],T.dark); g.font=`600 10px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='middle'; if(hx>90) g.fillText(DNAME[l],34,y); }
+      this.drawPage(nw,px,hwTop,pw,mh,false); }
+    for(let l=0;l<5;l++){ const y=this.laneY(l); drumSym(['crash','ride','hat','snare','kick'][l],hx<60?16:20,y,Math.min(11,(L.mainH||hwH)/5*0.32),DCOL[l],T.dark); g.font=`600 10px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='middle'; if(hx>90) g.fillText(DNAME[l],34,y); }
     // Schlagzeug-Set
     const now=ac?ac.currentTime:0, hitAt=L.hitAt||{};
     g.fillStyle='rgba(0,0,0,0.25)'; g.fillRect(0,L.kitTop,W,L.kitH);
@@ -5745,7 +5760,7 @@ const LE_HELP=[
   ['Tempo, Takt, Tonart','Stell das Tempo ein oder tippe „Tempo antippen“ im Takt des Liedes. „Tonart verschieben“ setzt alle Akkorde höher oder tiefer – z. B. in eine leichtere Tonart.'],
   ['Takte','Im Schritt „Takte“ steht jeder Akkord mit seiner Länge. Mit − und + änderst du sie, mit × entfernst du einen Akkord (↺ holt ihn zurück). „Alle 1 Takt“ und „Alle 2 Takte“ setzen alle auf einmal.'],
   ['Übertragen','Hast du eine Strophe oder einen Refrain fertig eingestellt, tippe auf „Auf alle Strophen übertragen“ bzw. „Auf alle Refrains übertragen“. Die anderen Abschnitte übernehmen Längen und entfernte Akkorde.'],
-  ['Exportieren','„Export“ macht ein Blatt für die Klasse. Du wählst aus, was darauf steht: Liedtext mit Akkorden, Akkordfolge ohne Text, Griffbilder für Gitarre oder Ukulele, die Muster jedes Instruments je Teil und die Übersicht, wer wann spielt. Im Druckfenster kannst du es auch als PDF sichern.']
+  ['Exportieren','„Export“ macht ein Blatt für die Klasse. Du wählst aus, was darauf steht: Liedtext mit Akkorden, Akkordfolge ohne Text, Griffbilder für Gitarre oder Ukulele, die Muster jedes Instruments je Teil und die Übersicht, wer wann spielt. „PDF teilen“ öffnet am iPhone das Teilen-Menü – zum Drucken, Sichern oder Verschicken.']
 ];
 document.querySelectorAll('#leTabs button').forEach(b=>b.onclick=()=>leTab(b.dataset.v));
 let leTimer=0;
@@ -5939,21 +5954,124 @@ function openPrint(S){
   $('printDlg').hidden=false;
 }
 function prRead(){ const o={}; $('prGrid').querySelectorAll('input').forEach(x=>o[x.dataset.k]=x.checked); return o; }
-function prUpd(){ const o=prRead(); $('prGo').disabled=!Object.entries(o).some(([k,v])=>v&&k!=='head'); }
+function prUpd(){ const o=prRead(); $('prGo').disabled=$('prPdf').disabled=!Object.entries(o).some(([k,v])=>v&&k!=='head'); }
 function prSet(f){ $('prGrid').querySelectorAll('input').forEach(x=>x.checked=f(x.dataset.k)); prUpd(); }
 $('prAll').onclick=()=>prSet(()=>true);
 $('prLyr').onclick=()=>prSet(k=>k==='head'||k==='lyrics');
 $('prCancel').onclick=()=>{ $('printDlg').hidden=true; };
 $('printDlg').addEventListener('click',e=>{ if(e.target.id==='printDlg') $('printDlg').hidden=true; });
-$('prGo').onclick=()=>{ const o=prRead(); try{ localStorage.setItem(PRINT_KEY,JSON.stringify(o)); }catch(e){} $('printDlg').hidden=true; printLied(printFor,o); };
+function prTake(){ const o=prRead(); try{ localStorage.setItem(PRINT_KEY,JSON.stringify(o)); }catch(e){} $('printDlg').hidden=true; return o; }
+$('prGo').onclick=()=>printLied(printFor,prTake());
+$('prPdf').onclick=()=>sharePdf(printFor,prTake());
 function printLied(S,opt){
   if(!S) return;
   $('printSheet').innerHTML=printHTML(S,opt);
   document.body.classList.add('printing');
   const done=()=>{ document.body.classList.remove('printing'); removeEventListener('afterprint',done); };
   addEventListener('afterprint',done);
-  setTimeout(()=>{ try{ window.print(); }catch(e){ done(); } },80);
+  // Direkt im Tipp aufrufen – iPhone und iPad drucken sonst nicht
+  try{ window.print(); }catch(e){ done(); }
 }
+
+/* ---------- Export als PDF-Datei (fürs Teilen-Menü am iPhone/iPad, sonst zum Speichern) ----------
+   Das Blatt wird wie beim Drucken als HTML aufgebaut, unsichtbar in A4-Breite gesetzt und dann Element für
+   Element auf A4-Seiten gemalt (150 dpi). Seitenumbrüche nur dort, wo kein Block zerschnitten wird. */
+const PDF_DPI=150, MM=96/25.4, PG={w:210,h:297,ml:14,mt:13,mb:15};
+function sheetPages(root){
+  const R0=root.getBoundingClientRect(), top=R0.top, ph=(PG.h-PG.mt-PG.mb)*MM, endY=R0.height;
+  const avoid=[...root.querySelectorAll('.ps-part,.ps-line,figure,.ps-groove,.ps-crow,tr,h2,.ps-legend,.ps-foot,.ps-who,h1,.ps-meta')].map(e=>{ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top,e.tagName==='H2']; });
+  const forced=[...root.querySelectorAll('.ps-page2')].map(e=>e.getBoundingClientRect().top-top);
+  const cand=[...new Set(avoid.map(a=>a[0]).concat(forced))].sort((a,b)=>a-b);
+  const ok=y=>!avoid.some(([a,b])=>a<y-0.5&&b>y+0.5)&&!avoid.some(([a,b,hd])=>hd&&b<=y+0.5&&b>y-30);
+  const pages=[]; let y0=0;
+  while(y0<endY-1){
+    const f=forced.find(y=>y>y0+1&&y<=y0+ph); let y1;
+    if(f!=null) y1=f; else if(y0+ph>=endY) y1=endY;
+    else { y1=null; for(const c of cand) if(c>y0+20&&c<=y0+ph&&ok(c)) y1=c; if(y1==null) y1=y0+ph; }
+    pages.push([y0,y1]); y0=y1;
+  }
+  return pages;
+}
+function paintSheet(root,y0,y1){
+  const k=PDF_DPI/96, cv=document.createElement('canvas'); cv.width=Math.round(PG.w*MM*k); cv.height=Math.round(PG.h*MM*k);
+  const x=cv.getContext('2d'), R0=root.getBoundingClientRect();
+  x.fillStyle='#fff'; x.fillRect(0,0,cv.width,cv.height);
+  x.setTransform(k,0,0,k,k*(PG.ml*MM-R0.left),k*(PG.mt*MM-R0.top-y0));
+  const vis=r=>r.bottom>R0.top+y0-0.5&&r.top<R0.top+y1+0.5;
+  const inside=r=>r.top>=R0.top+y0-0.5&&r.bottom<=R0.top+y1+0.5;
+  // Hintergründe und Linien
+  for(const el of root.querySelectorAll('*')){
+    if(el.closest('svg')) continue;
+    const r=el.getBoundingClientRect(); if(!r.width||!vis(r)||!inside(r)) continue;
+    const cs=getComputedStyle(el);
+    if(cs.backgroundImage!=='none'){ x.fillStyle='#f2f2f2'; x.fillRect(r.left,r.top,r.width,r.height); }
+    else if(cs.backgroundColor&&!/rgba\(.*,\s*0\)|transparent/.test(cs.backgroundColor)&&el!==root){ x.fillStyle=cs.backgroundColor; x.fillRect(r.left,r.top,r.width,r.height); }
+    for(const [sd,x0,yA,x1,yB] of [['Top',r.left,r.top,r.right,r.top],['Bottom',r.left,r.bottom,r.right,r.bottom],['Left',r.left,r.top,r.left,r.bottom],['Right',r.right,r.top,r.right,r.bottom]]){
+      const bw=parseFloat(cs['border'+sd+'Width']); if(!bw||cs['border'+sd+'Style']==='none') continue;
+      x.strokeStyle=cs['border'+sd+'Color']; x.lineWidth=bw; const o=(sd==='Top'||sd==='Left'?1:-1)*bw/2;
+      x.beginPath(); if(sd==='Top'||sd==='Bottom'){ x.moveTo(x0,yA+o); x.lineTo(x1,yB+o); } else { x.moveTo(x0+o,yA); x.lineTo(x1+o,yB); } x.stroke(); }
+  }
+  // Griffbilder: die wenigen SVG-Formen selbst zeichnen
+  for(const sv of root.querySelectorAll('svg')){
+    const r=sv.getBoundingClientRect(); if(!vis(r)||!inside(r)) continue;
+    const vb=sv.viewBox.baseVal, sx=r.width/vb.width, sy=r.height/vb.height;
+    x.save(); x.translate(r.left,r.top); x.scale(sx,sy);
+    for(const e of sv.children){ const A=n=>parseFloat(e.getAttribute(n))||0, fill=e.getAttribute('fill'), st=e.getAttribute('stroke'), sw=A('stroke-width')||1;
+      const paint=()=>{ if(fill&&fill!=='none'){ x.fillStyle=fill; x.fill(); } if(st){ x.strokeStyle=st; x.lineWidth=sw; x.stroke(); } };
+      if(e.tagName==='line'){ x.beginPath(); x.moveTo(A('x1'),A('y1')); x.lineTo(A('x2'),A('y2')); x.strokeStyle=st||'#000'; x.lineWidth=sw; x.stroke(); }
+      else if(e.tagName==='rect'){ x.beginPath(); const rx=A('rx'); if(rx&&x.roundRect) x.roundRect(A('x'),A('y'),A('width'),A('height'),rx); else x.rect(A('x'),A('y'),A('width'),A('height')); if(!fill&&!st){ x.fillStyle='#000'; x.fill(); } else paint(); }
+      else if(e.tagName==='circle'){ x.beginPath(); x.arc(A('cx'),A('cy'),A('r'),0,Math.PI*2); paint(); }
+      else if(e.tagName==='path'){ const p2=new Path2D(e.getAttribute('d')); x.strokeStyle=st||'#000'; x.lineWidth=sw; x.stroke(p2); }
+      else if(e.tagName==='text'){ x.font=`${e.getAttribute('font-weight')||400} ${A('font-size')}px ${FB}`; x.fillStyle=fill||'#000'; const an=e.getAttribute('text-anchor'); x.textAlign=an==='middle'?'center':an==='end'?'right':'left'; x.textBaseline='alphabetic'; x.fillText(e.textContent,A('x'),A('y')); }
+    }
+    x.restore();
+  }
+  // Text: Zeichen für Zeichen genau dort, wo der Browser es gesetzt hat
+  const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT), rg=document.createRange();
+  for(let n=tw.nextNode();n;n=tw.nextNode()){
+    const el=n.parentElement; if(!el||el.closest('svg')||!n.data.trim()) continue;
+    const cs=getComputedStyle(el); x.font=`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; x.fillStyle=cs.color; x.textBaseline='middle'; x.textAlign='left';
+    const up=cs.textTransform==='uppercase', d=n.data;
+    for(let i=0;i<d.length;i++){ const ch=d[i]; if(/\s/.test(ch)) continue;
+      rg.setStart(n,i); rg.setEnd(n,i+1); const r=rg.getBoundingClientRect(), cy=(r.top+r.bottom)/2; if(!r.width||cy<R0.top+y0||cy>=R0.top+y1) continue;
+      x.fillText(up?ch.toUpperCase():ch,r.left,(r.top+r.bottom)/2); }
+  }
+  return cv;
+}
+/* Kleinste PDF-Datei: jede Seite ein JPEG-Bild in A4 */
+function pdfFromJpegs(imgs){
+  const enc=new TextEncoder(), parts=[], offs=[]; let len=0;
+  const add=b=>{ const u=typeof b==='string'?enc.encode(b):b; parts.push(u); len+=u.length; };
+  const obj=(i,body)=>{ offs[i]=len; add(`${i} 0 obj\n`); body(); add('\nendobj\n'); };
+  const W=595.28, H=841.89, n=imgs.length;
+  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  obj(1,()=>add('<</Type/Catalog/Pages 2 0 R>>'));
+  obj(2,()=>add(`<</Type/Pages/Count ${n}/Kids[${imgs.map((_,i)=>`${3+i*3} 0 R`).join(' ')}]>>`));
+  imgs.forEach((im,i)=>{ const pi=3+i*3, ci=pi+1, ii=pi+2, cmd=`q ${W} 0 0 ${H} 0 0 cm /I Do Q`;
+    obj(pi,()=>add(`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${H}]/Resources<</XObject<</I ${ii} 0 R>>>>/Contents ${ci} 0 R>>`));
+    obj(ci,()=>{ add(`<</Length ${cmd.length}>>stream\n${cmd}\nendstream`); });
+    obj(ii,()=>{ add(`<</Type/XObject/Subtype/Image/Width ${im.w}/Height ${im.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${im.data.length}>>stream\n`); add(im.data); add('\nendstream'); });
+  });
+  const xref=len, cnt=3+n*3;
+  add(`xref\n0 ${cnt}\n0000000000 65535 f \n`+Array.from({length:cnt-1},(_,i)=>String(offs[i+1]).padStart(10,'0')+' 00000 n \n').join(''));
+  add(`trailer\n<</Size ${cnt}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+function sheetPdf(S,opt){
+  const root=$('printSheet'); root.innerHTML=printHTML(S,opt); root.querySelectorAll('.ps-cols').forEach(e=>e.classList.remove('ps-cols'));
+  root.classList.add('pdfmake');
+  try{
+    const pages=sheetPages(root).slice(0,30), imgs=pages.map(([a,b])=>{ const cv=paintSheet(root,a,b), u=cv.toDataURL('image/jpeg',0.88), bin=atob(u.split(',')[1]), d=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) d[i]=bin.charCodeAt(i); return {w:cv.width,h:cv.height,data:d}; });
+    return pdfFromJpegs(imgs);
+  } finally { root.classList.remove('pdfmake'); }
+}
+function sharePdf(S,opt){
+  let blob; try{ blob=sheetPdf(S,opt); }catch(e){ notice('Das PDF konnte nicht erstellt werden. Nimm „Drucken“.'); return; }
+  const name=(S.name||'Lied').replace(/[\\/:*?"<>|]+/g,'').slice(0,60)+'.pdf', file=new File([blob],name,{type:'application/pdf'});
+  if(navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){ navigator.share({files:[file],title:S.name}).catch(()=>{}); return; }
+  const a=document.createElement('a'), u=URL.createObjectURL(blob); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000);
+}
+
 $('lePrint').onclick=()=>openPrint(LE.S);
 $('sharePrint').onclick=()=>{ const S=shareLied; $('shareDlg').hidden=true; openPrint(S); };
 
