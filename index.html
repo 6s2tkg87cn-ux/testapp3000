@@ -136,6 +136,13 @@ button,input,select{font-family:inherit}
   #player:not(.building) #bQuick{opacity:.95}
 }
 #bQuick svg{width:14px;height:14px;fill:currentColor}
+/* Wenig Höhe (Smartphone quer, iPad quer): „Muster ändern“ als Knopf in der oberen Leiste statt eigener Zeile */
+#bTop{display:none}
+#bTop[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+@media (max-height:520px),(min-width:700px) and (max-height:699px){
+  #bTop:not([hidden]){display:inline-flex}
+  #player .builder[data-open="false"]{display:none}
+}
 #bQuick[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
 .mixlat{margin-bottom:6px}
 .parts{flex:none;display:flex;align-items:center;gap:8px;min-width:0}
@@ -430,6 +437,8 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
   .screen{padding-block:6px}
   #player{gap:6px}
   .ptop .btn{min-height:38px}
+  #player .ptop .btn .bt{display:none} #player .ptop .btn .q{display:inline}
+  #player .ptop .btn{width:42px;padding:0;justify-content:center}
   #pLevel{display:none}
   .ptitle h2{font-size:15px}
   .round{width:38px;height:38px}
@@ -469,8 +478,6 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
 .recvbtn{appearance:none;border:1px solid var(--border);border-radius:16px;background:var(--ibg);color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px 12px;font:inherit}
 .recvbtn .art svg{width:100%;max-width:120px;height:56px}
 .recvbtn b{font:700 15px var(--font-display);color:var(--iac);text-align:center;hyphens:manual;overflow-wrap:anywhere;max-width:100%}
-.bopt{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px}
-.bopt span{color:var(--muted);font-size:14px;line-height:1.45}
 .mixrows{display:flex;flex-direction:column;gap:6px;margin:14px 0 6px}
 .mixrow{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 56px;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--border);border-radius:12px}
 .mixrow span{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -493,9 +500,6 @@ body.present #player>*:not(#stage){display:none!important}
 body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0;z-index:30}
 .presbar{position:fixed;right:12px;bottom:12px;z-index:50;display:flex;gap:8px}
 .presbar .btn{background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.beamerhint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:45;max-width:min(560px,90vw);display:flex;flex-direction:column;gap:8px;text-align:center;padding:22px;border-radius:18px;background:var(--bg-2);border:1px solid var(--border)}
-.beamerhint b{font:700 22px var(--font-display)}
-.beamerhint span{color:var(--muted);line-height:1.5}
 /* ---------- Lied-Editor ---------- */
 #liedEd{display:flex;flex-direction:column;gap:10px;overflow:hidden}
 #liedEd>.ptop,#liedEd>.letabs{flex:none}
@@ -686,6 +690,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <button class="btn" id="presentBtn" aria-label="Vollbild"><svg viewBox="0 0 16 16"><path d="M1.5 1.5h5v1.6H3.1v3.4H1.5zm8 0h5v5h-1.6V3.1H9.5zM1.5 9.5h1.6v3.4h3.4v1.6h-5zm11.4 0h1.6v5h-5v-1.6h3.4z"/></svg><span class="bt">Vollbild</span></button>
     <button class="btn" id="pShare" hidden aria-label="Teilen"><svg viewBox="0 0 16 16"><path d="M8 1l3.5 3.5-1.1 1.1L8.8 4v6.5H7.2V4L5.6 5.6 4.5 4.5zM2.5 8h1.6v5.4h7.8V8h1.6v7h-11z"/></svg><span class="bt">Teilen</span></button>
     <button class="btn" id="editMel" hidden aria-label="Bearbeiten"><svg viewBox="0 0 16 16"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg><span class="bt">Bearbeiten</span></button>
+    <button class="btn" id="bTop" hidden aria-expanded="false" aria-label="Muster ändern"><svg viewBox="0 0 16 16"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg><span class="bt">Muster</span></button>
     <button class="btn" id="setToggle" aria-expanded="false" aria-label="Einstellungen"><svg viewBox="0 0 16 16"><path d="M2 3.5h7.2a2 2 0 013.6 0H14v1.5h-1.2a2 2 0 01-3.6 0H2zm0 7.5h1.2a2 2 0 013.6 0H14v1.5H6.8a2 2 0 01-3.6 0H2z"/></svg><span class="bt">Einstellungen</span></button>
     <button class="btn" id="helpBtn2" aria-label="So geht's"><span class="q" aria-hidden="true">?</span><span class="bt">So geht's</span></button>
   </div>
@@ -725,7 +730,6 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     </div>
     <div class="group" id="bQuickGroup" hidden><span class="lbl">Muster</span><button class="btn small" id="bQuick" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg><span id="bQuickT">Muster</span></button></div>
     <div class="group" id="mixGroup"><span class="lbl">Lautstärke</span><button class="btn small" id="mixBtn" title="Mischpult" aria-label="Mischpult"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h1.6v6.2a2 2 0 010 3.6v3.2H3v-3.2a2 2 0 010-3.6zM7.2 1.5h1.6v2.2a2 2 0 010 3.6v7.2H7.2V7.3a2 2 0 010-3.6zM11.4 1.5H13v8.2a2 2 0 010 3.6v1.2h-1.6v-1.2a2 2 0 010-3.6z"/></svg>Mischpult</button></div>
-    <div class="group" id="fontGroup" hidden><span class="lbl">Schrift</span><div class="seg" id="fontSeg"><button data-v="1" aria-pressed="true">Normal</button><button data-v="1.4" aria-pressed="false">Groß</button></div></div>
     <div class="group">
       <span class="lbl" id="micGroupLbl">Echtes Instrument</span>
       <div class="row">
@@ -961,17 +965,6 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   </div>
 </div>
 
-<div class="help" id="beamerDlg" hidden>
-  <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="beamerTitle">
-    <h2 id="beamerTitle">Auf dem Beamer zeigen</h2>
-    <div class="bopt" id="beamerWinBtnBox"><b>Ganzer Beamer, eigenes Bild</b><span>Der Beamer ist ein zweiter Bildschirm – am Laptop oder PC, oder am iPad mit Kabel (USB-C auf HDMI, Bildschirm „Erweitern“; geht bei iPads mit M-Chip). Das Beamer-Fenster nutzt die ganze Fläche des Beamers und läuft synchron mit, die Knöpfe bleiben auf deinem Gerät. Schieb das Fenster auf den Beamer (am iPad: den neuen Tab als eigenes Fenster öffnen und „Auf Display bewegen“).</span><button class="btn primary" id="beamerWinBtn">Beamer-Fenster öffnen</button></div>
-    <div class="bopt"><b>Vollbild auf diesem Gerät</b><span>Text und Akkorde ohne Knöpfe – für AirPlay. AirPlay spiegelt aber nur den Bildschirm: Der Beamer zeigt das Bild im Format des iPads, meist mit Rändern. Tippen startet und pausiert, „Beenden“ oder Esc schließt.</span><button class="btn" id="beamerFull">Vollbild starten</button></div>
-    <div class="bopt"><b>Ton kommt später als das Bild?</b><span>Über AirPlay, Bluetooth oder die Lautsprecher am Beamer ist das üblich. Stell die Verzögerung einmal ein – dann wartet das Bild auf den Ton.</span><button class="btn" id="beamerLat">Ton-Verzögerung einstellen</button></div>
-    <p class="lenote">Warum nicht einfach über AirPlay? Ein eigenes Bild nur für den Beamer – wie bei Keynote – dürfen über AirPlay nur Apps aus dem App Store senden. Webseiten in Safari kann das iPad dort nur spiegeln.</p>
-    <div class="end"><button class="btn" id="beamerCancel">Abbrechen</button></div>
-  </div>
-</div>
-
 <div class="help" id="mixDlg" hidden>
   <div class="hcard" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
     <h2 id="mixTitle">Mischpult</h2>
@@ -995,7 +988,6 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
 </div>
 
 <div class="presbar" id="presBar" hidden><button class="btn" id="presPrev" hidden aria-label="Teil zurück">◀ Teil</button><button class="btn" id="presNext" hidden aria-label="Nächster Teil">Teil ▶</button><button class="btn" id="presPlay">Start/Pause</button><button class="btn" id="presX">Beenden</button></div>
-<div class="beamerhint" id="beamerHint" hidden><b>Beamer-Fenster</b><span>Zieh dieses Fenster auf den Beamer und tippe auf „Vollbild“. Sobald du im Hauptfenster ein Lied öffnest, erscheint es hier.</span></div>
 
 <script>
 (()=>{
@@ -1668,8 +1660,10 @@ const BASS={
   yin:{N:4096,Wn:1600,fmin:36,fmax:700,lo:26,hi:72,tol:true,every:2},
   layout(){
     const L=GEO;
-    L.fbH=Math.max(116,Math.min(190,H*0.38)); L.fbTop=H-L.fbH-22;
-    hwTop=34+secRowH(); hwH=L.fbTop-hwTop-18; L.laneH=hwH/4;
+    // Niedrige Bühne (Smartphone quer): kleineres Griffbrett, damit die vier Bahnen lesbar bleiben
+    const sh=H<300; L.short=sh;
+    L.fbH=sh?Math.max(68,Math.min(110,H*0.4)):Math.max(116,Math.min(190,H*0.38)); L.fbLab=sh?14:22; L.fbTop=H-L.fbH-L.fbLab;
+    hwTop=(sh?30:34)+secRowH(); hwH=L.fbTop-hwTop-(sh?8:18); L.laneH=hwH/4;
     hx=Math.max(54,Math.min(110,W*0.12));
     L.nutX=Math.max(40,Math.min(64,W*0.07)); L.fw=(W-L.nutX-12)/12;
   },
@@ -1691,7 +1685,7 @@ const BASS={
       g.fillStyle=rgba(BCOL[s],0.35); g.fillRect(0,y-0.5,W,1+s*0.6);
     }
     const its=song.items, tEnd=pos+(W-hx)/pps, tStart=pos-hx/pps, active=[];
-    const bh=Math.min(L.laneH*0.66,34);
+    const bh=Math.min(L.laneH*(L.short?0.86:0.66),34);
     for(let j=lowerBound(its,tStart-song.maxDur,n=>n.start);j<its.length&&its[j].start<tEnd;j++){
       const n=its[j]; if(n.end<tStart) continue;
       const x0=tx(n.start), x1=tx(n.end), y=this.laneY(n.str);
@@ -1706,7 +1700,7 @@ const BASS={
       g.fillText(String(n.fret),x0+bh/2,y+1);
       g.globalAlpha=1;
     }
-    drawGutter(); for(let s=0;s<4;s++) laneBadge(20,this.laneY(s),BCOL[s],BSN[s]);
+    drawGutter(); for(let s=0;s<4;s++) laneBadge(20,this.laneY(s),BCOL[s],BSN[s],Math.max(7,Math.min(13,L.laneH*0.48)));
     drawHit(hwTop,hwH);
     // Griffbrett
     const sp=L.fbH/4;
@@ -1718,9 +1712,10 @@ const BASS={
     g.beginPath(); g.arc(L.nutX+11.5*L.fw,L.fbTop+L.fbH*0.27,ir,0,7); g.arc(L.nutX+11.5*L.fw,L.fbTop+L.fbH*0.73,ir,0,7); g.fill();
     for(let f=1;f<=12;f++){ g.fillStyle='rgba(225,215,205,0.5)'; g.fillRect(L.nutX+f*L.fw-1,L.fbTop,2,L.fbH); }
     g.fillStyle='#efe6da'; g.fillRect(L.nutX-4,L.fbTop-2,5,L.fbH+4);
-    g.textAlign='center'; g.textBaseline='top'; g.font=`500 11px ${FB}`; g.fillStyle=T.muted;
-    g.fillText('leer',L.nutX/2,L.fbTop+L.fbH+6);
-    for(let f=1;f<=12;f++) g.fillText(String(f),L.nutX+(f-0.5)*L.fw,L.fbTop+L.fbH+6);
+    const ly=L.fbTop+L.fbH+(L.short?2:6);
+    g.textAlign='center'; g.textBaseline='top'; g.font=`500 ${L.short?10:11}px ${FB}`; g.fillStyle=T.muted;
+    g.fillText('leer',L.nutX/2,ly);
+    for(let f=1;f<=12;f++) g.fillText(String(f),L.nutX+(f-0.5)*L.fw,ly);
     for(let s=0;s<4;s++){ const y=this.strY(s); g.fillStyle=rgba(BCOL[s],0.75); g.fillRect(0,y-(3-s)*0.35,W-12,1.6+(3-s)*0.7); }
     if(song.kind==='groove'&&pos>=0){
       const c=curChord(pos);
@@ -1887,8 +1882,10 @@ const PIANO={
   yin:{N:2048,Wn:768,fmin:55,fmax:2200,lo:28,hi:100,tol:false,spectral:true,every:1},
   layout(){
     const L=GEO;
-    L.kh=Math.max(100,Math.min(190,H*0.34)); L.kbTop=H-L.kh; L.infoH=32;
-    hwTop=34+secRowH(); hwH=L.kbTop-L.infoH-hwTop-6; L.laneH=hwH/2;
+    // Niedrige Bühne (Smartphone quer): flachere Tasten und eine schmale Infozeile
+    const sh=H<300; L.short=sh;
+    L.kh=sh?Math.max(70,Math.min(110,H*0.36)):Math.max(100,Math.min(190,H*0.34)); L.kbTop=H-L.kh; L.infoH=sh?22:32;
+    hwTop=(sh?30:34)+secRowH(); hwH=L.kbTop-L.infoH-hwTop-(sh?2:6); L.laneH=hwH/2;
     hx=Math.max(54,Math.min(110,W*0.12));
     let lo=127,hi=0; if(song) for(const it of song.items){ lo=Math.min(lo,it.midi); hi=Math.max(hi,it.midi); }
     if(lo>hi){ lo=48; hi=72; }
@@ -1933,15 +1930,15 @@ const PIANO={
       g.save(); g.beginPath(); g.rect(x0,y-th/2,w,th); g.clip(); g.fillText(lab,x0+8,y+1); g.restore();
       g.globalAlpha=1;
     }
-    drawGutter(); lanes.forEach(l=>laneBadge(20,l.y,l.col,l.t));
+    drawGutter(); lanes.forEach(l=>laneBadge(20,l.y,l.col,l.t,Math.max(8,Math.min(13,L.laneH*0.42))));
     drawHit(hwTop,hwH);
     // Infozeile
     const iy=L.kbTop-L.infoH/2-2, c=song.kind==='groove'?curChord(Math.max(0,pos)):null;
     g.textBaseline='middle'; g.textAlign='left';
     if(c){
-      g.font=`700 14px ${FD}`; const lw=g.measureText(c.label).width+20;
-      g.fillStyle=T.accent; rr(12,iy-12,lw,24,12); g.fill(); g.fillStyle=T.ink; g.fillText(c.label,22,iy+1);
-      g.font=`500 13px ${FB}`; g.fillStyle=T.soft; g.fillText('Töne: '+chordToneNames(c.c).join(' – ')+(hasBass(c.c)?' · links: '+bassName(c.c):''),12+lw+12,iy+1);
+      const ph=L.short?18:24; g.font=`700 ${L.short?12:14}px ${FD}`; const lw=g.measureText(c.label).width+20;
+      g.fillStyle=T.accent; rr(12,iy-ph/2,lw,ph,ph/2); g.fill(); g.fillStyle=T.ink; g.fillText(c.label,22,iy+1);
+      g.font=`500 ${L.short?12:13}px ${FB}`; g.fillStyle=T.soft; g.fillText('Töne: '+chordToneNames(c.c).join(' – ')+(hasBass(c.c)?' · links: '+bassName(c.c):''),12+lw+12,iy+1);
     }
     // Klaviatur
     const active=new Map(), chordKeys=new Map();
@@ -1958,8 +1955,8 @@ const PIANO={
       else if(held.has(m)) fill='#d6e6dc'; else if(mic&&mic.heardSet&&mic.heardSet.has(m)) fill='#9fb4ff';
       else { const gr=g.createLinearGradient(0,y,0,y+hh); gr.addColorStop(0,'#e8efe9'); gr.addColorStop(0.85,'#ffffff'); gr.addColorStop(1,'#d5ddd7'); fill=gr; }
       g.fillStyle=fill; rr(x,y,w,hh,[0,0,5,5]); g.fill();
-      if(!a&&chordKeys.has(m)){ g.fillStyle=rgba(hc(chordKeys.get(m)),0.85); g.beginPath(); g.arc(k.x+k.w/2,y+hh-30,Math.min(7,k.w*0.22),0,7); g.fill(); }
-      if(next.has(m)&&!a){ g.globalAlpha=0.45; g.strokeStyle=T.accent; g.lineWidth=1.5; g.beginPath(); g.arc(k.x+k.w/2,y+hh-30,Math.min(10,k.w*0.32),0,7); g.stroke(); g.globalAlpha=1; }
+      if(!a&&chordKeys.has(m)){ g.fillStyle=rgba(hc(chordKeys.get(m)),0.85); g.beginPath(); g.arc(k.x+k.w/2,y+hh-(L.short?24:30),Math.min(7,k.w*0.22),0,7); g.fill(); }
+      if(next.has(m)&&!a){ g.globalAlpha=0.45; g.strokeStyle=T.accent; g.lineWidth=1.5; g.beginPath(); g.arc(k.x+k.w/2,y+hh-(L.short?24:30),Math.min(10,k.w*0.32),0,7); g.stroke(); g.globalAlpha=1; }
       if(L.ww>11){ g.fillStyle=a?'rgba(10,23,18,.8)':'#7d8c84'; g.font=`500 ${Math.max(8,Math.min(12,L.ww*0.38))}px ${FB}`; g.textAlign='center'; g.textBaseline='bottom';
         g.fillText(NAMES[m%12]+(m%12===0?(Math.floor(m/12)-1):''),k.x+k.w/2,L.kbTop+L.kh-8); }
     }
@@ -4203,10 +4200,10 @@ function setInst(id){
   waitMode=!!INST.waitDefault; $('wait').setAttribute('aria-pressed',waitMode); $('waitLbl').textContent=waitMode?'An':'Aus';
   $('helpList').innerHTML=INST.help.map(([b,s])=>`<li><div><b>${b}</b><span>${s}</span></div></li>`).join('');
   $('helpTip').textContent=INST.helpTip;
-  { const ly=!!INST.lyrics; $('who').parentElement.hidden=ly; $('wait').parentElement.hidden=ly; $('mic').closest('.group').hidden=ly||!INST.micLabel; $('fontGroup').hidden=true; $('libTuner').hidden=ly||INST.id==='drums'; }
+  { const ly=!!INST.lyrics; $('who').parentElement.hidden=ly; $('wait').parentElement.hidden=ly; $('mic').closest('.group').hidden=ly||!INST.micLabel; $('libTuner').hidden=ly||INST.id==='drums'; }
   loadStore(); renderPalette(); filter=0; document.querySelectorAll('#filters .filter').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f==='0'));
 }
-function showScreen(id){ for(const s of ['pick','lib','player','tuner','editor','liedEd']) $(s).hidden=s!==id; if(id!=='player'&&typeof beamerSendSong==='function') beamerSendSong(); }
+function showScreen(id){ for(const s of ['pick','lib','player','tuner','editor','liedEd']) $(s).hidden=s!==id; }
 function renderPick(){
   const box=$('icards'); box.innerHTML='';
   for(const id of ['guitar','uke','piano','melody','bass','drums','voice']){
@@ -4451,9 +4448,8 @@ function setSong(s,reset){
   if(reset) pos=leadPos();
   $('seek').max=song.duration.toFixed(2); $('dur').textContent=fmt(song.duration);
   $('bpmOut').textContent=(gv?gv.bpm:meta&&meta.bpm||'')+(gv&&gv.compound&&INST.meter(gv)===6||meta&&meta.kind==='melody'&&meta.src&&meta.src.meter===6?' ♩.':' BPM');
-  rebuildPractice(); layout(); renderParts(); updTr(); $('bQuickGroup').hidden=$('builder').hidden; $('bQuick').title=$('bTitle').textContent; $('pShare').hidden=!(meta&&meta.lied); mixApply();
+  rebuildPractice(); layout(); renderParts(); updTr(); $('bQuickGroup').hidden=$('bTop').hidden=$('builder').hidden; $('bQuick').title=$('bTitle').textContent; $('pShare').hidden=!(meta&&meta.lied); mixApply();
   if(!reset&&was) playing=true;
-  beamerSendSong();
 }
 
 /* ---------- Baukasten ---------- */
@@ -4499,9 +4495,9 @@ function placeChord(c,btn){
   selSlot++; if(selSlot>=slotN) selSlot=-1; else if(selSlot>gv.chords.length) selSlot=gv.chords.length;
   changed();
 }
-function setBuilderOpen(o){ $('builder').dataset.open=o; $('bToggle').setAttribute('aria-expanded',o); $('bQuick').setAttribute('aria-expanded',o); $('player').classList.toggle('building',o); requestAnimationFrame(layout); }
+function setBuilderOpen(o){ $('builder').dataset.open=o; $('bToggle').setAttribute('aria-expanded',o); $('bQuick').setAttribute('aria-expanded',o); $('bTop').setAttribute('aria-expanded',o); $('player').classList.toggle('building',o); requestAnimationFrame(layout); }
 $('bToggle').onclick=()=>setBuilderOpen($('builder').dataset.open!=='true');
-$('bQuick').onclick=()=>setBuilderOpen($('builder').dataset.open!=='true');
+$('bQuick').onclick=$('bTop').onclick=()=>setBuilderOpen($('builder').dataset.open!=='true');
 $('bDone').onclick=()=>{ setBuilderOpen(false); $('player').scrollTop=0; try{ document.querySelector('.pctl').scrollTop=0; }catch(e){} };
 function renderKeyArea(){
   const ks=$('keySeg'); ks.innerHTML='';
@@ -4731,7 +4727,6 @@ setInterval(()=>{
   try{ pos=startOffset+(ac.currentTime-startCtx)*speed; if(waitMode&&chordIdx<chords.length&&pos>=chords[chordIdx].time) return; schedule(); }catch(e){}
 },50);
 function tickBody(){
-  if(BRX){ beamerTick(); return; }
   try{ audioWatch(); }catch(e){}
   if(mic&&ac) try{ analyzeMic(); }catch(e){}
   if(song&&playing&&!waiting&&!scrubbing){
@@ -4755,7 +4750,6 @@ function tickBody(){
     try{
       if(!seeking){ $('seek').value=Math.max(0,pos); $('cur').textContent=fmt(Math.max(0,pos)); }
       if(W>40&&H>60) try{ draw(); }catch(e){ g.setTransform(dpr,0,0,dpr,0,0); g.globalAlpha=1; g.shadowBlur=0; throw e; }
-      beamerSendState();
       markTile(); markPart();
     } finally { pos=real; }
   }
@@ -4817,7 +4811,6 @@ addEventListener('keydown',e=>{
   if(!$('latDlg').hidden){ if(e.key==='Escape') closeLat(); return; }
   if(!$('mixDlg').hidden){ if(e.key==='Escape') closeMix(); return; }
   if(!$('liedEd').hidden) return;
-  if(BRX) return;
   if(presenting()&&e.key==='Escape'){ exitPresent(); return; }
   // Teile: Bild-auf/ab (Präsentations-Fernbedienung) oder Pfeil links/rechts
   if(!$('player').hidden&&!edOn()&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&['PageDown','PageUp','ArrowRight','ArrowLeft'].includes(e.key)&&!['SELECT','INPUT','TEXTAREA'].includes(e.target.tagName)){
@@ -4837,7 +4830,7 @@ let scrub=null, scrubbing=false;
 function scrubPos(p0,dx,dy){ return INST.scrubPos?INST.scrubPos(p0,dx,dy):p0-dx/pps; }
 cv.addEventListener('pointerdown',e=>{
   const r=cv.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
-  if(BRX||pinch) return;
+  if(pinch) return;
   if(presenting()) presBar();
   if(presenting()||!INST.pointerDown(x,y,e.pointerId)){ if(!song) return; scrub={id:e.pointerId,x0:x,y0:y,pos0:Math.max(0,pos),moved:false}; }
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
@@ -4861,7 +4854,7 @@ cv.addEventListener('pointerup',e=>{ if(scrub&&scrub.id===e.pointerId){ scrubEnd
 /* Trackpad (zwei Finger) und Mausrad: wie Wischen. Laufband waagerecht (Mausrad geht auch), Gesang und Klaviermelodie senkrecht */
 let wheelT=0;
 cv.addEventListener('wheel',e=>{
-  if(!song||BRX) return; e.preventDefault(); if(presenting()) presBar();
+  if(!song) return; e.preventDefault(); if(presenting()) presBar();
   if(e.ctrlKey){ setZoom(curZoom()*Math.exp(-e.deltaY*0.01)); return; }
   const k=e.deltaMode===1?16:e.deltaMode===2?H:1, wx=e.deltaX*k, wy=e.deltaY*k;
   const vert=!!INST.scrubPos, dx=vert?0:-(Math.abs(wx)>Math.abs(wy)?wx:wy), dy=vert?-wy:0;
@@ -5174,7 +5167,7 @@ function setLag(ms){ ms=Math.max(-300,Math.min(3000,Math.round(ms/10)*10)); avLa
   $('latOut').textContent=ms+' ms'; $('latRange').value=ms; $('latBtn').textContent=ms+' ms'; }
 const LAT={on:false,next:0,clicks:[],taps:[],raf:0};
 function openLat(){
-  $('mixDlg').hidden=true; if(playing) stopPlayback(); ensureAudio(); $('beamerDlg').hidden=true; $('latDlg').hidden=false; setLag(avLag*1000);
+  $('mixDlg').hidden=true; if(playing) stopPlayback(); ensureAudio(); $('latDlg').hidden=false; setLag(avLag*1000);
   LAT.on=true; LAT.next=ac.currentTime+0.3; LAT.clicks=[]; LAT.taps=[]; $('latMsg').textContent='';
   const ol=(ac.outputLatency||0)+(ac.baseLatency||0); if(ol>0.06){ $('latMsg').textContent=`Das Gerät meldet etwa ${Math.round(ol*1000)} ms Verzögerung.`; if(!avLag) setLag(ol*1000); }
   cancelAnimationFrame(LAT.raf); latLoop();
@@ -5258,7 +5251,7 @@ function jumpPart(i){
   if(playing){ stopScheduled(); resyncFrom(t); resetScore(); }
   else if(t<=0) pos=leadPos();
   else { pos=t; countTo=t; resetScore(); }
-  markPart(); beamerSendState(true);
+  markPart();
 }
 function partStep(d){
   const S=song&&song.secs; if(!S||!S.length) return false;
@@ -5608,9 +5601,8 @@ $('leDel').onclick=()=>{
 };
 $('leShare').onclick=()=>openShareLied(LE.S);
 $('leHelp').onclick=()=>openHelp(LE_HELP,'Liedtexte sind urheberrechtlich geschützt: Nutze importierte Lieder nur im Unterricht mit deiner Lerngruppe und teile sie nicht öffentlich.');
-document.querySelectorAll('#fontSeg button').forEach(b=>b.onclick=()=>{ voiceScale=+b.dataset.v; saveZoom(); document.querySelectorAll('#fontSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); layout(); });
 function setZoom(z){
-  if(INST&&INST.lyrics){ voiceScale=Math.max(0.6,Math.min(3,z)); document.querySelectorAll('#fontSeg button').forEach(x=>x.setAttribute('aria-pressed',Math.abs(+x.dataset.v-voiceScale)<0.05)); }
+  if(INST&&INST.lyrics) voiceScale=Math.max(0.6,Math.min(3,z));
   else laneZoom=Math.max(0.4,Math.min(3,z));
   saveZoom(); layout();
 }
@@ -5673,92 +5665,19 @@ function goFull(el){ const f=el.requestFullscreen||el.webkitRequestFullscreen; i
 function exitFull(){ const f=document.exitFullscreen||document.webkitExitFullscreen; if((document.fullscreenElement||document.webkitFullscreenElement)&&f) try{ const r=f.call(document); if(r&&r.catch) r.catch(()=>{}); }catch(e){} }
 const presenting=()=>document.body.classList.contains('present');
 let presTimer=0;
-function presBar(){ $('presBar').hidden=false; clearTimeout(presTimer); presTimer=setTimeout(()=>{ if(presenting()&&!BRX) $('presBar').hidden=true; },2600); }
-function enterPresent(){ $('beamerDlg').hidden=true; document.body.classList.add('present'); goFull(document.documentElement); presBar(); requestAnimationFrame(layout); }
+function presBar(){ $('presBar').hidden=false; clearTimeout(presTimer); presTimer=setTimeout(()=>{ if(presenting()) $('presBar').hidden=true; },2600); }
+function enterPresent(){ document.body.classList.add('present'); goFull(document.documentElement); presBar(); requestAnimationFrame(layout); }
 function exitPresent(){ document.body.classList.remove('present'); $('presBar').hidden=true; exitFull(); requestAnimationFrame(layout); }
-['fullscreenchange','webkitfullscreenchange'].forEach(t=>document.addEventListener(t,()=>{ if(!document.fullscreenElement&&!document.webkitFullscreenElement){ if(presenting()&&!BRX) exitPresent(); if(!$('qrBig').hidden) $('qrBig').hidden=true; } }));
-addEventListener('pointermove',()=>{ if(presenting()&&!BRX) presBar(); });
+['fullscreenchange','webkitfullscreenchange'].forEach(t=>document.addEventListener(t,()=>{ if(!document.fullscreenElement&&!document.webkitFullscreenElement){ if(presenting()) exitPresent(); if(!$('qrBig').hidden) $('qrBig').hidden=true; } }));
+addEventListener('pointermove',()=>{ if(presenting()) presBar(); });
 $('presentBtn').onclick=enterPresent;
 /* Im Vollbild gehören Wischen und Scrollen der App – nicht dem Browser (sonst beendet Safari das Vollbild) */
 document.addEventListener('wheel',e=>{ if(presenting()&&e.target!==cv){ e.preventDefault(); } },{passive:false});
 document.addEventListener('touchmove',e=>{ if(presenting()) e.preventDefault(); },{passive:false});
-$('beamerFull').onclick=enterPresent;
-$('beamerCancel').onclick=()=>{ $('beamerDlg').hidden=true; };
-$('beamerLat').onclick=openLat;
 $('presX').onclick=exitPresent;
 $('presPlay').onclick=()=>$('play').click();
 $('presPrev').onclick=()=>{ partStep(-1); presBar(); }; $('presNext').onclick=()=>{ partStep(1); presBar(); };
 $('partPrev').onclick=()=>partStep(-1); $('partNext').onclick=()=>partStep(1);
-
-/* ---------- Beamer-Fenster: eigenes Fenster auf dem zweiten Bildschirm, läuft synchron mit ---------- */
-let bc=null, beamerOn=false, bcLast=0;
-function beamerChan(){
-  if(bc||!('BroadcastChannel' in window)) return bc;
-  bc=new BroadcastChannel('bandlauf-beamer');
-  bc.onmessage=e=>{ const d=e.data||{};
-    if(BRX){ if(d.type==='song') brxSong(d); else if(d.type==='state') BRX.st=d; else if(d.type==='stop'){ BRX.song=null; song=null; } return; }
-    if(d.type==='hello'){ beamerOn=true; beamerSendSong(); beamerSendState(true); }
-    else if(d.type==='bye') beamerOn=false; };
-  return bc;
-}
-function beamerSendSong(){
-  if(!beamerOn||!bc) return;
-  if(!song||$('player').hidden){ bc.postMessage({type:'stop'}); return; }
-  const L=meta&&meta.lied;
-  bc.postMessage({type:'song',name:meta?meta.name:'',canvas:TH.canvas,theme:INST.theme,bpm:gv&&gv.bpm||meta&&meta.bpm||100,
-    lied:L?{name:L.name,text:L.text,tr:L.tr,meter:L.meter,bpm:L.bpm,beats:liedBeats(L),arr:L.arr}:null,
-    timeline:song.timeline.map(t=>[t.start,t.end,t.label]),beat:song.beat||0.5,bar:song.bar||2,lead:song.lead||0,duration:song.duration});
-}
-function beamerSendState(force){
-  if(!beamerOn||!bc) return; const now=performance.now(); if(!force&&now-bcLast<150) return; bcLast=now;
-  bc.postMessage({type:'state',pos,playing:playing&&!waiting&&!(cntLeft>0),speed,at:Date.now()});
-}
-$('beamerWinBtn').onclick=()=>{
-  beamerChan(); $('beamerDlg').hidden=true;
-  const w=window.open(location.pathname+location.search+'#beamer','bandlauf-beamer','popup=yes,width=1280,height=720');
-  if(!w) notice('Das Fenster wurde blockiert. Erlaube Pop-ups für diese Seite und versuch es noch einmal.');
-};
-/* Akkord-Ansicht für Lieder ohne Text: aktueller Akkord groß, der nächste daneben, die Schläge darunter */
-const CHORDVIEW={
-  layout(){ hwTop=8; hwH=Math.max(60,H-16); hx=0; },
-  draw(){
-    const T=TH.canvas, tl=song.timeline; if(!tl.length) return;
-    const c=curChord(Math.max(0,pos)), nc=c&&nextChordAfter(c);
-    g.textAlign='left'; g.textBaseline='top'; g.font=`600 ${Math.round(Math.max(14,H*0.035))}px ${FB}`; g.fillStyle=T.muted; g.fillText(song.name||'',24,20);
-    if(!c) return;
-    const big=Math.min(H*0.42,W*0.28); g.textAlign='center'; g.textBaseline='middle';
-    g.font=`800 ${Math.round(big)}px ${FD}`; g.fillStyle=T.accent; g.fillText(c.label,W*0.42,H*0.46);
-    if(nc){ g.font=`600 ${Math.round(big*0.22)}px ${FB}`; g.fillStyle=T.muted; g.fillText('dann',W*0.8,H*0.36); g.font=`800 ${Math.round(big*0.5)}px ${FD}`; g.fillStyle=T.soft; g.fillText(nc.label,W*0.8,H*0.5); }
-    const bpb=Math.max(1,Math.round(song.bar/song.beat)), beatNow=pos<0?-1:Math.floor((pos%song.bar)/song.beat+1e-6), r=Math.max(6,H*0.018);
-    for(let k=0;k<bpb;k++){ g.fillStyle=k===beatNow?T.accent:'rgba(255,255,255,0.18)'; g.beginPath(); g.arc(W*0.42+(k-(bpb-1)/2)*r*4,H*0.78,k===beatNow?r*1.3:r,0,7); g.fill(); }
-  }
-};
-let BRX=null;
-function startBeamer(){
-  BRX={st:{pos:0,playing:false,speed:1,at:Date.now()}};
-  document.body.classList.add('present','beamer');
-  INST=CHORDVIEW; TH={canvas:VOICE.canvas}; setVars(VOICE.theme); song=null;
-  showScreen('player'); $('presBar').hidden=false; $('presPlay').hidden=true; $('presX').textContent='Vollbild';
-  $('presX').onclick=()=>{ goFull(document.documentElement); };
-  $('beamerHint').hidden=false;
-  beamerChan(); bc.postMessage({type:'hello'});
-  addEventListener('pagehide',()=>{ try{ bc.postMessage({type:'bye'}); }catch(e){} });
-  requestAnimationFrame(layout);
-}
-function brxSong(d){
-  $('beamerHint').hidden=true;
-  TH={canvas:d.canvas||VOICE.canvas}; if(d.theme) setVars(d.theme);
-  const tl=(d.timeline||[]).map(([s,e,l])=>({start:+s,end:+e,label:String(l)}));
-  song={name:String(d.name||''),items:[],acc:[],drums:[],timeline:tl,beat:+d.beat||0.5,bar:+d.bar||2,lead:+d.lead||0,duration:+d.duration||0,maxDur:0,kind:'groove'};
-  gv={bpm:+d.bpm||100};
-  if(d.lied){ const S=cleanLied({...d.lied,id:'beamer'}); if(S&&parseLied(S.text).events.length){ INST=VOICE; TH={canvas:VOICE.canvas}; setVars(VOICE.theme); song.lyric=liedLyric(S,gv.bpm); } else INST=CHORDVIEW; }
-  else INST=CHORDVIEW;
-  layout();
-}
-function beamerTick(){
-  const st=BRX.st; playing=!!st.playing; pos=(+st.pos||0)+(playing?(Date.now()-(+st.at||Date.now()))/1000*(+st.speed||1):0);
-  if(W>40&&H>60){ if(song) try{ draw(); }catch(e){} else { g.fillStyle=getComputedStyle(document.body).getPropertyValue('--bg')||'#111'; g.fillRect(0,0,W,H); } }
-}
 
 /* Nur für automatische Tests: mit localStorage „bandlauf-debug“ ist das aktuelle Lied lesbar */
 try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta}; }catch(e){}
@@ -5766,7 +5685,7 @@ try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song
 renderPick();
 if(ONLY){ setInst(ONLY); showScreen('lib'); renderLib(); maybeHelp(); }
 else { setVars(PICK_THEME); showScreen('pick'); }
-if(location.hash==='#beamer') startBeamer(); else { checkHash(); beamerChan(); }
+checkHash();
 requestAnimationFrame(tick);
 
 })();

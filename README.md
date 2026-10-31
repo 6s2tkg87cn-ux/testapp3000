@@ -80,6 +80,8 @@ Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
 **Vollbild:** Der Knopf „Vollbild“ im Spieler zeigt sofort nur Text und Akkorde bzw. das Laufband –
 z. B. für den Beamer per AirPlay. Wischen, Trackpad und Mausrad funktionieren dort wie sonst; Tippen
 zeigt die Knöpfe (Start/Pause, Teile, Beenden), Esc beendet.
+**Smartphone quer:** Bass, Klavier und die anderen Instrumente rücken auf niedrigen Bildschirmen
+enger zusammen; „Muster ändern“ ist dann ein Knopf in der oberen Leiste statt einer eigenen Zeile.
 **Ton-Ausgleich:** Kommt der Ton über AirPlay, Bluetooth oder die Beamer-Lautsprecher später als das
 Bild, stellt man die Verzögerung einmal ein (Regler mit Blink-Test oder automatisch durch Tippen im
 Takt; über AirPlay oft 1–2 Sekunden, einstellbar bis 3 Sekunden). Das Bild wartet dann auf den Ton.
