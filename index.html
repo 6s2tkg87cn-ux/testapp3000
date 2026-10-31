@@ -210,7 +210,8 @@ button,input,select{font-family:inherit}
 .lpct:empty{display:none}
 #presLoop svg{width:15px;height:15px;fill:currentColor}
 #presLoop[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-@media (max-width:640px){ .parts>.lbl{display:none} #loopInfo{display:none} }
+.loopctl .ls{display:none}
+@media (max-width:640px){ .parts>.lbl{display:none} #loopInfo{display:none} .loopctl .lw{display:none} .loopctl .ls{display:inline} .loopctl .chipt{padding:0 10px;gap:6px} }
 .pchips button[aria-current="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
 .pctl{flex:0 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
 #setToggle{display:none}
@@ -220,7 +221,8 @@ button,input,select{font-family:inherit}
   #player:not(.set-open) .strip{display:none}
 }
 .ptop{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ptitle{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ptitle{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+#pLevel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptitle h2{margin:0;font-family:var(--font-display);font-weight:500;font-size:18px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptop{flex-wrap:nowrap}
 .ptop .btn{flex:none}
@@ -475,6 +477,7 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
   .btn .q{display:inline}
   .ptop .btn,.lib-head .btn{width:44px;padding:0;justify-content:center}
   .ptitle h2{font-size:15.5px}
+  #player .ptop{gap:6px} #player .ptop .btn{width:40px} #pLevel{display:none}
   .transport{gap:8px 10px}
   .round{width:42px;height:42px}
   .round.play{width:54px;height:54px}
@@ -870,7 +873,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   <div class="notice" id="notice" role="status" hidden><p id="noticeText"></p><button id="noticeX" aria-label="Hinweis schließen">OK</button></div>
 
   <div class="parts" id="parts" hidden><span class="lbl">Springen zu</span><div class="pchips" id="partChips" role="group" aria-label="Teile des Liedes"></div>
-    <div class="loopctl"><button class="chipt" id="loopBtn" aria-pressed="false" title="Den Teil, der gerade dran ist, immer wieder spielen">Teil wiederholen</button><button class="chipt" id="rampBtn" aria-pressed="false" hidden title="Jeder Durchgang etwas schneller: von 70 % bis 100 %">Schneller werden</button><span class="lbl" id="loopInfo" role="status"></span></div></div>
+    <div class="loopctl"><button class="chipt" id="loopBtn" aria-pressed="false" title="Den Teil, der gerade dran ist, immer wieder spielen"><span class="lw">Teil wiederholen</span><span class="ls">Wiederholen</span></button><button class="chipt" id="rampBtn" aria-pressed="false" hidden title="Jeder Durchgang etwas schneller: von 70 % bis 100 %"><span class="lw">Schneller werden</span><span class="ls">Schneller</span></button><span class="lbl" id="loopInfo" role="status"></span></div></div>
 
   <div class="stage" id="stage">
     <canvas id="cv" aria-label="Laufband und Instrument"></canvas>
@@ -3289,6 +3292,8 @@ function liedPc(letter,acc,german){
   return mod12(pc);
 }
 function liedChord(tok,german){
+  // Moll auch klein geschrieben, so wie die App sie anzeigt: am, dm7, f#m, hm7, ebm
+  const lo=/^([a-h])((?:is|es|s|#|b)?m(?!aj).*)$/.exec(tok); if(lo) tok=lo[1].toUpperCase()+lo[2];
   const m=/^([A-H])(is|es|s|#|b)?(.*?)(?:\/([A-H])(is|es|s|#|b)?)?$/.exec(tok); if(!m) return null;
   const tries=[[m[2]||'',m[3]]]; if(m[2]==='s'||m[2]==='es'||m[2]==='is') tries.push(['',(m[2]||'')+m[3]]);
   for(const [acc,suf] of tries){
@@ -4293,7 +4298,7 @@ function cleanFolge(f){
   if(!f||typeof f!=='object') return null;
   const chords=(Array.isArray(f.chords)?f.chords:[]).slice(0,64).filter(c=>c&&Number.isInteger(c.pc)&&c.pc>=0&&c.pc<12&&Object.prototype.hasOwnProperty.call(TYPES,c.type)).map(c=>({pc:c.pc,type:c.type,bars:1,hi:!!c.hi,...(Number.isInteger(c.bass)&&c.bass>=0&&c.bass<12&&c.bass!==c.pc?{bass:c.bass}:{})}));
   if(!chords.length) return null;
-  const out={name:String(f.name||'Meine Akkordfolge').slice(0,40),chords,bpm:Math.max(40,Math.min(180,Math.round(+f.bpm)||80)),reps:[1,2,4].includes(+f.reps)?+f.reps:2,pats:{}};
+  const out={name:String(f.name||'Meine Akkordfolge').slice(0,40),chords,bpm:Math.max(40,Math.min(240,Math.round(+f.bpm)||80)),reps:[1,2,4].includes(+f.reps)?+f.reps:2,pats:{}};
   const pats=f.pats&&typeof f.pats==='object'?f.pats:{};
   for(const id of Object.keys(PAT_OK)){
     const q=pats[id]; if(!q||typeof q!=='object') continue;
@@ -4499,12 +4504,13 @@ function liedBand(s,S,gv){
   s.acc=acc; s.drums=drums; s.hasAcc=true;
   for(const a of acc) s.duration=Math.max(s.duration,a.end);
 }
-function rebuild(reset){
-  const keep=pos, was=playing;
+/* scale: Bei Tempowechsel bleibt die Stelle im Lied gleich (nicht die Sekunde). Steht das Lied am Anfang eines Teils, wird weiter eingezählt. */
+function rebuild(reset,scale=1){
+  const keep=pos*scale, was=playing, ct=countTo;
   const s=INST.build(gv); s.name=meta.name;
   if(meta.lied){ s.lyric=liedLyric(meta.lied,gv.bpm); liedBand(s,meta.lied,gv); }
   setSong(s,reset);
-  if(!reset){ pos=Math.min(keep,song.duration); if(was) resyncFrom(pos); resetScore(); }
+  if(!reset){ pos=Math.min(keep,song.duration); if(ct!=null&&!was) countTo=pos; if(was) resyncFrom(pos); resetScore(); }
 }
 function setSong(s,reset){
   const was=playing;
@@ -5180,10 +5186,10 @@ function bpmStep(d){
     if(!reset){ pos=Math.min(keep,song.duration); if(was) resyncFrom(pos); resetScore(); }
     return;
   }
-  if(!gv) return; gv.bpm=Math.max(40,Math.min(180,gv.bpm+d));
+  if(!gv) return; const old=gv.bpm; gv.bpm=Math.max(40,Math.min(240,gv.bpm+d)); if(gv.bpm===old) return;
   // Importierte Lieder merken sich das Tempo – es gilt dann bei allen Instrumenten und wird beim Teilen mitgeschickt
   if(meta&&meta.lied){ meta.lied.bpm=gv.bpm; if(!meta.lied.demo) storeLied(meta.lied); }
-  rebuild(!playing&&pos<=0);
+  rebuild(!playing&&pos<=0,old/gv.bpm);
 }
 $('bpmDown').onclick=()=>bpmStep(-5); $('bpmUp').onclick=()=>bpmStep(5);
 /* Transponieren: Halbton höher oder tiefer – gespeichert, damit alle Instrumente in derselben Tonart spielen */
@@ -5300,7 +5306,7 @@ $('mixDlg').addEventListener('click',e=>{ if(e.target.id==='mixDlg') closeMix();
 $('latBtn').onclick=openLat; $('latBtn').textContent=Math.round(avLag*1000)+' ms';
 function renderParts(){
   const S=song&&song.secs||[], box=$('partChips'); box.innerHTML=''; partIdx=-2;
-  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length) loop=null; loopUI();
+  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length) loopDrop(); loopUI();
   S.forEach((sc,i)=>{ const b=document.createElement('button'); b.textContent=sc.name; b.dataset.i=i; b.title=sc.name+' – hierhin springen'; b.onclick=()=>jumpPart(i); box.appendChild(b); });
   markPart();
 }
@@ -5331,6 +5337,8 @@ let loop=null; // {i,start,end,pass,ramp,base}
 const RAMP0=0.7, RAMPSTEP=0.1;
 function loopBounds(i){ const S=song.secs; return {start:S[i].start,end:i+1<S.length?S[i+1].start:song.duration}; }
 function loopSpeed(){ return !loop?speed:loop.ramp?loop.base*Math.min(1,RAMP0+RAMPSTEP*loop.pass):loop.base; }
+/* Schleife fällt weg (z. B. das Lied hat keine Teile mehr): normales Tempo zurück */
+function loopDrop(){ if(loop){ speed=loop.base; loop=null; } }
 function loopPct(){ return loop?Math.round(loopSpeed()/loop.base*100):100; }
 /* Tempo mitten im Lauf ändern: alles ab der aktuellen Stelle neu anlegen */
 function setSpeedLive(v){ if(Math.abs(v-speed)<1e-6) return; speed=v; if(playing&&!waiting){ stopScheduled(); resyncFrom(pos); } }
@@ -5351,7 +5359,7 @@ function loopRetarget(k){
 /* Nach dem Neuaufbau (Tempo, Tonart, Muster) passen Anfang und Ende des Teils wieder */
 function loopSync(){
   if(!loop) return;
-  if(!song.secs||!song.secs[loop.i]){ loop=null; loopUI(); return; }
+  if(!song.secs||!song.secs[loop.i]){ loopDrop(); loopUI(); return; }
   Object.assign(loop,loopBounds(loop.i)); loopUI();
 }
 /* Kurz vor dem Ende des Teils: Rücksprung auf den Teilanfang – genau im Takt, ohne Lücke */
