@@ -3363,7 +3363,7 @@ function chordTokens(line,german){
   }
   return out.length?{chords:out,rep}:null;
 }
-const SEC_DE=[[/^verse\b/i,'Strophe'],[/^chorus\b/i,'Refrain'],[/^pre-?chorus\b/i,'Vor-Refrain'],[/^bridge\b/i,'Bridge'],[/^intro\b/i,'Intro'],[/^outro\b/i,'Outro'],[/^interlude\b/i,'Zwischenspiel'],[/^instrumental\b/i,'Zwischenspiel'],[/^solo\b/i,'Solo']];
+const SEC_DE=[[/^verse\b/i,'Strophe'],[/^chorus\b/i,'Refrain'],[/^hook\b/i,'Refrain'],[/^pre-?chorus\b/i,'Vor-Refrain'],[/^bridge\b/i,'Bridge'],[/^intro\b/i,'Intro'],[/^outro\b/i,'Outro'],[/^interlude\b/i,'Zwischenspiel'],[/^instrumental\b/i,'Zwischenspiel'],[/^solo\b/i,'Solo']];
 function secName(s){ s=s.trim(); for(const [re,de] of SEC_DE) if(re.test(s)) return s.replace(re,de); return s; }
 const parseCache=new Map();
 function parseLied(text){
@@ -3400,7 +3400,7 @@ function parseLied(text){
         const r=/x\s*(\d+)|(\d+)\s*x/i.exec(com[1]), short=/short|kurz/i.test(com[1]);
         const tgt=pend||(lines.length&&lines[lines.length-1].kind==='inst'?lines[lines.length-1]:null);
         if(tgt&&(r||short)){ if(r) tgt.rep=Math.min(16,+(r[1]||r[2])); if(short) tgt.short=true; if(pend) flush(); }
-        else push({kind:'note',text:com[1].slice(0,80)});
+        else push({kind:'note',text:com[1].slice(0,80),chords:[]});
         continue;
       }
       const ct=chordTokens(ln,german);
