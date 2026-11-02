@@ -68,6 +68,19 @@ dem Laufband. Ein Tipp springt dorthin; steht das Lied, zählt die App beim Star
 Im Laufband zeigt eine Linie, wo der nächste Teil beginnt. Im Vollbild gehen auch die Pfeiltasten
 oder eine Präsentations-Fernbedienung (Bild auf/ab).
 
+**Klaviermelodie zu importierten Liedern:** Bei Klaviermelodie gibt es den Bereich „Lieder“ (oder im
+Lied-Editor unter „Begleitung“ → „Melodie schreiben“). Im Melodie-Editor stehen dann oben die Teile und
+Akkorde, beim Abspielen klingen die Akkorde leise mit. Was man in einem Teil schreibt, gilt für alle
+gleichen Teile (alle Strophen, alle Refrains). Erst wenn ein Lied eine Melodie hat, erscheint die
+Klaviermelodie beim Empfangen eines Liedes und als Spalte im Arranger – dort steht automatisch
+„spielt“, wo Noten stehen (abschaltbar). Die Melodie spielt bei allen anderen Instrumenten mit, hat
+einen Regler im Mischpult, wird geteilt und transponiert mit. Bei Klaviermelodie selbst funktioniert
+das Lied wie bei den anderen Instrumenten: Teile, Teil wiederholen, Tempo, Tonart, Band, Vollbild.
+
+**Mehrere Noten auswählen (Melodie-Editor):** Mit der Maus auf freier Fläche einen Rahmen aufziehen;
+Umschalt-Klick nimmt einzelne Noten dazu. Die Auswahl gemeinsam verschieben, mit „Kopieren“ und
+„Einfügen“ (Strg/⌘+C/V) an die Abspiel-Linie setzen, mit Entf löschen; Strg/⌘+A wählt alles.
+
 **Teil wiederholen:** Einen Teil antippen (z. B. den Refrain) und „Teil wiederholen“ wählen – der Teil
 läuft dann endlos, ohne Lücke beim Rücksprung. Mit „Schneller werden“ beginnt er bei 70 % und wird
 bei jedem Durchgang 10 % schneller, bis das normale Tempo erreicht ist. Im Laufband ist abgedunkelt,

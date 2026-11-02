@@ -137,6 +137,7 @@ button,input,select{font-family:inherit}
 }
 #bQuick svg{width:14px;height:14px;fill:currentColor}
 /* ---------- Arbeitsblatt drucken ---------- */
+#editor.edlied #edMeter{pointer-events:none;opacity:.45}
 #printSheet{display:none}
 @media print{
   @page{size:A4;margin:13mm 14mm 15mm}
@@ -941,6 +942,8 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <span class="sp"></span>
     <button class="btn" id="edUndo" aria-label="Rückgängig"><svg viewBox="0 0 16 16"><path d="M6 3L1.5 7 6 11V8.2c3.4 0 5.6.9 7.5 3.8-.6-3.9-3-6.5-7.5-6.9z"/></svg><span class="bt">Rückgängig</span></button>
     <button class="btn" id="edSwap" aria-label="Andere Hand"><svg viewBox="0 0 16 16"><path d="M4 2L1 5l3 3V6h8V4H4zM12 8l3 3-3 3v-2H4v-2h8z"/></svg><span class="bt">Andere Hand</span></button>
+    <button class="btn" id="edCopy" aria-label="Kopieren" title="Kopieren (Strg/⌘+C)"><svg viewBox="0 0 16 16"><path d="M5 1.5h8.5V11H11V4H5zM2.5 5H10v9.5H2.5z"/></svg><span class="bt">Kopieren</span></button>
+    <button class="btn" id="edPaste" aria-label="Einfügen" title="Einfügen an der Abspiel-Linie (Strg/⌘+V)"><svg viewBox="0 0 16 16"><path d="M6 1h4v1.5h3V15H3V2.5h3zm.5 1.5v1.5h3V2.5zM5 7v1.5h6V7zm0 3v1.5h6V10z"/></svg><span class="bt">Einfügen</span></button>
     <button class="btn" id="edDel" aria-label="Note löschen"><svg viewBox="0 0 16 16"><path d="M6 1.5h4l.5 1H14V4H2V2.5h3.5zM3.2 5h9.6l-.7 9.5H3.9z"/></svg><span class="bt">Note löschen</span></button>
   </div>
 </section>
@@ -984,6 +987,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <div class="group"><span class="lbl">Taktart</span><div class="seg lemeter" id="leMeter3"><button data-v="4">4/4</button><button data-v="3">3/4</button><button data-v="2">2/4</button><button data-v="6">6/8</button></div></div>
     <div class="group"><span class="lbl">Stil</span><div class="seg lestyle" id="leStyle"></div></div>
     <div class="group"><span class="lbl">Schlagzeug</span><div class="seg" id="leDrums"><button data-v="">Spielt mit</button><button data-v="off">Aus</button></div></div>
+    <div class="group"><span class="lbl">Klaviermelodie</span><div class="row"><button class="btn small" id="leMel">Melodie schreiben</button><span class="lbl" id="leMelInfo"></span></div></div>
     <div class="lepats" id="lePats"></div>
     <p class="lenote" id="leBandNote"></p>
     <div class="learr"><h3>Arranger</h3><p class="lbl">Tipp auf „spielt“/„Pause“, um ein Instrument in einem Teil an- oder auszuschalten, und wähl darunter sein Muster (★ = Muster des ganzen Liedes). So klingt das Playback – und genau das spielt jedes Instrument beim Üben.</p>
@@ -2265,6 +2269,11 @@ const MELODY={
   accLabel:'Akkorde', accDefault:false, micLabel:'Echtes Klavier', sensQuiet:'Klavier ist leise',
   patTitle:'', patHint:'', patterns:[], presets:[],
   defaultGv:()=>({bpm:80,reps:1,chords:[]}),
+  /* Nur für Lieder mit eigener Melodie: Takte und Teile wie bei den anderen Instrumenten, die Noten aus der Melodie */
+  build(gv){
+    const n=gv.n||8, fr=grooveFrame(gv,n,()=>{}); fr.drums=fr.drums.filter(d=>d.k==='stick');
+    return finishSong('',meta&&meta.lied?melLiedItems(meta.lied,gv.bpm):[],[],fr,{hasAcc:true});
+  },
   midi(name,groups){
     if(groups.length===1){ const n=groups[0].notes, lo=n.filter(x=>x.midi<60), hi=n.filter(x=>x.midi>=60); if(lo.length>4&&hi.length>4) groups=[{notes:hi},{notes:lo}]; }
     const avg=gr=>gr.notes.reduce((s,x)=>s+x.midi,0)/gr.notes.length, items=[];
@@ -2572,7 +2581,7 @@ function melToMidi(m){
 }
 
 /* ---------- Editor-Zustand ---------- */
-const ED={m:null,sel:null,hand:'R',grid:0.5,bw:56,rh:20,sx:0,sy:0,ph:0,play:null,rec:null,undo:[],metro:true,autoQ:true,lastLen:1,lastTap:null,W:0,H:0,kbW:52,rulerH:26,delArm:false,isNew:false};
+const ED={m:null,sel:null,selSet:new Set(),clip:null,hand:'R',grid:0.5,bw:56,rh:20,sx:0,sy:0,ph:0,play:null,rec:null,undo:[],metro:true,autoQ:true,lastLen:1,lastTap:null,W:0,H:0,kbW:52,rulerH:26,delArm:false,isNew:false};
 const edCv=$('edCv'), eg=edCv.getContext('2d');
 function edOn(){ return !$('editor').hidden; }
 function err(x,y,w,h,r){ w=Math.max(0,w); h=Math.max(0,h); eg.beginPath(); if(eg.roundRect) eg.roundRect(x,y,w,h,Math.max(0,Math.min(r,w/2,h/2))); else eg.rect(x,y,w,h); }
@@ -2587,7 +2596,7 @@ new ResizeObserver(edLayout).observe($('edStage'));
 const edX=t=>ED.kbW+t*ED.bw-ED.sx, edT=x=>(x-ED.kbW+ED.sx)/ED.bw;
 const edY=p=>ED.rulerH+(PMAX-p)*ED.rh-ED.sy, edP=y=>PMAX-Math.floor((y-ED.rulerH+ED.sy)/ED.rh);
 function edEnd(){ let e=0; for(const n of ED.m.notes) e=Math.max(e,n.t+n.d); return e; }
-function edContentW(){ const mt=barQ(ED.m.meter), b=ED.play?edPlayBeat():0; return Math.max(Math.ceil((Math.max(edEnd(),b)+mt*2)/mt)*mt,mt*8)*ED.bw; }
+function edContentW(){ const mt=barQ(ED.m.meter), b=ED.play?edPlayBeat():0, le=ED.lied?ED.lied.end:0; return Math.max(Math.ceil((Math.max(edEnd(),b,le)+mt*2)/mt)*mt,mt*8)*ED.bw; }
 function edClamp(){
   ED.sx=Math.max(0,Math.min(ED.sx,Math.max(0,edContentW()-(ED.W-ED.kbW))));
   ED.sy=Math.max(0,Math.min(ED.sy,Math.max(0,(PMAX-PMIN+1)*ED.rh-(ED.H-ED.rulerH))));
@@ -2611,12 +2620,18 @@ function edDraw(){
   eg.textBaseline='middle'; eg.textAlign='left'; eg.font=`600 ${Math.round(Math.min(12,rh*0.6))}px ${FB}`;
   const drawN=(n,live)=>{
     const x=edX(n.t), w=Math.max(4,n.d*ED.bw-2), y=edY(n.p); if(x>W||x+w<kb||y>H||y+rh<ru) return;
-    const col=n.h==='L'?MLC:MRC, sel=n===ED.sel;
+    const col=n.h==='L'?MLC:MRC, sel=n===ED.sel||ED.selSet.has(n);
     eg.fillStyle=live?rgba(col,0.65):col; if(sel){ eg.shadowColor='#fff'; eg.shadowBlur=10; }
     err(x+1,y+1,w,rh-2,5); eg.fill(); eg.shadowBlur=0;
     if(sel){ eg.strokeStyle='#fff'; eg.lineWidth=2; eg.stroke(); eg.fillStyle='rgba(12,10,29,0.7)'; eg.fillRect(x+w-5,y+rh*0.28,2,rh*0.44); }
     if(w>22){ eg.fillStyle='rgba(12,10,29,0.85)'; eg.fillText(NAMES[n.p%12],x+5,y+rh/2+0.5); } };
+  if(ED.lied){ const L=ED.lied;
+    for(const sp of L.spans){ const x=edX(sp.start); if(x>=kb&&x<=W){ eg.fillStyle=rgba(T.accent,0.45); eg.fillRect(x-1,ru,2,H-ru); } }
+    const xe=edX(L.end); if(xe<W){ eg.fillStyle='rgba(0,0,0,0.45)'; eg.fillRect(Math.max(kb,xe),ru,W-Math.max(kb,xe),H-ru); } }
   for(const n of m.notes) drawN(n,false);
+  if(edOp&&edOp.type==='box'&&edOp.moved){ const bx=Math.min(edOp.x0,edOp.x1), byy=Math.min(edOp.y0,edOp.y1);
+    eg.fillStyle='rgba(255,255,255,0.08)'; eg.fillRect(bx,byy,Math.abs(edOp.x1-edOp.x0),Math.abs(edOp.y1-edOp.y0));
+    eg.strokeStyle='rgba(255,255,255,0.8)'; eg.lineWidth=1; eg.setLineDash([5,4]); eg.strokeRect(bx+0.5,byy+0.5,Math.abs(edOp.x1-edOp.x0),Math.abs(edOp.y1-edOp.y0)); eg.setLineDash([]); }
   if(ED.rec){ const b=edPlayBeat(); for(const n of ED.rec.notes) drawN(n,true); for(const o of ED.rec.open.values()) drawN({p:o.p,t:o.t,d:Math.max(0.05,b-o.t),h:ED.rec.hand},true); }
   const ph=ED.play?edPlayBeat():ED.ph, px=edX(Math.max(0,ph)), pc=ED.rec?'#ff5d6c':T.accent;
   eg.fillStyle=pc; eg.fillRect(px-1,ru,2,H-ru);
@@ -2624,7 +2639,16 @@ function edDraw(){
   // Lineal mit Taktnummern
   eg.fillStyle='#14112e'; eg.fillRect(kb,0,W-kb,ru); eg.fillStyle='rgba(255,255,255,0.12)'; eg.fillRect(kb,ru-1,W-kb,1);
   eg.font=`600 11px ${FB}`; eg.textAlign='left'; eg.textBaseline='middle';
-  for(let b=Math.floor(t0/mt);b*mt<=t1;b++){ const x=edX(b*mt); if(x<kb) continue; eg.fillStyle='rgba(255,255,255,0.35)'; eg.fillRect(x,ru-9,1,8); eg.fillStyle=T.muted; eg.fillText(String(b+1),x+4,ru/2); }
+  const by=ED.lied?10:ru/2;
+  for(let b=Math.floor(t0/mt);b*mt<=t1;b++){ const x=edX(b*mt); if(x<kb) continue; eg.fillStyle='rgba(255,255,255,0.35)'; eg.fillRect(x,ru-9,1,8); eg.fillStyle=T.muted; eg.fillText(String(b+1),x+4,by); }
+  // Lied: Teile und Akkorde über dem Raster
+  if(ED.lied){ const L=ED.lied; eg.save(); eg.beginPath(); eg.rect(kb,0,W-kb,ru); eg.clip();
+    L.spans.forEach((sp,k)=>{ const x=Math.max(kb+2,edX(sp.start)), xr=edX(sp.start+sp.len); if(xr<kb||edX(sp.start)>W) return;
+      const has=melPart(L.S,sp.base,sp.len).length; eg.font=`700 11px ${FB}`; eg.fillStyle=has?T.accent:T.soft;
+      eg.save(); eg.beginPath(); eg.rect(x,20,Math.max(0,xr-x-4),20); eg.clip(); eg.fillText(sp.name.toUpperCase()+(has?' ♪':''),x+4,30); eg.restore(); });
+    eg.font=`700 12px ${FD}`;
+    for(const c of L.chords){ const x=edX(c.t); if(x>W||edX(c.t+c.d)<kb) continue; eg.fillStyle='rgba(255,255,255,0.18)'; eg.fillRect(x,42,1,16); eg.fillStyle='#fff'; eg.fillText(c.label,Math.max(kb+2,x)+4,50); }
+    eg.restore(); }
   if(px>=kb){ eg.fillStyle=pc; eg.beginPath(); eg.moveTo(px-6,0); eg.lineTo(px+6,0); eg.lineTo(px,10); eg.closePath(); eg.fill(); }
   // Tasten links
   eg.fillStyle='#07060f'; eg.fillRect(0,ru,kb,H-ru);
@@ -2652,7 +2676,7 @@ function edStartPlay(rec){
   for(let k=0;k<cnt;k++) drum('stick',now+k*bq*spb);
   ED.play={from,t0:now+cnt*bq*spb,idx:0,beat:Math.ceil(from/bq-1e-6)*bq,notes:m.notes.filter(n=>n.t>=from-1e-6&&!(rec&&n.h===ED.hand)).sort((a,b)=>a.t-b.t)};
   ED.rec=rec?{hand:ED.hand,from,open:new Map(),notes:[]}:null;
-  ED.sel=null; edBtns();
+  ED.sel=null; ED.selSet=new Set(); edBtns();
   if(rec) edStatus(`Aufnahme: ${ED.hand==='L'?'linke':'rechte'} Hand. Nach dem Einzählen spielen, dann ■ drücken.`);
 }
 function edStop(silent){
@@ -2665,9 +2689,13 @@ function edSched(){
   const P=ED.play, m=ED.m, spb=qSec(m.bpm,m.meter), bq=beatQ(m.meter), mt=barQ(m.meter), b=edPlayBeat(), lim=b+0.25/spb;
   while(P.idx<P.notes.length&&P.notes[P.idx].t<lim){ const n=P.notes[P.idx++], at_=P.t0+(n.t-P.from)*spb;
     if(at_>=ac.currentTime-0.05) pianoVoice(n.p,Math.max(ac.currentTime,at_),n.d*spb*0.94,n.h==='L'?0.55:0.75); }
+  if(ED.lied){ const C=ED.lied.chords; if(P.ci==null) P.ci=C.findIndex(c=>c.t+c.d>P.from);
+    while(P.ci>=0&&P.ci<C.length&&C[P.ci].t<lim){ const c=C[P.ci++], t=Math.max(c.t,P.from), at_=P.t0+(t-P.from)*spb, dur=(c.t+c.d-t)*spb*0.95;
+      if(at_>=ac.currentTime-0.05&&dur>0.05){ const w=Math.max(ac.currentTime,at_); let base=48+c.c.pc; if(base<52) base+=12;
+        for(const iv of TYPES[c.c.type].iv) keysVoice(base+iv,w,dur,0.22); bassVoice(bassMidi(c.c),w,dur*0.9,0.45); } } }
   if(ED.rec&&ED.metro) while(P.beat<lim){ const at_=P.t0+(P.beat-P.from)*spb;
     if(at_>=ac.currentTime-0.02) drum(Math.abs(P.beat/mt-Math.round(P.beat/mt))<1e-6?'stick':'hat',Math.max(ac.currentTime,at_)); P.beat+=bq; }
-  if(!ED.rec&&b>edEnd()+0.4) edStop();
+  if(!ED.rec&&b>Math.max(edEnd(),ED.lied?ED.lied.end:0)+0.4) edStop();
   else if(ED.rec&&b>ED.rec.from+mt*64) edStop();
 }
 function edRecOn(p){ const R=ED.rec; if(!R||!ED.play) return; const b=edPlayBeat(); if(b<R.from-0.5) return; R.open.set(p,{p,t:Math.max(R.from,b)}); }
@@ -2680,16 +2708,19 @@ function edRecFinish(){
   if(!R.notes.length){ edStatus('Nichts aufgenommen. Spiel nach dem Einzählen auf dem Keyboard, der Tastatur oder links auf den Tasten.'); return; }
   pushUndo();
   const m=ED.m; m.notes=m.notes.filter(n=>!(n.h===R.hand&&n.t>=R.from-1e-6&&n.t<end));
-  m.notes.push(...(ED.autoQ?quantNotes(R.notes,ED.grid):R.notes)); dedupe(); ED.sel=null;
+  m.notes.push(...(ED.autoQ?quantNotes(R.notes,ED.grid):R.notes)); dedupe(); ED.sel=null; ED.selSet=new Set();
   edChanged(`${R.notes.length} Noten aufgenommen (${R.hand==='L'?'linke':'rechte'} Hand).`+(R.hand==='R'?' Jetzt die linke Hand?':''));
 }
 
 /* ---------- Ändern, Rückgängig, Speichern ---------- */
 function edSnap(){ return JSON.stringify({notes:ED.m.notes,bpm:ED.m.bpm,meter:ED.m.meter}); }
 function pushUndo(){ ED.undo.push(edSnap()); if(ED.undo.length>100) ED.undo.shift(); }
-function edUndo(){ if(ED.rec||!ED.undo.length) return; edStop(true); Object.assign(ED.m,JSON.parse(ED.undo.pop())); ED.sel=null; edChanged('Rückgängig gemacht.'); }
+function edUndo(){ if(ED.rec||!ED.undo.length) return; edStop(true); Object.assign(ED.m,JSON.parse(ED.undo.pop())); ED.sel=null; ED.selSet=new Set(); edChanged('Rückgängig gemacht.'); }
 function edChanged(msg){
-  const ok=storeMel(ED.m); ED.isNew=false;
+  let ok;
+  if(ED.lied){ const lost=melSync(); ok=storeLied(ED.lied.S); if(lost&&!msg) msg='Noten nach dem Liedende fallen weg.'; }
+  else ok=storeMel(ED.m);
+  ED.isNew=false;
   edStatus(msg||(ok?'Automatisch gespeichert':'Speichern geht hier nicht – der Browser erlaubt es nicht.'));
   edClamp(); edBtns();
 }
@@ -2699,7 +2730,8 @@ function edBtns(){
   $('edPlayIcon').innerHTML=playing_?'<path d="M3.5 3.5h9v9h-9z"/>':'<path d="M4.5 2.5l9 5.5-9 5.5z"/>';
   $('edRec').setAttribute('aria-pressed',!!ED.rec); $('edRec').setAttribute('aria-label',ED.rec?'Aufnahme beenden':'Aufnehmen');
   $('edPlay').disabled=!!ED.rec;
-  $('edDel').disabled=!ED.sel; $('edSwap').disabled=!ED.sel; $('edUndo').disabled=!ED.undo.length||!!ED.rec;
+  const ns=ED.selSet.size||(ED.sel?1:0); $('edDel').disabled=!ns; $('edSwap').disabled=!ns; $('edCopy').disabled=!ns; $('edPaste').disabled=!(ED.clip&&ED.clip.length)||!!ED.rec;
+  $('edDel').querySelector('.bt').textContent=ns>1?ns+' Noten löschen':'Note löschen'; $('edUndo').disabled=!ED.undo.length||!!ED.rec;
   document.querySelectorAll('#edHand button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ED.hand));
   document.querySelectorAll('#edGrid button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===ED.grid));
   document.querySelectorAll('#edMeter button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===m.meter));
@@ -2717,11 +2749,12 @@ function edTick(){
 }
 
 /* ---------- Öffnen ---------- */
-function openEditor(m,isNew){
+function openEditor(m,isNew,lied){
   stopPlayback(); for(const p of [...held.keys()]) unpress(p);
-  Object.assign(ED,{m,sel:null,undo:[],play:null,rec:null,ph:0,sx:0,lastTap:null,lastLen:1,delArm:false,isNew:!!isNew});
+  Object.assign(ED,{m,sel:null,undo:[],play:null,rec:null,ph:0,sx:0,lastTap:null,lastLen:1,delArm:false,isNew:!!isNew,lied:lied||null,selSet:new Set(),rulerH:lied?60:26});
+  $('editor').classList.toggle('edlied',!!lied); $('edName').readOnly=!!lied; $('edDelMel').textContent=lied?'Melodie löschen':'Löschen';
   showScreen('editor'); setVars(MELODY.theme);
-  $('edName').value=m.name; $('edDelMel').textContent='Löschen';
+  $('edName').value=m.name;
   edStatus(!navigator.requestMIDIAccess&&IS_IOS?'MIDI-Keyboards gehen in Safari auf iPhone/iPad nicht – spiel auf den Bildschirmtasten (Details unter „So geht’s“).':isNew?'Neu – wird beim ersten Ändern gespeichert':'');
   setEdSettings(false); edLayout();
   const ps=m.notes.map(n=>n.p).sort((a,b)=>a-b), mid=ps.length?ps[ps.length>>1]:62;
@@ -2729,7 +2762,7 @@ function openEditor(m,isNew){
   let seen=false; try{ seen=!!localStorage.getItem('tastenfall-editor-hilfe'); }catch(e){}
   if(!seen){ openEdHelp(); try{ localStorage.setItem('tastenfall-editor-hilfe','1'); }catch(e){} }
 }
-function newMelody(){ openEditor(cleanMel({id:newId(),name:'Meine Melodie',bpm:100,meter:4,notes:[]}),true); }
+function newMelody(){ ED.lied=null; openEditor(cleanMel({id:newId(),name:'Meine Melodie',bpm:100,meter:4,notes:[]}),true); }
 /* Aus dem Spieler: eigene Melodie bearbeiten, sonst eine eigene Kopie des Lieds anlegen */
 function editCurrent(){
   const s=meta&&meta.src;
@@ -2745,20 +2778,56 @@ const ED_HELP=[
   ['Ändern','Zieh einen Balken nach oben, unten oder zur Seite. Am rechten Ende ziehst du ihn länger oder kürzer. Zweimal schnell tippen löscht ihn. Mit zwei Fingern verschiebst und zoomst du.'],
   ['Aufnehmen','Wähl unten die Hand und drück ●. Nach dem Einzählen spielst du – auf dem Keyboard am Kabel, der Computer-Tastatur (<kbd>A</kbd> bis <kbd>K</kbd>) oder links auf den Tasten. Mit ■ hörst du auf. Eine neue Aufnahme ersetzt die Noten dieser Hand an dieser Stelle.'],
   ['MIDI am iPhone/iPad','Safari auf iPhone und iPad lässt Webseiten nicht auf MIDI-Keyboards zugreifen – das ist eine Grenze von Apple, nicht der App (GarageBand darf es als App). Am Mac oder PC mit Chrome, Edge oder Firefox funktioniert das Keyboard. Am iPhone/iPad gehen Browser-Apps mit Web-MIDI aus dem App Store (z. B. „Web MIDI Browser“) oder die Bildschirmtasten.'],
+  ['Mehrere Noten','Zieh mit der Maus auf einer freien Stelle einen Rahmen auf: Alle Noten darin sind ausgewählt. Mit Umschalt-Klick nimmst du einzelne dazu. Zieh eine ausgewählte Note, dann wandern alle mit. „Kopieren“ und „Einfügen“ (Strg/⌘+C, Strg/⌘+V) setzen sie an die Abspiel-Linie – die stellst du mit einem Tipp ins Lineal. Entf löscht die Auswahl, Strg/⌘+A wählt alles.'],
+  ['Melodie zu einem Lied','Bei „Lieder“ schreibst du eine Melodie zu einem importierten Lied. Oben stehen Teile und Akkorde, beim Abspielen klingen die Akkorde leise mit. Was du in einem Teil schreibst, gilt für alle gleichen Teile – schreib den Refrain einmal, dann haben ihn alle Refrains.'],
   ['Beide Hände','Nimm zuerst die rechte Hand auf. Dann wähl „Links“ und nimm noch einmal auf: Du hörst die rechte Hand dabei.'],
   ['Quantisieren','„Quantisieren“ rückt alle Noten genau aufs Raster. So klingt eine Aufnahme ordentlich. „Ans Raster rücken“ macht das gleich beim Aufnehmen.'],
   ['Teilen','Mit „Teilen“ bekommst du einen Link und einen Code. Wer ihn in Bandlauf öffnet, hat deine Melodie.']
 ];
 function openEdHelp(){ openHelp(ED_HELP,'Tipp: Mit „Üben“ spielst du deine Melodie mit fallenden Noten – wie die anderen Lieder. Alles wird automatisch gespeichert.'); }
 
+/* ---------- Melodie-Editor für ein Lied: Teile und Akkorde laufen mit, gleiche Teile teilen sich die Melodie ---------- */
+function melFull(S){ const tr=S.tr||0, out=[]; for(const sp of melSpans(S)) for(const n of melPart(S,sp.base,sp.len)) out.push({p:n.p+tr,t:sp.start+n.t,d:n.d,h:n.h}); return out; }
+function melEdInfo(S){
+  const P=parseLied(S.text), b=liedBeats(S), tr=S.tr||0, chords=[]; let q=0;
+  P.events.forEach((e,i)=>{ if(!(b[i]>0)) return; chords.push({t:q,d:b[i],label:liedLabel(e.c,tr),c:liedTr(e.c,tr)}); q+=b[i]; });
+  return {S,spans:melSpans(S),chords,end:q};
+}
+function openMelLied(S){
+  if(!parseLied(S.text).events.length){ notice('In diesem Lied wurden keine Akkorde gefunden.'); return; }
+  if(INST!==MELODY) setInst('melody');
+  libTab.melody='lieder';
+  openEditor({id:'lied:'+S.id,name:S.name,bpm:S.bpm,meter:S.meter,notes:melFull(S)},false,melEdInfo(S));
+  if(!melHas(S)) edStatus('Schreib die Melodie zu „'+S.name+'“. Was du in einem Teil schreibst, gilt für alle gleichen Teile (z. B. alle Refrains).');
+}
+/* Nach jeder Änderung: Der geänderte Teil wird zur Vorlage für alle gleichen Teile */
+function melSync(){
+  const L=ED.lied, S=L.S, tr=S.tr||0, old=S.mel||{}, sig=a=>JSON.stringify(a.map(n=>[n.p,+n.t.toFixed(3),+n.d.toFixed(3),n.h]).sort());
+  const per=L.spans.map(()=>[]); let lost=0;
+  for(const n of ED.m.notes){ const k=L.spans.findIndex(sp=>n.t>=sp.start-1e-6&&n.t<sp.start+sp.len-1e-6); if(k<0){ lost++; continue; }
+    per[k].push({p:n.p-tr,t:Math.round((n.t-L.spans[k].start)*TPB)/TPB,d:n.d,h:n.h}); }
+  const mel={}, done=new Set();
+  L.spans.forEach((sp,k)=>{ if(done.has(sp.base)) return;
+    const prev=(old[sp.base]||[]).map(melObj), inst=L.spans.map((x,j)=>j).filter(j=>L.spans[j].base===sp.base);
+    let pick=null; for(const j of inst){ if(sig(per[j])!==sig(prev.filter(n=>n.t<L.spans[j].len-1e-6))){ pick=j; break; } }
+    let notes=prev; if(pick!=null) notes=per[pick].concat(prev.filter(n=>n.t>=L.spans[pick].len-1e-6));
+    if(notes.length) mel[sp.base]=notes.map(n=>[n.p,n.t,n.d,n.h==='L'?1:0]).sort((x,y)=>x[1]-y[1]||x[0]-y[0]);
+    done.add(sp.base); });
+  for(const [k,v] of Object.entries(old)) if(!done.has(k)) mel[k]=v; // Teile, die es gerade nicht gibt, bleiben erhalten
+  S.mel=mel; S.bpm=ED.m.bpm;
+  const sel=ED.sel; ED.m.notes=melFull(S);
+  const same=o=>ED.m.notes.find(n=>n.p===o.p&&Math.abs(n.t-o.t)<1e-6&&n.h===o.h)||null;
+  ED.sel=sel?same(sel):null; ED.selSet=new Set([...ED.selSet].map(same).filter(Boolean));
+  return lost;
+}
 /* ---------- Bedienung im Raster ---------- */
 const ptrE=new Map(); let edOp=null;
 function edHit(x,y){ const ns=ED.m.notes; for(let i=ns.length-1;i>=0;i--){ const n=ns[i], nx=edX(n.t), w=Math.max(4,n.d*ED.bw-2), ny=edY(n.p); if(x>=nx&&x<=nx+w+2&&y>=ny&&y<ny+ED.rh) return n; } return null; }
 function edLocal(e){ const r=edCv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
 function edCancelOp(){
   const op=edOp; edOp=null; if(!op) return;
-  if(op.type==='create'){ const i=ED.m.notes.indexOf(op.n); if(i>=0) ED.m.notes.splice(i,1); ED.undo.pop(); ED.sel=null; }
-  else if(op.type==='move'||op.type==='resize'){ Object.assign(op.n,op.orig); ED.undo.pop(); }
+  if(op.type==='create'){ const i=ED.m.notes.indexOf(op.n); if(i>=0) ED.m.notes.splice(i,1); ED.undo.pop(); ED.sel=null; ED.selSet=new Set(); }
+  else if(op.type==='move'||op.type==='resize'){ Object.assign(op.n,op.orig); if(op.group) for(const q of op.group){ q.m.t=q.t; q.m.p=q.p; } ED.undo.pop(); }
   else if(op.type==='kb'&&!op.moved&&op.p) unpress(op.p);
   edBtns();
 }
@@ -2774,17 +2843,28 @@ edCv.addEventListener('pointerdown',e=>{
   if(ED.rec) return;
   const n=edHit(x,y), now=performance.now();
   if(n){
-    if(ED.lastTap&&ED.lastTap.n===n&&now-ED.lastTap.t<350){ pushUndo(); ED.m.notes.splice(ED.m.notes.indexOf(n),1); ED.sel=null; ED.lastTap=null; edOp=null; edChanged('Note gelöscht.'); return; }
+    // Umschalt-Klick: Note zur Auswahl hinzufügen oder herausnehmen
+    if(e.shiftKey){ if(ED.selSet.has(n)) ED.selSet.delete(n); else { if(ED.sel&&!ED.selSet.size) ED.selSet.add(ED.sel); ED.selSet.add(n); } ED.sel=ED.selSet.size?n:null; edOp=null; edBtns(); return; }
+    if(ED.lastTap&&ED.lastTap.n===n&&now-ED.lastTap.t<350){ pushUndo(); ED.m.notes.splice(ED.m.notes.indexOf(n),1); ED.selSet.delete(n); ED.sel=null; ED.lastTap=null; edOp=null; edChanged('Note gelöscht.'); return; }
+    if(!ED.selSet.has(n)) ED.selSet=new Set([n]);
     ED.lastTap={n,t:now}; ED.sel=n; ED.hand=n.h; edPreview(n.p); pushUndo();
     const xr=edX(n.t)+n.d*ED.bw, edge=x>xr-Math.max(6,Math.min(14,n.d*ED.bw*0.35));
-    edOp={type:edge?'resize':'move',n,orig:{t:n.t,p:n.p,d:n.d},t0:edT(x),y0:y,changed:false}; edBtns(); return;
+    edOp={type:edge?'resize':'move',n,orig:{t:n.t,p:n.p,d:n.d},group:[...ED.selSet].map(m=>({m,t:m.t,p:m.p})),t0:edT(x),y0:y,changed:false}; edBtns(); return;
   }
+  // Mit der Maus auf freier Fläche ziehen: Rahmen aufziehen und mehrere Noten auswählen (ein Klick setzt weiter eine Note)
+  if(e.pointerType==='mouse'){ edOp={type:'box',x0:x,y0:y,x1:x,y1:y,moved:false,base:new Set(e.shiftKey?ED.selSet:[])}; return; }
+  if(ED.selSet.size>1){ ED.selSet=new Set(); ED.sel=null; edBtns(); return; }
   const p=edP(y); if(p<PMIN||p>PMAX) return;
   pushUndo();
   const nn={p,t:Math.max(0,Math.floor(edT(x)/ED.grid)*ED.grid),d:ED.lastLen,h:ED.hand};
-  ED.m.notes.push(nn); ED.sel=nn; ED.lastTap={n:nn,t:now}; edPreview(p);
+  ED.m.notes.push(nn); ED.sel=nn; ED.selSet=new Set([nn]); ED.lastTap={n:nn,t:now}; edPreview(p);
   edOp={type:'create',n:nn,x0:x,moved:false}; edBtns();
 });
+function edBoxSel(op){
+  const t0=edT(Math.min(op.x0,op.x1)), t1=edT(Math.max(op.x0,op.x1)), pHi=edP(Math.min(op.y0,op.y1)), pLo=edP(Math.max(op.y0,op.y1)), S=new Set(op.base);
+  for(const n of ED.m.notes) if(n.p>=pLo&&n.p<=pHi&&n.t<t1&&n.t+n.d>t0) S.add(n);
+  ED.selSet=S; ED.sel=S.size?[...S][0]:null;
+}
 edCv.addEventListener('pointermove',e=>{
   if(!ptrE.has(e.pointerId)) return; const {x,y}=edLocal(e); ptrE.set(e.pointerId,{x,y});
   const op=edOp; if(!op) return;
@@ -2794,10 +2874,14 @@ edCv.addEventListener('pointermove',e=>{
     ED.sx=ED.kbW+op.tc*ED.bw-cx; ED.sy=op.sy-(cy-op.cy); edClamp(); return; }
   if(op.type==='ruler'){ if(Math.abs(x-op.x0)>6) op.moved=true; if(op.moved){ ED.sx=op.sx-(x-op.x0); edClamp(); } return; }
   if(op.type==='kb'){ if(!op.moved&&Math.abs(y-op.y0)>8){ op.moved=true; if(op.p) unpress(op.p); } if(op.moved){ ED.sy=op.sy-(y-op.y0); edClamp(); } return; }
+  if(op.type==='box'){ op.x1=x; op.y1=y; if(!op.moved&&Math.hypot(x-op.x0,y-op.y0)>5) op.moved=true; if(op.moved){ edBoxSel(op); edBtns(); } return; }
   const n=op.n, g0=ED.grid;
   if(op.type==='move'){
-    const t=Math.max(0,Math.round((op.orig.t+edT(x)-op.t0)/g0)*g0), p=Math.max(PMIN,Math.min(PMAX,op.orig.p+Math.round((op.y0-y)/ED.rh)));
-    if(t!==n.t||p!==n.p){ if(p!==n.p) edPreview(p); n.t=t; n.p=p; op.changed=true; }
+    // Alle ausgewählten Noten wandern gemeinsam
+    const G=op.group&&op.group.length?op.group:[{m:n,t:op.orig.t,p:op.orig.p}], minT=Math.min(...G.map(q=>q.t)), minP=Math.min(...G.map(q=>q.p)), maxP=Math.max(...G.map(q=>q.p));
+    let dt=Math.round((op.orig.t+edT(x)-op.t0)/g0)*g0-op.orig.t; dt=Math.max(-minT,dt);
+    const dp=Math.max(PMIN-minP,Math.min(PMAX-maxP,Math.round((op.y0-y)/ED.rh)));
+    if(op.orig.t+dt!==n.t||op.orig.p+dp!==n.p){ if(op.orig.p+dp!==n.p) edPreview(op.orig.p+dp); for(const q of G){ q.m.t=Math.max(0,Math.round((q.t+dt)*TPB)/TPB); q.m.p=q.p+dp; } op.changed=true; }
   } else if(op.type==='resize'){
     const d=Math.max(g0,Math.round((op.orig.d+edT(x)-op.t0)/g0)*g0); if(d!==n.d){ n.d=d; op.changed=true; }
   } else if(op.type==='create'){
@@ -2812,6 +2896,13 @@ function edUp(e){
   edOp=null;
   if(op.type==='ruler'){ if(!op.moved){ ED.ph=Math.max(0,Math.round(edT(x)/ED.grid)*ED.grid); if(ED.play&&!ED.rec) edStartPlay(false); } return; }
   if(op.type==='kb'){ if(!op.moved&&op.p) unpress(op.p); return; }
+  if(op.type==='box'){
+    if(op.moved){ edBtns(); if(ED.selSet.size) edStatus(`${ED.selSet.size} Noten ausgewählt – ziehen zum Verschieben, Entf zum Löschen, Strg/⌘+C zum Kopieren.`); return; }
+    // Nur geklickt: Auswahl aufheben – oder, wenn nichts ausgewählt war, eine Note setzen
+    if(ED.selSet.size>1){ ED.selSet=new Set(); ED.sel=null; edBtns(); return; }
+    const p=edP(op.y0); if(p<PMIN||p>PMAX) return;
+    pushUndo(); const nn={p,t:Math.max(0,Math.floor(edT(op.x0)/ED.grid)*ED.grid),d:ED.lastLen,h:ED.hand};
+    ED.m.notes.push(nn); ED.sel=nn; ED.selSet=new Set([nn]); ED.lastTap={n:nn,t:performance.now()}; edPreview(p); edChanged(); return; }
   if(op.type==='create'){ ED.lastLen=op.n.d; edChanged(); return; }
   if(op.changed){ if(op.type==='resize') ED.lastLen=op.n.d; edChanged(); } else { ED.undo.pop(); edBtns(); }
 }
@@ -2825,7 +2916,7 @@ edCv.addEventListener('wheel',e=>{
 },{passive:false});
 
 /* ---------- Knöpfe ---------- */
-$('edBack').onclick=()=>{ edStop(true); for(const p of [...held.keys()]) unpress(p); if(ownMel.some(x=>x.id===ED.m.id)) libTab.melody='mine'; setVars(INST.theme); showScreen('lib'); renderLib(); };
+$('edBack').onclick=()=>{ edStop(true); for(const p of [...held.keys()]) unpress(p); if(ED.lied) libTab.melody='lieder'; else if(ownMel.some(x=>x.id===ED.m.id)) libTab.melody='mine'; setVars(INST.theme); showScreen('lib'); renderLib(); };
 $('edPlay').onclick=()=>{ if(ED.rec) return; if(ED.play) edStop(); else edStartPlay(false); };
 $('edRec').onclick=()=>{ if(ED.rec) edStop(); else edStartPlay(true); };
 $('edStart').onclick=()=>{ const was=ED.play&&!ED.rec; edStop(); ED.ph=0; ED.sx=0; if(was) edStartPlay(false); edBtns(); };
@@ -2836,28 +2927,42 @@ function edBpmStep(d){ const v=Math.max(40,Math.min(240,ED.m.bpm+d)); if(v===ED.
 $('edBpmDown').onclick=()=>edBpmStep(-5); $('edBpmUp').onclick=()=>edBpmStep(5);
 $('edMetro').onclick=()=>{ ED.metro=!ED.metro; edBtns(); };
 $('edAutoQ').onclick=()=>{ ED.autoQ=!ED.autoQ; edBtns(); };
-$('edQuant').onclick=()=>{ if(!ED.m.notes.length) return; edStop(true); pushUndo(); ED.m.notes=quantNotes(ED.m.notes,ED.grid); dedupe(); ED.sel=null;
+$('edQuant').onclick=()=>{ if(!ED.m.notes.length) return; edStop(true); pushUndo(); ED.m.notes=quantNotes(ED.m.notes,ED.grid); dedupe(); ED.sel=null; ED.selSet=new Set();
   edChanged(`Alle Noten aufs Raster gerückt (${{1:'Viertel',0.5:'Achtel',0.25:'16tel'}[ED.grid]}).`); };
 function edZoom(f){ const c=(ED.kbW+ED.W)/2, tc=edT(c); ED.bw=Math.max(18,Math.min(160,ED.bw*f)); ED.sx=ED.kbW+tc*ED.bw-c; edClamp(); }
 $('edZoomIn').onclick=()=>edZoom(1.25); $('edZoomOut').onclick=()=>edZoom(1/1.25);
 $('edUndo').onclick=edUndo;
-$('edDel').onclick=()=>{ if(!ED.sel) return; pushUndo(); ED.m.notes.splice(ED.m.notes.indexOf(ED.sel),1); ED.sel=null; edChanged('Note gelöscht.'); };
-$('edSwap').onclick=()=>{ if(!ED.sel) return; pushUndo(); ED.sel.h=ED.sel.h==='L'?'R':'L'; ED.hand=ED.sel.h; edChanged(); };
+function edSelList(){ return ED.selSet.size?[...ED.selSet]:ED.sel?[ED.sel]:[]; }
+function edDelSel(){ const L=edSelList(); if(!L.length) return; pushUndo(); const D=new Set(L); ED.m.notes=ED.m.notes.filter(n=>!D.has(n)); ED.sel=null; ED.selSet=new Set(); edChanged(L.length>1?L.length+' Noten gelöscht.':'Note gelöscht.'); }
+function edCopy(){ const L=edSelList(); if(!L.length) return; const t0=Math.min(...L.map(n=>n.t)); ED.clip=L.map(n=>({p:n.p,t:n.t-t0,d:n.d,h:n.h})); edBtns(); edStatus(`${L.length} ${L.length>1?'Noten':'Note'} kopiert. Stell die Abspiel-Linie (oben ins Lineal tippen) und füge sie ein.`); }
+function edPaste(){
+  if(!ED.clip||!ED.clip.length||ED.rec) return; edStop(true); pushUndo();
+  const at=Math.max(0,Math.round(ED.ph/ED.grid)*ED.grid), nn=ED.clip.map(n=>({...n,t:at+n.t}));
+  ED.m.notes.push(...nn); dedupe(); const key=n=>n.h+n.p+'@'+Math.round(n.t*TPB), K=new Set(nn.map(key));
+  ED.selSet=new Set(ED.m.notes.filter(n=>K.has(key(n)))); ED.sel=[...ED.selSet][0]||null;
+  edChanged(`${nn.length} ${nn.length>1?'Noten':'Note'} eingefügt (Takt ${Math.floor(at/barQ(ED.m.meter))+1}).`);
+}
+$('edDel').onclick=edDelSel;
+$('edCopy').onclick=edCopy; $('edPaste').onclick=edPaste;
+$('edSwap').onclick=()=>{ const L=edSelList(); if(!L.length) return; pushUndo(); const h=L[0].h==='L'?'R':'L'; for(const n of L) n.h=h; ED.hand=h; edChanged(); };
 $('edName').addEventListener('input',()=>{ ED.m.name=$('edName').value.trim().slice(0,40)||'Meine Melodie'; if(!ED.isNew||ED.m.notes.length) edChanged(); });
 $('edDelMel').onclick=()=>{
   if(!ED.delArm){ ED.delArm=true; $('edDelMel').textContent='Wirklich löschen?'; return; }
-  edStop(true); const i=ownMel.findIndex(x=>x.id===ED.m.id); if(i>=0){ ownMel.splice(i,1); saveOwnAll(); }
-  ED.m=null; setVars(INST.theme); showScreen('lib'); renderLib();
+  edStop(true);
+  if(ED.lied){ ED.lied.S.mel={}; storeLied(ED.lied.S); libTab.melody='lieder'; }
+  else { const i=ownMel.findIndex(x=>x.id===ED.m.id); if(i>=0){ ownMel.splice(i,1); saveOwnAll(); } }
+  ED.m=null; ED.lied=null; setVars(INST.theme); showScreen('lib'); renderLib();
 };
 $('edSetToggle').onclick=()=>setEdSettings(!$('editor').classList.contains('set-open'));
 $('edHelp').onclick=openEdHelp;
-$('edPractice').onclick=()=>{ edStop(true); if(!ED.m.notes.length){ edStatus('Setz zuerst ein paar Noten.'); return; } storeMel(ED.m); ED.isNew=false; openMelody(ED.m); };
-$('editMel').onclick=()=>{ stopPlayback(); if(meta&&meta.lied){ openLiedEd(meta.lied,false); return; } editCurrent(); };
+$('edPractice').onclick=()=>{ edStop(true); if(!ED.m.notes.length){ edStatus('Setz zuerst ein paar Noten.'); return; } if(ED.lied){ const S=ED.lied.S; storeLied(S); setVars(INST.theme); openLied(S); return; } storeMel(ED.m); ED.isNew=false; openMelody(ED.m); };
+$('editMel').onclick=()=>{ stopPlayback(); if(meta&&meta.lied){ if(INST===MELODY) openMelLied(meta.lied); else openLiedEd(meta.lied,false); return; } editCurrent(); };
 $('pShare').onclick=()=>{ if(meta&&meta.lied){ stopPlayback(); openShareLied(meta.lied); } };
 
 /* ---------- Teilen und Empfangen ---------- */
 function openShare(){
   edStop(true);
+  if(ED.lied){ openShareLied(ED.lied.S); return; }
   if(!ED.m.notes.length){ edStatus('Setz zuerst ein paar Noten.'); return; }
   storeMel(ED.m); ED.isNew=false;
   const code=encodeMel(ED.m), link=location.href.split('#')[0]+'#melodie='+code;
@@ -3439,6 +3544,7 @@ function cleanLied(S){
   if(Array.isArray(S.beats)) out.beats=S.beats.slice(0,3000).map(b=>{ b=+b; return Number.isFinite(b)?Math.max(0,Math.min(64,Math.round(b*2)/2)):out.meter; });
   // Arranger: je Teil (in Reihenfolge) und Instrument „off“ oder eine Muster-ID; n = Name des Teils zur Kontrolle
   out.arr=[]; if(Array.isArray(S.arr)) for(const a of S.arr.slice(0,200)){ const r={n:String(a&&a.n||'').slice(0,40),i:{}};
+    if(a&&a.i&&typeof a.i==='object'&&a.i.melody==='off') r.i.melody='off';
     if(a&&a.i&&typeof a.i==='object') for(const k of ['guitar','uke','bass','piano','drums']){ const v=a.i[k]; if(typeof v==='string'&&/^[a-z0-9]{1,12}$/.test(v)) r.i[k]=v; }
     out.arr.push(r); }
   // Begleitung: Stil, Muster je Instrument, Schlagzeug (leer = passend zum Stil)
@@ -3446,6 +3552,12 @@ function cleanLied(S){
   if(S.pats&&typeof S.pats==='object') for(const k of ['guitar','uke','bass','piano','drums']){ const v=S.pats[k];
     if(typeof v==='string'&&/^[a-z0-9]{1,12}$/.test(v)) out.pats[k]=v;
     else if(v&&typeof v==='object'){ const r=ownPat(k,v); if(r) out.pats[k]=r; } }
+  // Klaviermelodie je Teil
+  out.mel={}; if(S.mel&&typeof S.mel==='object'&&!Array.isArray(S.mel)){ let tot=0;
+    for(const [k,v] of Object.entries(S.mel).slice(0,40)){ if(!Array.isArray(v)) continue; const key=String(k).slice(0,40), arr=[];
+      for(const n of v){ if(!Array.isArray(n)) continue; const p=Math.round(+n[0]), t=Math.round(+n[1]*TPB)/TPB, d=Math.round(+n[2]*TPB)/TPB;
+        if(!(p>=21&&p<=108)||!(t>=0&&t<5000)||!(d>0&&d<500)) continue; arr.push([p,t,d,n[3]?1:0]); if(++tot>=4000) break; }
+      if(arr.length) out.mel[key]=arr.sort((x,y)=>x[1]-y[1]||x[0]-y[0]); } }
   return out;
 }
 /* Eigenes Muster eines Instruments prüfen: Kästchen mit erlaubten Zeichen, 4, 6 oder 8 lang */
@@ -3475,6 +3587,29 @@ function liedPart(S,I,chords,n){
   if(I.meter(gv0)!==n) I.setMeter(gv0,n); gv0.compound=S.meter===6;
   const dr=S.drums||fe.kit; gv0.drums=dr==='off'?'simple':dr; gv0.drumsOn=dr!=='off'; gv0.lockN=n;
   return {gv:gv0,pt};
+}
+/* ---------- Klaviermelodie zu einem Lied ----------
+   S.mel = { Teilname ohne Nummer: [[Ton, Beginn, Dauer, Hand (0 rechts, 1 links)], …] }, Zeiten in Vierteln ab Anfang des Teils.
+   Gleiche Teile (Strophe 1/2, alle Refrains) teilen sich dieselbe Melodie. Ohne Teile gilt der Schlüssel „“. */
+function melHas(S){ return !!(S&&S.mel&&Object.values(S.mel).some(a=>a.length)); }
+function melSpans(S){
+  const P=parseLied(S.text), b=liedBeats(S), parts=liedParts(P), sp=[]; let q=0, last=null;
+  P.events.forEach((e,i)=>{ if(!(b[i]>0)) return;
+    if(!sp.length||e.secId!==last){ const name=liedSecName(P,e); sp.push({secId:e.secId,name,base:parts.length?secBase(name):'',start:q,len:0,k:parts.findIndex(p=>p.li===e.secId)}); last=e.secId; }
+    sp[sp.length-1].len+=b[i]; q+=b[i]; });
+  return sp;
+}
+const melObj=a=>({p:a[0],t:a[1],d:a[2],h:a[3]?'L':'R'});
+function melPart(S,base,len){ return ((S.mel&&S.mel[base])||[]).map(melObj).filter(n=>n.t<len-1e-6); }
+/* Spielt die Melodie in diesem Teil? (Noten vorhanden und im Arranger nicht auf Pause) */
+function melIn(S,sp,parts){ if(!melPart(S,sp.base,sp.len).length) return false; const a=parts&&parts.length?partArr(S,parts,sp.secId):null; return !(a&&a.melody==='off'); }
+function melLiedItems(S,bpm){
+  if(!melHas(S)) return [];
+  const spb=qSec(bpm,S.meter), tr=S.tr||0, parts=liedParts(parseLied(S.text)), out=[];
+  for(const sp of melSpans(S)){ if(!melIn(S,sp,parts)) continue;
+    for(const n of melPart(S,sp.base,sp.len)){ const d=Math.min(n.d,sp.len-n.t);
+      out.push({kind:'note',hand:n.h,midi:n.p+tr,start:(sp.start+n.t)*spb,end:(sp.start+n.t+d*0.94)*spb,vel:n.h==='L'?0.55:0.75}); } }
+  return out;
 }
 function liedBeats(S){ const P=parseLied(S.text); return P.events.map((e,i)=>S.beats&&S.beats.length===P.events.length?S.beats[i]:defaultBeats(e,S.meter)); }
 let ownLieder=[];
@@ -3506,7 +3641,7 @@ function liedGv(S){
     const c={...liedTr(e.c,S.tr),bars:1,hi:false,beats:beats[i]}, ar=partArr(S,parts,e.secId); if(ar) c.arr=ar;
     if(e.secId!==lastSec){ c.sec=liedSecName(P,e); lastSec=e.secId; }
     chords.push(c); });
-  if(INST.lyrics){ const gt=liedPart(S,GUITAR,chords,n).gv, bs=liedPart(S,BASS,chords,n).gv;
+  if(INST.lyrics||INST===MELODY){ const gt=liedPart(S,GUITAR,chords,n).gv, bs=liedPart(S,BASS,chords,n).gv;
     return {gv:{bpm:S.bpm,reps:1,drums:gt.drums,drumsOn:gt.drumsOn,padOn:true,chords,n,compound:S.meter===6,gtr:gt,bas:bs},level:4}; }
   const {gv:gv0,pt}=liedPart(S,INST,chords,n);
   const seen=new Set(); let lv=pt.l||1; chords.forEach(c=>{ const k=c.pc+c.type; if(seen.has(k)) return; seen.add(k); lv=Math.max(lv,chordLevel(c)); });
@@ -3525,10 +3660,11 @@ function liedLyric(S,bpm){
 function openLied(S){
   const P=parseLied(S.text); if(!P.events.length){ notice('In diesem Lied wurden keine Akkorde gefunden.'); return; }
   if(!liedBeats(S).some(b=>b>0)){ notice('Alle Akkorde dieses Liedes sind entfernt.'); return; }
+  if(INST===MELODY&&!melHas(S)){ openMelLied(S); return; }
   const r=liedGv(S);
-  if(INST.lyrics){
+  if(INST.lyrics||INST===MELODY){
     const lv=S.demo?1:5; meta={name:S.name,level:lv,kind:'lied',lied:S}; gv=r.gv;
-    showPlayer(S.name,lv); $('builder').hidden=true;
+    showPlayer(S.name,lv); $('builder').hidden=true; if(INST===MELODY) $('accBtn').textContent='Band';
     $('bpmGroup').hidden=false; $('speedGroup').hidden=true; $('accBtn').hidden=false; $('drumsBtn').hidden=false; $('bandGroup').hidden=false; $('editMel').hidden=false;
     setBand(gv.drumsOn!==false,true); speed=1; rebuild(true); return;
   }
@@ -3549,7 +3685,7 @@ async function unpackBytes(bytes){
 function b64u(bytes){ let s=''; for(let i=0;i<bytes.length;i+=3){ const v=(bytes[i]<<16)|((bytes[i+1]||0)<<8)|(bytes[i+2]||0); s+=B64[v>>18]+B64[(v>>12)&63]+(i+1<bytes.length?B64[(v>>6)&63]:'')+(i+2<bytes.length?B64[v&63]:''); } return s; }
 function unb64u(str){ const out=[]; let acc=0,bits=0; for(const ch of str){ const v=B64.indexOf(ch); if(v<0) continue; acc=(acc<<6)|v; bits+=6; if(bits>=8){ bits-=8; out.push((acc>>bits)&255); acc&=(1<<bits)-1; } } return new Uint8Array(out); }
 async function encodeLied(S){
-  const json=JSON.stringify({n:S.name,t:S.text,b:S.bpm,m:S.meter,r:S.tr,d:S.beats||liedBeats(S),a:S.arr&&S.arr.some(x=>Object.keys(x.i).length)?S.arr:undefined,y:S.style||undefined,q:S.pats&&Object.keys(S.pats).length?S.pats:undefined,u:S.drums||undefined});
+  const json=JSON.stringify({n:S.name,t:S.text,b:S.bpm,m:S.meter,r:S.tr,d:S.beats||liedBeats(S),a:S.arr&&S.arr.some(x=>Object.keys(x.i).length)?S.arr:undefined,y:S.style||undefined,q:S.pats&&Object.keys(S.pats).length?S.pats:undefined,u:S.drums||undefined,v:melHas(S)?S.mel:undefined});
   const {z,bytes}=await packBytes(new TextEncoder().encode(json));
   return 'L'+(z?'z':'p')+b64u(bytes);
 }
@@ -3560,7 +3696,7 @@ async function decodeLied(str){
   if(!/^L[zp]/.test(str)) throw new Error('kein Lied');
   let bytes=unb64u(str.slice(2)); if(str[1]==='z') bytes=await unpackBytes(bytes);
   const o=JSON.parse(new TextDecoder().decode(bytes));
-  const S=cleanLied({id:newId(),name:o.n,text:o.t,bpm:o.b,meter:o.m,tr:o.r,beats:o.d,arr:o.a,style:o.y,pats:o.q,drums:o.u});
+  const S=cleanLied({id:newId(),name:o.n,text:o.t,bpm:o.b,meter:o.m,tr:o.r,beats:o.d,arr:o.a,style:o.y,pats:o.q,drums:o.u,mel:o.v});
   if(!S||!parseLied(S.text).events.length) throw new Error('leer');
   return S;
 }
@@ -3764,13 +3900,19 @@ function leArr(){
   const setCell=(k,id,v)=>{ const def=songPatId(S,id); parts.forEach((q,j)=>{ if(j===k||(link&&base(j)===base(k))){ if(!v||v===def) delete cur[j][id]; else cur[j][id]=v; } }); };
   const opts=(I,id)=>{ const def=songPatId(S,id), list=I.patterns.filter(q=>patOk(q,S.meter)); let h=def==='own'?'<option value="own">Eigenes Muster</option>':'';
     for(const q of list) h+=`<option value="${q.id}">${q.id===def?'★ ':''}${q.n}</option>`; return h; };
-  const hd=document.createElement('tr'); hd.innerHTML='<th>Teil</th>'+BAND_INSTS.map(([id,n])=>`<th><span class="arrdot" style="background:${INSTS[id].theme['--accent']}"></span>${n}</th>`).join(''); tb.appendChild(hd);
+  // Klaviermelodie: eigene Spalte, sobald das Lied eine Melodie hat – „spielt“, wo Noten stehen
+  const MC=melHas(S), spans=MC?melSpans(S):[], lenOf=k=>{ const sp=spans.find(x=>x.k===k); return sp?sp.len:0; };
+  const hd=document.createElement('tr'); hd.innerHTML='<th>Teil</th>'+BAND_INSTS.map(([id,n])=>`<th><span class="arrdot" style="background:${INSTS[id].theme['--accent']}"></span>${n}</th>`).join('')+(MC?`<th><span class="arrdot" style="background:${MELODY.theme['--accent']}"></span>Klaviermelodie</th>`:''); tb.appendChild(hd);
   // Schnell für alle Teile
   const all=document.createElement('tr'); all.className='arrall'; all.innerHTML='<th>Alle Teile</th>';
   BAND_INSTS.forEach(([id,name])=>{ const td=document.createElement('td'), sel=document.createElement('select'); sel.id='arrall-'+id;
     sel.innerHTML='<option value="">ändern …</option><option value="on">alle an</option><option value="off">alle Pause</option>'+opts(INSTS[id],id);
     sel.onchange=()=>{ const v=sel.value; parts.forEach((q,j)=>{ if(v==='on'){ if(cur[j][id]==='off') delete cur[j][id]; } else if(v) { if(v===songPatId(S,id)) delete cur[j][id]; else cur[j][id]=v; } }); save(`${name}: in allen Teilen geändert.`); };
     td.appendChild(sel); all.appendChild(td); });
+  if(MC){ const td=document.createElement('td'), sel=document.createElement('select'); sel.id='arrall-melody';
+    sel.innerHTML='<option value="">ändern …</option><option value="on">alle an</option><option value="off">alle Pause</option>';
+    sel.onchange=()=>{ const v=sel.value; parts.forEach((q,j)=>{ if(v==='on') delete cur[j].melody; else if(v==='off') cur[j].melody='off'; }); save('Klaviermelodie: in allen Teilen geändert.'); };
+    td.appendChild(sel); all.appendChild(td); }
   tb.appendChild(all);
   parts.forEach((p,k)=>{
     const tr=document.createElement('tr'); const th=document.createElement('th'); th.textContent=p.name; tr.appendChild(th);
@@ -3783,6 +3925,13 @@ function leArr(){
         sel.onchange=()=>{ setCell(k,id,sel.value); save(`${p.name}: ${name} spielt ${sel.options[sel.selectedIndex].textContent.replace('★ ','')}.`); };
         td.appendChild(sel); }
       tr.appendChild(td); });
+    if(MC){ const td=document.createElement('td'), notes=melPart(S,secBase(p.name),lenOf(k)).length, on=notes&&cur[k].melody!=='off';
+      if(!notes){ td.className='arrcell off'; td.innerHTML='<span class="lbl">keine Noten</span>'; }
+      else { td.className='arrcell'+(on?'':' off'); const bt=document.createElement('button'); bt.className='arrtog'; bt.id=`arr-${k}-melody`; bt.style.setProperty('--ic',MELODY.theme['--accent']);
+        bt.setAttribute('aria-pressed',on); bt.textContent=on?'spielt':'Pause'; bt.setAttribute('aria-label',`${p.name}, Klaviermelodie: ${on?'spielt':'Pause'}`);
+        bt.onclick=()=>{ parts.forEach((q,j)=>{ if(j===k||(link&&base(j)===base(k))){ if(on) cur[j].melody='off'; else delete cur[j].melody; } }); save(`${p.name}: Klaviermelodie ${on?'macht Pause':'spielt'}.`); };
+        td.appendChild(bt); }
+      tr.appendChild(td); }
     tb.appendChild(tr);
   });
   $('arrLink').checked=link;
@@ -3790,6 +3939,8 @@ function leArr(){
 $('arrLink').addEventListener('change',e=>{ LE.arrLink=e.target.checked; });
 function leBand(){
   const S=LE.S, st=liedStyle(S), fe=FEEL[st], fixed=S.meter===3||S.meter===6;
+  $('leMel').textContent=melHas(S)?'Melodie bearbeiten':'Melodie schreiben';
+  $('leMelInfo').textContent=melHas(S)?'Spielt bei den anderen Instrumenten mit. Im Arranger siehst du, in welchen Teilen.':'Optional: eine eigene Melodie, die die Band mitspielt.';
   const sb=$('leStyle'); sb.innerHTML='';
   (S.meter===3?['waltz']:S.meter===6?['six']:LIED_STYLES.filter(x=>x!=='waltz'&&x!=='six')).forEach(k=>{ const b=document.createElement('button'); b.textContent=STYLE_NAMES[k]; b.dataset.v=k; b.setAttribute('aria-pressed',k===st);
     b.onclick=()=>{ if(fixed) return; S.style=k; S.pats={}; S.drums=''; leSave(STYLE_NAMES[k]+': Muster für alle Instrumente gesetzt.'); leRender(); }; sb.appendChild(b); });
@@ -4429,8 +4580,11 @@ function libSections(){
   if(INST.songs){
     const mel=(s,i)=>({item:{...s,hint:s.origin+(s.hint?' · '+s.hint:''),btag:!!s.band},id:'card-ms'+i,open:()=>openMelody(s)});
     return [
-      {id:'songs',t:'Alle Lieder',ts:'Lieder',info:'Fang mit „Leicht“ an. Schaffst du alle Töne, gibt es drei Sterne. „Klassenband“ heißt: Dieses Lied gibt es auch bei den anderen Instrumenten.',items:INST.songs.map(mel)},
+      {id:'songs',t:'Alle Melodien',ts:'Melodien',info:'Fang mit „Leicht“ an. Schaffst du alle Töne, gibt es drei Sterne. „Klassenband“ heißt: Dieses Lied gibt es auch bei den anderen Instrumenten.',items:INST.songs.map(mel)},
       {id:'band',t:'Klassenband',ts:'Band',info:'Diese Lieder gibt es bei allen Instrumenten, in gleicher Tonart und gleichem Tempo. Hier spielst du die Melodie – bei Gitarre, Ukulele, Bass und Klavierbegleitung spielt man die Akkorde dazu.',items:INST.songs.map(mel).filter(x=>x.item.band).map(x=>({...x,item:{...x.item,btag:false}}))},
+      {id:'lieder',t:'Lieder',ts:'Lieder',info:'Deine importierten Lieder mit eigener Klaviermelodie. Tippe ein Lied ohne Melodie an, um sie zu schreiben – die Teile und Akkorde laufen dabei mit. Was du in einem Teil schreibst, gilt für alle gleichen Teile. Sobald ein Lied eine Melodie hat, spielt sie bei den anderen Instrumenten mit.',
+        empty:'Noch keine importierten Lieder. Importiere ein Lied, z. B. bei Gesang – dann kannst du hier die Melodie dazu schreiben.',
+        items:ownLieder.map((S,i)=>({S,i,h:melHas(S)})).sort((a,b)=>b.h-a.h).map(({S,i,h})=>{ const ns=melFull(S); return {item:{name:S.name,level:h?4:0,hint:h?`${ns.length} Noten · ${S.bpm} BPM`:'Noch keine Melodie – tippen, um sie zu schreiben',notes:ns,bpm:S.bpm,meter:S.meter},id:'card-ml'+i,open:()=>openLied(S)}; })},
       {id:'mine',t:'Meine',info:'Deine Melodien und geöffnete MIDI-Dateien. Sie sind nur in diesem Browser gespeichert – teile eine Melodie per Link, dann geht sie nicht verloren.',empty:'Noch keine eigenen Melodien. Tippe oben auf „Melodie schreiben“ oder „Melodie empfangen“.',
         items:[...ownMel.map((m,i)=>{ const hs=new Set(m.notes.map(n=>n.h)); return {item:{name:m.name,level:4,hint:`${m.notes.length} Noten · ${m.bpm} BPM`+(hs.size>1?' · beide Hände':''),notes:m.notes,bpm:m.bpm,meter:m.meter},id:'card-own'+i,open:()=>openMelody(m)}; }),...midi]}
     ];
@@ -4496,7 +4650,7 @@ document.querySelectorAll('#filters .filter').forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- Öffnen ---------- */
-function showPlayer(name,level){ loop=null; showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); setTimeout(midiInfo,0); }
+function showPlayer(name,level){ loop=null; $('accBtn').textContent=INST.accLabel; showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); setTimeout(midiInfo,0); }
 function openGroove(p,editable){
   meta={name:p.name,level:p.level,kind:'groove',saved:!!p.saved,lied:p.lied||null,trKey:p.trKey||null};
   gv=clone(p.gv); gv.chords=normalize(gv.chords);
@@ -4555,6 +4709,8 @@ function liedBand(s,S,gv){
       else acc.push({v:'pluck',inst:id,midi:it.midi,start:it.start,end:it.end,dur:d,vel:it.vel*0.4});
     }
   }
+  // Die eigene Klaviermelodie spielt mit (außer man spielt sie gerade selbst)
+  if(own!=='melody') for(const it of melLiedItems(S,gv.bpm)) acc.push({v:'mel',midi:it.midi,start:it.start,end:it.end,dur:it.end-it.start,vel:it.vel*0.85});
   acc.sort((a,b)=>a.start-b.start); drums.sort((a,b)=>a.start-b.start);
   s.acc=acc; s.drums=drums; s.hasAcc=true;
   for(const a of acc) s.duration=Math.max(s.duration,a.end);
@@ -4832,7 +4988,7 @@ function schedule(){
   const its=song.items;
   while(schedIdx<its.length&&its[schedIdx].start<limit){ const n=its[schedIdx++]; if(n.start<pos-0.15) continue; if(!isPractice(n)) viaBus('inst',()=>INST.playItem(n,at(n.start))); }
   const A=song.acc;
-  while(accIdx<A.length&&A[accIdx].start<limit){ const a=A[accIdx++]; if(a.start<pos-0.15||!accOn) continue; if(a.v==='strum') viaBus(a.inst==='uke'?'uke':'gtr',()=>(a.inst==='uke'?UKE:GUITAR).strumSound(a.shape,a.dir,at(a.start),a.vel,(a.ring||0.4)/speed)); else if(a.v==='pluck') viaBus(a.inst==='uke'?'uke':'gtr',()=>pluck(a.midi,at(a.start),a.vel,a.dur/speed+0.3)); else if(a.v==='piano') viaBus('keys',()=>pianoVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else if(a.v==='bass') viaBus('bass',()=>bassVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else viaBus('keys',()=>keysVoice(a.midi,at(a.start),a.dur/speed,a.vel)); }
+  while(accIdx<A.length&&A[accIdx].start<limit){ const a=A[accIdx++]; if(a.start<pos-0.15||!accOn) continue; if(a.v==='strum') viaBus(a.inst==='uke'?'uke':'gtr',()=>(a.inst==='uke'?UKE:GUITAR).strumSound(a.shape,a.dir,at(a.start),a.vel,(a.ring||0.4)/speed)); else if(a.v==='pluck') viaBus(a.inst==='uke'?'uke':'gtr',()=>pluck(a.midi,at(a.start),a.vel,a.dur/speed+0.3)); else if(a.v==='piano') viaBus('keys',()=>pianoVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else if(a.v==='mel') viaBus('mel',()=>pianoVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else if(a.v==='bass') viaBus('bass',()=>bassVoice(a.midi,at(a.start),a.dur/speed,a.vel)); else viaBus('keys',()=>keysVoice(a.midi,at(a.start),a.dur/speed,a.vel)); }
   const ds=song.drums;
   while(drumIdx<ds.length&&ds[drumIdx].start<limit){ const d=ds[drumIdx++]; if(d.start<pos-0.15) continue; if(d.k==='stick'||drumsOn) drum(d.k,at(d.start),d.v); }
 }
@@ -4935,7 +5091,7 @@ function press(m,vel=0.85,src='touch',where){
 function unpress(m){ const v=held.get(m); if(!v) return; held.delete(m); heldPos.delete(m); release(v,ac.currentTime); if(ED.rec) edRecOff(m); }
 
 addEventListener('keydown',e=>{
-  if(!$('shareDlg').hidden||!$('importDlg').hidden){ if(e.key==='Escape'){ $('shareDlg').hidden=true; $('importDlg').hidden=true; } return; }
+  if(!$('shareDlg').hidden||!$('importDlg').hidden||!$('printDlg').hidden){ if(e.key==='Escape'){ $('shareDlg').hidden=true; $('importDlg').hidden=true; $('printDlg').hidden=true; } return; }
   if(!$('help').hidden){ if(e.key==='Escape'||e.key==='Enter') closeHelp(); return; }
   if(!$('latDlg').hidden){ if(e.key==='Escape') closeLat(); return; }
   if(!$('mixDlg').hidden){ if(e.key==='Escape') closeMix(); return; }
@@ -4947,6 +5103,14 @@ addEventListener('keydown',e=>{
   const ed=edOn();
   if(($('player').hidden&&!ed)||['SELECT','INPUT','TEXTAREA'].includes(e.target.tagName)) return;
   if(e.code==='Space'){ e.preventDefault(); if(!e.repeat) (ed?(ED.rec?$('edRec'):$('edPlay')):$('play')).click(); return; }
+  // Melodie-Editor: Auswahl löschen, alles auswählen, kopieren, einfügen, rückgängig
+  if(ed&&!ED.rec){ const mod=e.ctrlKey||e.metaKey, k=e.key.toLowerCase();
+    if((e.key==='Delete'||e.key==='Backspace')&&edSelList().length){ e.preventDefault(); edDelSel(); return; }
+    if(mod&&k==='a'){ e.preventDefault(); ED.selSet=new Set(ED.m.notes); ED.sel=ED.m.notes[0]||null; edBtns(); edDraw(); return; }
+    if(mod&&k==='c'){ e.preventDefault(); edCopy(); return; }
+    if(mod&&k==='v'){ e.preventDefault(); edPaste(); return; }
+    if(mod&&k==='z'){ e.preventDefault(); edUndo(); return; }
+    if(e.key==='Escape'&&edSelList().length){ ED.selSet=new Set(); ED.sel=null; edBtns(); return; } }
   if(ed&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){ e.preventDefault(); edUndo(); return; }
   if(e.repeat||e.metaKey||e.ctrlKey||e.altKey) return;
   if(ed&&(e.key==='Delete'||e.key==='Backspace')){ e.preventDefault(); $('edDel').click(); return; }
@@ -5337,6 +5501,7 @@ function mixChannels(){
   if(hasI('uke')) out.push(['uke','Ukulele','Band']);
   if(has('bass')) out.push(['bass','Bass','Begleitung']);
   if(has('keys')||has('piano')) out.push(['keys','Klavier','Begleitung']);
+  if(has('mel')) out.push(['mel','Klaviermelodie','Melodie']);
   if((song.drums||[]).some(d=>d.k!=='stick')) out.push(['drums','Schlagzeug','']);
   return out;
 }
@@ -5504,6 +5669,13 @@ function drawLoopEnd(){
   if(W-x0>90){ g.font=`600 13px ${FB}`; g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=T.accent;
     g.fillText('↻ wieder '+song.secs[loop.i].name,x0+10,hwTop+hwH/2); }
 }
+/* Klaviermelodie zu einem Lied: oben links Teil und Akkord, damit man weiß, wo man ist */
+function drawMelLiedInfo(){
+  const T=TH.canvas, p=Math.max(0,pos), c=curChord(p), nc=c&&nextChordAfter(c), S=song.secs||[]; let nm=''; for(const sc of S) if(sc.start<=p+1e-3) nm=sc.name;
+  const txt=(nm?(loop&&S[loop.i]&&S[loop.i].name===nm?'↻ ':'')+nm.toUpperCase()+' · ':'')+(c?c.label:'')+(nc?'  → '+nc.label:'');
+  g.font=`700 13px ${FB}`; const w=g.measureText(txt).width+20; g.fillStyle=T.panel; rr(10,10,w,28,14); g.fill();
+  g.fillStyle=T.accent; g.textAlign='left'; g.textBaseline='middle'; g.fillText(txt,20,24.5);
+}
 function secLab(i){ const S=song.secs, L=loop&&loop.i===i; return (L?'↻ ':'')+S[i].name.toUpperCase()+(L&&loop.ramp?' · '+loopPct()+' %':''); }
 function drawSecs(tStart,tEnd){
   const S=song.secs, sr=secRowH(), T=TH.canvas; if(!S||!S.length) return;
@@ -5566,7 +5738,8 @@ function draw(){
   g.fillStyle=bg; g.fillRect(0,0,W,H);
   if(!song||!hwH) return;
   INST.draw();
-  if(loop&&song.kind==='groove'&&!INST.lyrics&&INST.id!=='drums') drawLoopEnd();
+  if(loop&&song.kind==='groove'&&!INST.lyrics&&INST.id!=='drums'&&INST!==MELODY) drawLoopEnd();
+  if(INST===MELODY&&meta&&meta.lied&&song.timeline.length) drawMelLiedInfo();
   const R=GEO.ringR||12;
   fx=fx.filter(f=>{ f.a*=0.93; return f.a>0.05; });
   for(const f of fx){ g.globalAlpha=f.a; g.strokeStyle=f.c==='good'?'#5ee6a0':'#ff6f7d'; g.lineWidth=4;
@@ -5760,6 +5933,7 @@ const LE_HELP=[
   ['Tempo, Takt, Tonart','Stell das Tempo ein oder tippe „Tempo antippen“ im Takt des Liedes. „Tonart verschieben“ setzt alle Akkorde höher oder tiefer – z. B. in eine leichtere Tonart.'],
   ['Takte','Im Schritt „Takte“ steht jeder Akkord mit seiner Länge. Mit − und + änderst du sie, mit × entfernst du einen Akkord (↺ holt ihn zurück). „Alle 1 Takt“ und „Alle 2 Takte“ setzen alle auf einmal.'],
   ['Übertragen','Hast du eine Strophe oder einen Refrain fertig eingestellt, tippe auf „Auf alle Strophen übertragen“ bzw. „Auf alle Refrains übertragen“. Die anderen Abschnitte übernehmen Längen und entfernte Akkorde.'],
+  ['Klaviermelodie','Im Schritt „Begleitung“ schreibst du mit „Melodie schreiben“ eine eigene Melodie zum Lied. Dann spielt sie bei allen Instrumenten mit, hat einen Regler im Mischpult und eine Spalte im Arranger: Dort steht „spielt“, wo Noten stehen.'],
   ['Exportieren','„Export“ macht ein Blatt für die Klasse. Du wählst aus, was darauf steht: Liedtext mit Akkorden, Akkordfolge ohne Text, Griffbilder für Gitarre oder Ukulele, die Muster jedes Instruments je Teil und die Übersicht, wer wann spielt. „PDF teilen“ öffnet am iPhone das Teilen-Menü – zum Drucken, Sichern oder Verschicken.']
 ];
 document.querySelectorAll('#leTabs button').forEach(b=>b.onclick=()=>leTab(b.dataset.v));
@@ -5798,6 +5972,7 @@ $('leDel').onclick=()=>{
   showScreen('lib'); renderLib();
 };
 $('leShare').onclick=()=>openShareLied(LE.S);
+$('leMel').onclick=()=>{ const S=LE.S; leSave(); if(!parseLied(S.text).events.length){ leStatus('Das Lied hat noch keine Akkorde.'); return; } openMelLied(S); };
 $('leHelp').onclick=()=>openHelp(LE_HELP,'Liedtexte sind urheberrechtlich geschützt: Nutze importierte Lieder nur im Unterricht mit deiner Lerngruppe und teile sie nicht öffentlich.');
 function setZoom(z){
   if(INST&&INST.lyrics) voiceScale=Math.max(0.6,Math.min(3,z));
@@ -5928,8 +6103,9 @@ function printHTML(S,opt){
   }
   if(opt.arr){
     const steps=pt=>{ if(!pt) return ''; const a=pt.p||pt.steps; if(!a||(pt.k||pt.kind)!=='s') return ''; return `<small>${cutM(a,S).map(v=>v==='-'?'·':strumGlyph(v)).join(' ')}</small>`; };
-    let arr='<table class="ps-arr"><thead><tr><th>Teil</th>'+BAND_INSTS.map(([,n])=>`<th>${n}</th>`).join('')+'</tr></thead><tbody>';
-    rowsP.forEach((p,k)=>{ arr+=`<tr><th>${escH(p.name)}</th>`+BAND_INSTS.map(([id])=>{ const pt=printPat(S,parts,k,id); return pt?`<td>${escH(pt.n)}${id==='guitar'||id==='uke'?steps(pt):''}</td>`:'<td class="off">Pause</td>'; }).join('')+'</tr>'; });
+    const MC=melHas(S), msp=MC?melSpans(S):[];
+    let arr='<table class="ps-arr"><thead><tr><th>Teil</th>'+BAND_INSTS.map(([,n])=>`<th>${n}</th>`).join('')+(MC?'<th>Klaviermelodie</th>':'')+'</tr></thead><tbody>';
+    rowsP.forEach((p,k)=>{ const sp=msp.find(x=>x.k===k)||msp[0]; arr+=`<tr><th>${escH(p.name)}</th>`+BAND_INSTS.map(([id])=>{ const pt=printPat(S,parts,k,id); return pt?`<td>${escH(pt.n)}${id==='guitar'||id==='uke'?steps(pt):''}</td>`:'<td class="off">Pause</td>'; }).join('')+(MC?(sp&&melIn(S,sp,parts)?'<td>Melodie</td>':'<td class="off">Pause</td>'):'')+'</tr>'; });
     secs.push({h:`<h2>Wer spielt wann?</h2>${arr}</tbody></table><div class="ps-legend">↓ Abschlag · ↑ Aufschlag · · Pause</div>`});
   }
   // Nach Liedtext oder Akkordfolge beginnt der Rest auf einer neuen Seite
@@ -6095,7 +6271,7 @@ async function openRecv(code){
   recvLied=null; $('recvTitle').textContent='Lied wird geladen …'; $('recvDesc').textContent=''; $('recvMsg').textContent=''; $('recvGrid').innerHTML=''; $('recvDlg').hidden=false;
   let S; try{ S=await decodeLied(code); }catch(e){ $('recvTitle').textContent='Das hat nicht geklappt'; $('recvMsg').textContent='Der Link ist unvollständig oder beschädigt. Lass ihn dir noch einmal schicken.'; return; }
   recvLied=S; $('recvTitle').textContent=`„${S.name}“`; $('recvDesc').textContent='Welches Instrument spielst du? Tippe darauf – dann geht es gleich los.';
-  for(const id of ['guitar','uke','piano','bass','drums','voice']){
+  for(const id of ['guitar','uke','piano','bass','drums','voice',...(melHas(S)?['melody']:[])]){
     const I=INSTS[id], b=document.createElement('button'); b.className='recvbtn'; b.id='recv-'+id;
     b.style.setProperty('--iac',I.theme['--accent']); b.style.setProperty('--ibg',`linear-gradient(180deg,${I.theme['--bg-2']},${I.theme['--bg']})`);
     b.innerHTML=`<span class="art">${I.art}</span><b>${I.label.replace(/^Klavier(?=.)/,'Klavier&shy;')}</b>`;
@@ -6125,7 +6301,7 @@ $('presPrev').onclick=()=>{ partStep(-1); presBar(); }; $('presNext').onclick=()
 $('partPrev').onclick=()=>partStep(-1); $('partNext').onclick=()=>partStep(1);
 
 /* Nur für automatische Tests: mit localStorage „bandlauf-debug“ ist das aktuelle Lied lesbar */
-try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop},ac:ac&&ac.state,idle:acIdle})}; }catch(e){}
+try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop},ac:ac&&ac.state,idle:acIdle}),ed:()=>ED}; }catch(e){}
 /* ---------- Start ---------- */
 renderPick();
 if(ONLY){ setInst(ONLY); showScreen('lib'); renderLib(); maybeHelp(); }
