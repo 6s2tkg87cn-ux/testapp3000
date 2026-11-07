@@ -807,6 +807,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
       </div>
     </div>
     <div class="group" id="bQuickGroup" hidden><span class="lbl">Muster</span><button class="btn small" id="bQuick" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.3 1.3l3.4 3.4-8.5 8.5H2.8V9.8z"/></svg><span id="bQuickT">Muster</span></button></div>
+    <div class="group" id="pianoGroup" hidden><span class="lbl">Ansicht</span><div class="row"><button class="chipt" id="pvLane" aria-pressed="false" title="Alte Ansicht mit Laufband statt großer Klaviatur">Laufband</button><button class="chipt" id="pvFing" aria-pressed="true" title="Fingersatz auf den Tasten">Fingersatz</button><button class="chipt" id="pvEasy" aria-pressed="false" title="Ein Akkord pro Takt, links nur der Grundton">Leicht</button></div></div>
     <div class="group" id="mixGroup"><span class="lbl">Lautstärke</span><button class="btn small" id="mixBtn" title="Mischpult" aria-label="Mischpult"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h1.6v6.2a2 2 0 010 3.6v3.2H3v-3.2a2 2 0 010-3.6zM7.2 1.5h1.6v2.2a2 2 0 010 3.6v7.2H7.2V7.3a2 2 0 010-3.6zM11.4 1.5H13v8.2a2 2 0 010 3.6v1.2h-1.6v-1.2a2 2 0 010-3.6z"/></svg>Mischpult</button></div>
     <div class="group">
       <span class="lbl" id="micGroupLbl">Echtes Instrument</span>
@@ -1899,6 +1900,193 @@ function nearVoicing(pc,ivs,prev,center=64){
   return best||n0Fallback(pc,ivs,center);
 }
 function n0Fallback(pc,ivs,center){ const base=pc+12*Math.round((center-pc-4)/12); return ivs.map(i=>base+i); }
+/* ---------- Klavierbegleitung, Ansicht „Klaviatur“: oben was jetzt und was gleich, darunter eine große Klaviatur ----------
+   Statt des Laufbands: aktueller Akkord groß, Countdown bis zum Wechsel, ein Takt Rhythmus mit Lauflicht,
+   die Akkordfolge als Kästchen, die Liedzeile. Auf den Tasten: welche drücken, mit welchem Finger, und wohin es gleich geht. */
+const PV_KEY='tastenlauf-ansicht'; let pianoView='keys', pianoFing=true, pianoEasy=false;
+try{ const o=JSON.parse(localStorage.getItem(PV_KEY)||'{}'); if(o&&o.v==='lane') pianoView='lane'; if(o&&o.f===false) pianoFing=false; if(o&&o.e===true) pianoEasy=true; }catch(e){}
+function pvSave(){ try{ localStorage.setItem(PV_KEY,JSON.stringify({v:pianoView,f:pianoFing,e:pianoEasy})); }catch(e){} }
+const pKeysView=()=>pianoView==='keys'&&!!song&&song.kind==='groove'&&song.timeline.length>0;
+const FINGER_NAME={1:'Daumen',2:'Zeigefinger',3:'Mittelfinger',4:'Ringfinger',5:'kleiner Finger'};
+/* Tasten eines Bereichs der Klaviatur */
+function kvSeg(lo,hi,x,y,w,h,hand){
+  lo=Math.max(21,lo); hi=Math.min(108,hi); if(isBlackKey(lo)) lo--; if(isBlackKey(hi)) hi++;
+  const keys=new Array(128).fill(null), whites=[]; for(let m=lo;m<=hi;m++) if(!isBlackKey(m)) whites.push(m);
+  const ww=w/whites.length; let wi=0;
+  for(let m=lo;m<=hi;m++){ if(!isBlackKey(m)){ keys[m]={x:x+wi*ww,w:ww,black:false}; wi++; } else { const bw=ww*0.6; keys[m]={x:x+wi*ww-bw/2,w:bw,black:true}; } }
+  return {lo,hi,x,y,w,h,ww,keys,whites,hand};
+}
+const kvWhites=(lo,hi)=>{ let n=0; for(let m=lo;m<=hi;m++) if(!isBlackKey(m)) n++; return n; };
+/* Fingersatz: rechts vom Daumen aufwärts, links vom kleinen Finger aufwärts */
+function kvFingers(set,hand){
+  const a=[...set].sort((x,y)=>x-y), F=hand==='L'?{1:[5],2:[5,1],3:[5,3,1],4:[5,4,2,1],5:[5,4,3,2,1]}:{1:[1],2:[1,5],3:[1,3,5],4:[1,2,3,5],5:[1,2,3,4,5]}, f=F[a.length], m=new Map();
+  if(f) a.forEach((x,i)=>m.set(x,f[i])); return m;
+}
+/* Was bewegt sich beim Wechsel? Gemeinsame Töne bleiben, die anderen wandern zum nächsten freien Ziel */
+function kvMove(cur,nxt){
+  const stay=[...cur].filter(m=>nxt.has(m)).sort((a,b)=>a-b), from=[...cur].filter(m=>!nxt.has(m)).sort((a,b)=>a-b), to=[...nxt].filter(m=>!cur.has(m)).sort((a,b)=>a-b), pairs=[];
+  if(from.length===to.length) from.forEach((m,i)=>pairs.push([m,to[i]]));
+  else { const left=[...to]; for(const m of from){ if(!left.length) break; let bi=0; left.forEach((t,i)=>{ if(Math.abs(t-m)<Math.abs(left[bi]-m)) bi=i; }); pairs.push([m,left.splice(bi,1)[0]]); } }
+  return {stay,pairs,from,to};
+}
+/* Zusammenhängende gleiche Akkorde (über Taktgrenzen) zu einem Kästchen zusammenfassen */
+function kvRuns(){
+  if(song._runs) return song._runs; const R=[];
+  for(const t of song.timeline){ const l=R[R.length-1]; if(l&&l.label===t.label&&Math.abs(l.end-t.start)<1e-4) l.end=t.end; else R.push({label:t.label,start:t.start,end:t.end,c:t.c}); }
+  return song._runs=R;
+}
+function kvHit(x,y){
+  const K=GEO.kv; if(!K) return null;
+  for(const S of K.segs){ if(y<S.y||y>S.y+S.h) continue;
+    if(y<S.y+S.h*0.6) for(let m=S.lo;m<=S.hi;m++){ const k=S.keys[m]; if(k&&k.black&&x>=k.x&&x<k.x+k.w) return m; }
+    for(let m=S.lo;m<=S.hi;m++){ const k=S.keys[m]; if(k&&!k.black&&x>=k.x&&x<k.x+k.w) return m; } }
+  return null;
+}
+function kvSegFor(m,hand){ const K=GEO.kv; if(!K) return null; return K.segs.find(S=>S.keys[m]&&(!S.hand||!hand||S.hand===hand))||K.segs.find(S=>S.keys[m])||null; }
+function kvLayout(){
+  const L=GEO, K=L.kv={}, sh=H<300, coarse=matchMedia('(pointer:coarse)').matches; K.short=sh;
+  let rlo=127,rhi=0,llo=127,lhi=0;
+  for(const it of song.items){ if(it.hand==='L'){ llo=Math.min(llo,it.midi); lhi=Math.max(lhi,it.midi); } else { rlo=Math.min(rlo,it.midi); rhi=Math.max(rhi,it.midi); } }
+  const hasR=rlo<=rhi, hasL=llo<=lhi;
+  let lo=Math.min(hasR?rlo:127,hasL?llo:127), hi=Math.max(hasR?rhi:0,hasL?lhi:0); if(lo>hi){ lo=48; hi=72; }
+  lo-=1; hi+=1; while(hi-lo<16){ lo--; if(hi-lo<16) hi++; }
+  K.headH=sh?Math.round(Math.max(50,Math.min(66,H*0.3))):Math.round(Math.max(120,Math.min(240,H*0.38)));
+  let kbTop=K.headH+6, kbH=H-kbTop-2;
+  const minW=coarse?24:18, split=!sh&&hasR&&hasL&&kvWhites(lo,hi)*minW>W&&kbH>=220;
+  if(split){
+    const span=(a,b)=>{ a-=1; b+=1; while(b-a<12){ a--; if(b-a<12) b++; } return [a,b]; }, [ra,rb]=span(rlo,rhi), [la,lb]=span(llo,lhi);
+    const hh=Math.min((kbH-12)/2,(W/Math.max(kvWhites(ra,rb),kvWhites(la,lb)))*5.4);
+    kbTop=H-2-hh*2-12; K.headH=kbTop-6;
+    K.segs=[kvSeg(ra,rb,0,kbTop,W,hh,'R'),kvSeg(la,lb,0,kbTop+hh+12,W,hh,'L')];
+  } else {
+    const ww=W/kvWhites(lo,hi), maxH=Math.max(70,ww*(coarse?4.6:4.2));
+    if(kbH>maxH){ kbTop=H-2-maxH; kbH=maxH; K.headH=kbTop-6; }
+    K.segs=[kvSeg(lo,hi,0,kbTop,W,kbH,null)];
+  }
+  hwTop=4; hwH=Math.max(40,K.headH-4); hx=0;
+  GEO.ringR=Math.min(14,K.segs[0].ww*0.4);
+}
+function kvDraw(){
+  const K=GEO.kv, T=TH.canvas, its=song.items, p=Math.max(0,pos), runs=kvRuns();
+  let ri=0; for(let i=0;i<runs.length;i++) if(runs[i].start<=p+1e-4) ri=i;
+  const cr=runs[ri], nr=runs[ri+1]||null;
+  const notesIn=(a,b)=>{ const r={R:new Set(),L:new Set()}; for(let j=lowerBound(its,a-1e-4,n=>n.start);j<its.length&&its[j].start<b-1e-4;j++) r[its[j].hand==='L'?'L':'R'].add(its[j].midi); return r; };
+  const cur=notesIn(cr.start,cr.end), soon=!!nr&&nr.start-p<=(song.bar||2)+1e-4, nxt=soon?notesIn(nr.start,nr.end):null;
+  const active=new Map(); for(let j=lowerBound(its,pos-song.maxDur-0.1,n=>n.start);j<its.length&&its[j].start<=pos+0.001;j++){ const n=its[j]; if(n.end>pos) active.set(n.midi,n.hand); }
+  const fing={R:kvFingers(cur.R,'R'),L:kvFingers(cur.L,'L')}, mv=nxt?{R:kvMove(cur.R,nxt.R),L:kvMove(cur.L,nxt.L)}:null;
+  const plays=h=>who==='app'||who==='both'||who===h, hc=h=>h==='L'?LHC:RHC;
+  /* ---- Kopf ---- */
+  const secs=song.secs||[]; let sn=''; for(const s of secs) if(s.start<=p+1e-3) sn=s.name;
+  const loopOn=loop&&secs[loop.i]&&secs[loop.i].name===sn, x0=16, hd=K.headH;
+  g.textAlign='left'; g.textBaseline='middle';
+  const bpb=Math.max(1,Math.round((song.bar||2)/(song.beat||0.5))), left=nr?(nr.start-p)/(song.beat||0.5):0, dots=Math.min(bpb,Math.ceil(left-1e-6));
+  const drawNext=(xr,yc,big)=>{ if(!nr) return; g.textAlign='right'; g.font=`600 ${big?13:11}px ${FB}`; g.fillStyle=soon?T.accent:T.muted;
+    const lab=nr.label; g.font=`800 ${big?24:16}px ${FD}`; const lw=g.measureText(lab).width; g.fillText(lab,xr,yc);
+    g.font=`600 ${big?13:11}px ${FB}`; g.fillText(soon?'gleich':'dann',xr-lw-8,yc);
+    if(soon){ const r=big?5:3.5, gap=r*3; for(let i=0;i<bpb;i++){ const cx=xr-(bpb-1-i)*gap-r, on=i>=bpb-dots; g.beginPath(); g.arc(cx,yc+(big?22:13),r,0,7); g.fillStyle=on?T.accent:'rgba(255,255,255,0.15)'; g.fill(); } }
+    g.textAlign='left'; };
+  /* Rhythmus: ein Takt, zwei Zeilen (rechts/links), Lauflicht */
+  const n=gv&&gv.rh?gv.rh.length:8, bar=song.bar||2, st=bar/n, b0=Math.floor(p/bar+1e-6)*bar, kstep=pos<0?-1:Math.floor((p-b0)/st+1e-6);
+  const stepNotes=(i,h)=>{ const t=b0+i*st, s=[]; for(let j=lowerBound(its,t-st*0.3,q=>q.start);j<its.length&&its[j].start<t+st*0.3;j++) if((its[j].hand==='L')===(h==='L')) s.push(its[j].midi); return s; };
+  const drawRhythm=(x,y,cw,ch)=>{
+    [['R',0],['L',1]].forEach(([h,r])=>{ const yy=y+r*(ch+4);
+      laneBadge(x+ch/2,yy+ch/2,hc(h),h,ch*0.42); 
+      for(let i=0;i<n;i++){ const cx=x+ch+6+i*cw, s=stepNotes(i,h), beat=i%(gv&&gv.compound?3:2)===0, now=i===kstep;
+        g.fillStyle=now?rgba(T.accent,0.35):beat?'rgba(255,255,255,0.09)':'rgba(255,255,255,0.04)'; rr(cx+1,yy,cw-2,ch,4); g.fill();
+        if(s.length){ g.globalAlpha=plays(h)?1:0.5; g.fillStyle=hc(h); g.font=`700 ${Math.round(ch*0.5)}px ${FB}`; g.textAlign='center';
+          g.fillText(s.length>1?'■':NAMES[mod12(s[0])],cx+cw/2,yy+ch/2+1); g.textAlign='left'; g.globalAlpha=1; } } });
+    // Zählzeiten über den Kästchen
+    g.font=`600 ${Math.round(Math.max(9,ch*0.38))}px ${FB}`; g.fillStyle=T.muted; g.textAlign='center';
+    for(let i=0;i<n;i++) g.fillText(gv&&gv.compound?String(i+1):i%2?'+':String(i/2+1),x+ch+6+i*cw+cw/2,y-8);
+    g.textAlign='left'; };
+  const hint=()=>{ // Bewegung beim Wechsel, sonst die Töne des Akkords
+    const nm=m=>NAMES[mod12(m)];
+    if(!mv) return {t:'Töne: '+chordToneNames(cr.c).join(' – ')+(hasBass(cr.c)?' · links: '+bassName(cr.c):''),c:T.soft};
+    const part=(h,lab)=>{ const M=mv[h]; if(!cur[h].size||!nxt[h].size) return ''; if(!M.from.length&&!M.to.length) return lab+' bleibt';
+      if(!M.stay.length){
+        if(cur[h].size===1&&nxt[h].size===1) return lab+': '+nm([...cur[h]][0])+' → '+nm([...nxt[h]][0]);
+        // Rücken alle Finger nur einen Ton in dieselbe Richtung, sag das so
+        const P=M.pairs, up=P.every(([a,b])=>b>a), dn=P.every(([a,b])=>b<a);
+        if(P.length===cur[h].size&&P.length===nxt[h].size&&(up||dn)&&P.every(([a,b])=>Math.abs(b-a)<=2)) return lab+': alle Finger einen Ton nach '+(up?'rechts':'links')+' ('+P.map(([a,b])=>nm(a)+'→'+nm(b)).join(', ')+')';
+        return lab+': ganze Hand → '+[...nxt[h]].sort((a,b)=>a-b).map(nm).join(' '); }
+      const f=fing[h]; return lab+': '+M.pairs.map(([a,b])=>(pianoFing&&f.get(a)?FINGER_NAME[f.get(a)]+' ':'')+nm(a)+' → '+nm(b)).join(', ')+' ('+M.stay.map(nm).join(' ')+(M.stay.length>1?' bleiben)':' bleibt)'); };
+    return {t:[part('R','rechts'),part('L','links')].filter(Boolean).join('   ·   '),c:T.accent}; };
+  if(K.short){
+    const yc=hd/2;
+    g.font=`700 10px ${FB}`; g.fillStyle=T.muted; g.fillText(((loopOn?'↻ ':'')+sn).toUpperCase(),x0,10);
+    g.font=`800 ${Math.round(Math.min(30,hd*0.5))}px ${FD}`; g.fillStyle='#fff'; const cl=cr.label; g.fillText(cl,x0,yc+6); const cw0=g.measureText(cl).width;
+    const ch=Math.max(11,Math.min(16,(hd-14)/2-2)), rx=x0+Math.max(70,cw0+22), rw=Math.min(28,(W-rx-170)/n);
+    if(rw>=10) drawRhythm(rx,(hd-(ch*2+4))/2+3,rw,ch);
+    drawNext(W-12,yc-4,false);
+  } else {
+    let y=16;
+    g.font=`700 12px ${FB}`; g.fillStyle=T.muted; g.fillText(((loopOn?'↻ ':'')+(sn||'')).toUpperCase(),x0,y);
+    const F=Math.round(Math.max(28,Math.min(58,hd*0.25))); y+=F*0.5+10;
+    g.font=`800 ${F}px ${FD}`; g.fillStyle='#fff'; g.fillText(cr.label,x0,y); const clw=g.measureText(cr.label).width;
+    drawNext(W-16,y-6,true);
+    // Liedzeile (importierte Lieder): in der freien Fläche zwischen Akkord und Vorschau
+    const Ly=song.lyric; let lyrDone=!(Ly&&Ly.ev&&Ly.ev.length);
+    const lyrText=()=>{ const e=Math.max(0,lowerBound(Ly.evT,p+1e-6,v=>v)-1), Ln=Ly.P.lines[Ly.ev[e].line]; return Ln&&Ln.text?Ln.text.trim():''; };
+    if(!lyrDone){ const lx=x0+clw+32, lmax=W-16-(nr?190:0); if(lmax-lx>=160){ const t=lyrText(); lyrDone=true;
+      if(t){ g.font=`500 ${Math.round(Math.max(14,Math.min(19,hd*0.085)))}px ${FB}`; g.fillStyle=T.soft; g.save(); g.beginPath(); g.rect(lx,y-F/2,lmax-lx,F); g.clip(); g.fillText('„'+t+'“',lx,y); g.restore(); } } }
+    y+=F*0.5+14; const h=hint(); g.font=`600 ${Math.round(Math.max(12,Math.min(15,hd*0.07)))}px ${FB}`; g.fillStyle=h.c;
+    g.save(); g.beginPath(); g.rect(0,y-12,W,24); g.clip(); g.fillText(h.t,x0,y); g.restore();
+    y+=16;
+    const ch=Math.round(Math.max(16,Math.min(28,(hd-y-24)/3.2))), cw=Math.min(46,(W-x0*2-ch-6)/n);
+    // Akkordfolge als Kästchen (auf breiten Bildschirmen rechts neben dem Rhythmus, sonst darunter)
+    const strip=(sx,sy,xmax)=>{ let x=sx; g.font=`700 13px ${FD}`;
+      for(let i=Math.max(0,ri-1);i<runs.length&&x<xmax-30;i++){ const R=runs[i], w=Math.max(42,g.measureText(R.label).width+20), now=i===ri;
+        if(secs.some(s=>Math.abs(s.start-R.start)<1e-3)&&i>Math.max(0,ri-1)){ g.fillStyle='rgba(255,255,255,0.35)'; g.fillRect(x-4,sy,2,24); x+=4; }
+        g.globalAlpha=i<ri?0.4:1; g.fillStyle=now?T.accent:'rgba(255,255,255,0.08)'; rr(x,sy,w,24,7); g.fill();
+        if(now){ const f=Math.max(0,Math.min(1,(p-R.start)/(R.end-R.start))); g.fillStyle='rgba(0,0,0,0.22)'; rr(x,sy,w*f,24,7); g.fill(); }
+        g.fillStyle=now?T.ink:'#fff'; g.textAlign='center'; g.fillText(R.label,x+w/2,sy+12.5); g.textAlign='left'; g.globalAlpha=1; x+=w+6; } };
+    let side=false;
+    if(y+18+ch*2+4<=hd){ y+=18; drawRhythm(x0,y,cw,ch); const rx=x0+ch+6+n*cw+28;
+      if(W-16-rx>=220){ side=true; g.save(); g.beginPath(); g.rect(rx-6,0,W-rx,hd); g.clip(); strip(rx,y+ch+2-12,W-16); g.restore(); }
+      y+=ch*2+4+16; }
+    if(!side&&y+26<=hd){ strip(x0,y,W-16); y+=34; }
+    // Liedzeile darunter, wenn sie oben keinen Platz hatte
+    if(!lyrDone&&y+12<=hd){ const t=lyrText(); if(t){ g.font=`500 ${Math.round(Math.max(13,Math.min(17,hd*0.075)))}px ${FB}`; g.fillStyle=T.soft; g.save(); g.beginPath(); g.rect(0,y-12,W,26); g.clip(); g.fillText('„'+t+'“',x0,y); g.restore(); } }
+  }
+  /* ---- Klaviatur ---- */
+  for(const S of K.segs){
+    const hset=S.hand?[S.hand]:['R','L'], inCur=m=>hset.find(h=>cur[h].has(m)), inNxt=m=>nxt?hset.find(h=>nxt[h].has(m)):null;
+    g.fillStyle='#050b08'; g.fillRect(S.x,S.y,S.w,S.h);
+    const fs=Math.max(9,Math.min(14,S.ww*0.36)), fr=Math.max(7,Math.min(13,S.ww*0.32));
+    const mark=(k,m,top,bottom,black)=>{ // Finger, Name, nächster Akkord
+      const h=inCur(m), nh=inNxt(m), cx=k.x+k.w/2;
+      if(nh&&!h){ g.save(); g.setLineDash([4,3]); g.strokeStyle=T.accent; g.lineWidth=2; rr(k.x+2,top+2,k.w-4,bottom-top-4,4); g.stroke(); g.restore(); }
+      if(h&&pianoFing){ const f=fing[h].get(m); if(f){ const cy=black?bottom-fr-6:bottom-fs-fr-14; g.globalAlpha=plays(h)?1:0.55;
+        g.fillStyle=hc(h); g.beginPath(); g.arc(cx,cy,fr,0,7); g.fill(); if(nh){ g.strokeStyle='#fff'; g.lineWidth=2; g.stroke(); }
+        g.fillStyle='#0a1712'; g.font=`800 ${Math.round(fr*1.15)}px ${FD}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(f),cx,cy+1); g.globalAlpha=1; } } };
+    for(const m of S.whites){
+      const k=S.keys[m], a=active.get(m), h=inCur(m), x=k.x+1, w=k.w-2, y=S.y+2, hh=S.h-4;
+      let fill; if(a&&hset.includes(a==='L'?'L':'R')){ const gr=g.createLinearGradient(0,y,0,y+hh); gr.addColorStop(0,hc(a)); gr.addColorStop(1,shade(hc(a),0.75)); fill=gr; }
+      else if(held.has(m)) fill='#d6e6dc'; else if(mic&&mic.heardSet&&mic.heardSet.has(m)) fill='#9fb4ff';
+      else if(h){ fill=h==='L'?'#ffd9e1':'#d4ecff'; } else { const gr=g.createLinearGradient(0,y,0,y+hh); gr.addColorStop(0,'#e8efe9'); gr.addColorStop(0.85,'#ffffff'); gr.addColorStop(1,'#d5ddd7'); fill=gr; }
+      if(a&&!held.has(m)){ g.shadowColor=hc(a); g.shadowBlur=18; }
+      g.fillStyle=fill; rr(x,y,w,hh,[0,0,6,6]); g.fill(); g.shadowBlur=0;
+      mark(k,m,y+S.h*0.6,y+hh,false);
+      g.fillStyle=h?'#0a1712':'#7d8c84'; g.font=`${h?800:500} ${h?Math.round(fs*1.1):Math.round(fs*0.85)}px ${FB}`; g.textAlign='center'; g.textBaseline='bottom';
+      if(S.ww>11) g.fillText(NAMES[m%12]+(!h&&m%12===0?(Math.floor(m/12)-1):''),k.x+k.w/2,y+hh-6);
+    }
+    for(let m=S.lo;m<=S.hi;m++){
+      const k=S.keys[m]; if(!k||!k.black) continue;
+      const a=active.get(m), h=inCur(m), bh=S.h*0.6;
+      let fill; if(a&&hset.includes(a==='L'?'L':'R')) fill=shade(hc(a),0.9); else if(held.has(m)) fill='#4f6158'; else if(mic&&mic.heardSet&&mic.heardSet.has(m)) fill='#5f74b8';
+      else if(h) fill=shade(hc(h),0.55); else { const gr=g.createLinearGradient(0,S.y,0,S.y+bh); gr.addColorStop(0,'#141a17'); gr.addColorStop(1,'#29312d'); fill=gr; }
+      if(a){ g.shadowColor=hc(a); g.shadowBlur=18; }
+      g.fillStyle=fill; rr(k.x,S.y+1,k.w,bh,[0,0,4,4]); g.fill(); g.shadowBlur=0;
+      mark(k,m,S.y+1,S.y+bh,true);
+      if(h&&S.ww>14){ g.fillStyle='#fff'; g.font=`800 ${Math.round(fs*0.8)}px ${FB}`; g.textAlign='center'; g.textBaseline='top'; g.fillText(NAMES[m%12],k.x+k.w/2,S.y+6); }
+    }
+    // Pfeile: welcher Finger wohin wandert
+    if(mv) for(const h of hset){ for(const [a,b] of mv[h].pairs){ const ka=S.keys[a], kb=S.keys[b]; if(!ka||!kb) continue;
+      const xa=ka.x+ka.w/2, xb=kb.x+kb.w/2, yy=S.y+S.h*(ka.black||kb.black?0.12:0.3), lift=Math.min(40,12+Math.abs(xb-xa)*0.25);
+      g.strokeStyle=T.accent; g.fillStyle=T.accent; g.lineWidth=2.5; g.beginPath(); g.moveTo(xa,yy); g.quadraticCurveTo((xa+xb)/2,yy-lift,xb,yy); g.stroke();
+      const ang=Math.atan2(yy-(yy-lift),xb-(xa+xb)/2), al=8; g.beginPath(); g.moveTo(xb,yy); g.lineTo(xb-al*Math.cos(ang-0.45),yy-al*Math.sin(ang-0.45)); g.lineTo(xb-al*Math.cos(ang+0.45),yy-al*Math.sin(ang+0.45)); g.closePath(); g.fill(); } }
+  }
+}
 const PIANO={
   id:'piano', app:'Tastenlauf', label:'Klavierbegleitung', store:'tastenlauf', file:'Tastenlauf.html', hands:true, micWho:'both',
   theme:{'--bg':'#0a1712','--bg-2':'#10241c','--fg':'#eef7f1','--muted':'#a3bfb2','--accent':'#f2c14e','--accent-ink':'#2a1d00','--glow1':'rgba(242,193,78,.16)','--glow2':'rgba(80,200,140,.14)'},
@@ -1959,7 +2147,9 @@ const PIANO={
   build(gv){
     const n=gv.rh.length, items=[], acc=[], memo=new Map(); let prev=null;
     const fr=grooveFrame(gv,n,(c,t,st,bar,i0=0,i1=n)=>{
-      const G=chordGv(c,PIANO,gv,memo); if(!G){ bassHits(acc,c,t,st,n,i0,i1); return; }
+      let G=chordGv(c,PIANO,gv,memo); if(!G){ bassHits(acc,c,t,st,n,i0,i1); return; }
+      // „Leicht“: ein Akkord pro Takt, links nur der Grundton (nur wenn man selbst Klavier spielt)
+      if(pianoEasy&&INST===PIANO) G={...G,rh:G.rh.map((x,i)=>i===0?'A':'-'),lh:G.lh.map((x,i)=>i===0?'1':'-')};
       const third=TYPES[c.type].third, ivs=TYPES[c.type].iv;
       const reg=gv.reg||'mid', v=gv.voicing==='near'?nearVoicing(c.pc,ivs,prev,REG_MID[reg]):ivs.map(i=>(reg==='low'?48:reg==='high'?72:60)+c.pc+i);
       prev=v;
@@ -1993,7 +2183,8 @@ const PIANO={
   accVoice:'bass',
   yin:{N:2048,Wn:768,fmin:55,fmax:2200,lo:28,hi:100,tol:false,spectral:true,every:1},
   layout(){
-    const L=GEO;
+    if(pKeysView()){ kvLayout(); GEO.pmode='keys'; return; }
+    const L=GEO; L.pmode='lane';
     // Niedrige Bühne (Smartphone quer): flachere Tasten und eine schmale Infozeile
     const sh=H<300; L.short=sh;
     L.kh=sh?Math.max(70,Math.min(110,H*0.36)):Math.max(100,Math.min(190,H*0.34)); L.kbTop=H-L.kh; L.infoH=sh?22:32;
@@ -2010,10 +2201,15 @@ const PIANO={
     for(let m=lo;m<=hi;m++){ if(!isBlackKey(m)){ L.keys[m]={x:wi*L.ww,w:L.ww,black:false}; wi++; } else { const bw=L.ww*0.6; L.keys[m]={x:wi*L.ww-bw/2,w:bw,black:true}; } }
   },
   fxPos(q){
+    if(pKeysView()){ const S=kvSegFor(q.midi,q.hand), k=S&&S.keys[q.midi]; if(!k) return null; return {x:k.x+k.w/2,y:S.y+(k.black?S.h*0.4:S.h*0.75),col:q.hand==='L'?LHC:RHC,key:q.midi}; }
     const L=GEO, m=q.midi, k=L.keys&&L.keys[m]; if(!k) return null;
     return {x:k.x+k.w/2,y:L.kbTop+(k.black?L.kh*0.45:L.kh*0.72),col:q.hand==='L'?LHC:RHC,key:m};
   },
+  quietIdle(){ return pKeysView()&&pos>0; },
   draw(){
+    // Ansicht gewechselt, aber noch nicht neu aufgeteilt (z. B. Bühne war hinter den Einstellungen versteckt)
+    if(GEO.pmode!==(pKeysView()?'keys':'lane')) this.layout();
+    if(pKeysView()){ kvDraw(); return; }
     const L=GEO, T=TH.canvas;
     drawGrid();
     const lanes=[{y:hwTop+L.laneH/2,col:RHC,t:'R'},{y:hwTop+L.laneH*1.5,col:LHC,t:'L'}];
@@ -2090,6 +2286,7 @@ const PIANO={
     GEO.ringR=Math.min(14,L.ww*0.4);
   },
   hitKey(x,y){
+    if(pKeysView()) return kvHit(x,y);
     const L=GEO; if(y<L.kbTop) return null;
     if(y<L.kbTop+L.kh*0.6) for(let m=0;m<128;m++){ const k=L.keys[m]; if(k&&k.black&&x>=k.x&&x<k.x+k.w) return m; }
     for(let m=0;m<128;m++){ const k=L.keys[m]; if(k&&!k.black&&x>=k.x&&x<k.x+k.w) return m; }
@@ -2109,9 +2306,10 @@ const PIANO={
   idleHint(){ return who==='app'?'Die App spielt. Du hörst zu.':who==='both'?'Du spielst mit beiden Händen.':who==='R'?'Du spielst die rechte Hand. Links spielt die App.':'Du spielst die linke Hand. Rechts spielt die App.'; },
   help:[
     ['Übung aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen. Tippe auf eine Karte. Mit „Selbst bauen“ setzt du eigene Akkorde in Kästchen.'],
-    ['Kästchen lesen','Oben läuft die rechte Hand (R), unten die linke Hand (L). In den Kästchen steht der Akkord oder der Ton.'],
-    ['Spielen','Berührt ein Kästchen die Linie, drückst du die Tasten. Die Punkte auf der Klaviatur zeigen alle Tasten des Akkords.'],
-    ['Hand wählen','Bei „Wer spielt?“ wählst du beide Hände, nur rechts oder nur links. Die andere Hand spielt dann die App.']
+    ['Was jetzt, was gleich','Oben steht groß der Akkord, den du gerade spielst. Rechts siehst du den nächsten – kommt er bald, zählen Punkte die Schläge bis zum Wechsel herunter. Darunter steht, welcher Finger wohin rückt.'],
+    ['Rhythmus','Die Kästchen zeigen einen Takt: oben die rechte Hand (R), unten die linke (L). ■ heißt ganzer Akkord, ein Buchstabe heißt dieser Ton. Das Licht wandert mit, und die Taste leuchtet, wenn du anschlagen sollst.'],
+    ['Klaviatur','Blaue Tasten spielt die rechte Hand, rosa die linke. Die Zahl ist der Finger: 1 Daumen, 2 Zeigefinger, 3 Mittelfinger, 4 Ringfinger, 5 kleiner Finger. Gestrichelte Tasten gehören zum nächsten Akkord, die Pfeile zeigen, wohin die Finger wandern.'],
+    ['Leichter spielen','In den Einstellungen: „Leicht“ spielt nur einen Akkord pro Takt und links nur den Grundton. Bei „Wer spielt?“ übst du nur rechts oder nur links – die andere Hand spielt die App. „Laufband“ zeigt die alte Ansicht mit Balken.']
   ],
   helpTip:'Tipp: Spiel auf dem Bildschirm, mit der Computer-Tastatur (A bis K), mit einem Keyboard am Kabel oder am echten Klavier mit „App hört zu“.',
   art:'<svg viewBox="0 0 220 110"><g>'+[0,1,2,3,4,5,6,7].map(i=>`<rect x="${12+i*25}" y="18" width="23" height="78" rx="3" fill="${[2,4,6].includes(i)?'#f2c14e':'#f4f7f5'}"/>`).join('')+'</g><g fill="#141a17">'+[0,1,3,4,5].map(i=>`<rect x="${29+i*25}" y="18" width="14" height="46" rx="2"/>`).join('')+'</g></svg>'
@@ -4481,7 +4679,7 @@ function setInst(id){
   waitMode=!!INST.waitDefault; $('wait').setAttribute('aria-pressed',waitMode); $('waitLbl').textContent=waitMode?'An':'Aus';
   $('helpList').innerHTML=INST.help.map(([b,s])=>`<li><div><b>${b}</b><span>${s}</span></div></li>`).join('');
   $('helpTip').textContent=INST.helpTip;
-  { const ly=!!INST.lyrics; $('who').parentElement.hidden=ly; $('wait').parentElement.hidden=ly; $('mic').closest('.group').hidden=ly||!INST.micLabel; $('libTuner').hidden=ly||INST.id==='drums'; }
+  { const ly=!!INST.lyrics; $('who').parentElement.hidden=ly; $('wait').parentElement.hidden=ly; $('mic').closest('.group').hidden=ly||!INST.micLabel; $('libTuner').hidden=ly||INST.id==='drums'; $('pianoGroup').hidden=INST!==PIANO; pvUI(); }
   loadStore(); renderPalette(); filter=0; document.querySelectorAll('#filters .filter').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f==='0'));
 }
 function showScreen(id){ for(const s of ['pick','lib','player','tuner','editor','liedEd']) $(s).hidden=s!==id; }
@@ -5393,6 +5591,11 @@ $('play').onclick=()=>{
   playing?stopPlayback():play();
 };
 function smallScreen(){ return innerHeight<900||innerWidth<700; }
+/* Klavierbegleitung: Ansicht, Fingersatz, Leicht – merkt sich das Gerät */
+function pvUI(){ $('pvLane').setAttribute('aria-pressed',pianoView==='lane'); $('pvFing').setAttribute('aria-pressed',pianoFing); $('pvEasy').setAttribute('aria-pressed',pianoEasy); $('pvFing').hidden=pianoView!=='keys'; }
+$('pvLane').onclick=()=>{ pianoView=pianoView==='lane'?'keys':'lane'; pvSave(); pvUI(); layout(); };
+$('pvFing').onclick=()=>{ pianoFing=!pianoFing; pvSave(); pvUI(); };
+$('pvEasy').onclick=()=>{ pianoEasy=!pianoEasy; pvSave(); pvUI(); if(gv&&song&&song.kind==='groove'&&INST===PIANO) rebuild(!playing&&pos<=0); };
 function setSettings(o){ $('player').classList.toggle('set-open',o); $('setToggle').setAttribute('aria-expanded',o); requestAnimationFrame(layout); }
 $('setToggle').onclick=()=>setSettings(!$('player').classList.contains('set-open'));
 $('restart').onclick=()=>{ if(!song) return; const was=playing; stopPlayback(); countTo=null; pos=leadPos(); finished=false; resetScore(); loopRetarget(); if(was) play(); };
@@ -5743,7 +5946,7 @@ function draw(){
   g.fillStyle=bg; g.fillRect(0,0,W,H);
   if(!song||!hwH) return;
   INST.draw();
-  if(loop&&song.kind==='groove'&&!INST.lyrics&&INST.id!=='drums'&&INST!==MELODY) drawLoopEnd();
+  if(loop&&song.kind==='groove'&&!INST.lyrics&&INST.id!=='drums'&&INST!==MELODY&&!(INST===PIANO&&pKeysView())) drawLoopEnd();
   if(INST===MELODY&&meta&&meta.lied&&song.timeline.length) drawMelLiedInfo();
   const R=GEO.ringR||12;
   fx=fx.filter(f=>{ f.a*=0.93; return f.a>0.05; });
@@ -5785,7 +5988,7 @@ function draw(){
     if(tot) for(let i=0;i<3;i++){ starPath(W/2+(i-1)*42,top+14+34+24,16); g.fillStyle=i<st?'#ffd166':'rgba(255,255,255,0.14)'; g.fill(); }
   } else if(!playing&&!song.items.length&&!song.timeline.length){
     panel([{t:'Noch keine Akkorde',f:`700 18px ${FD}`,c:'#fff',h:28},{t:'Tippe oben auf ein Kästchen und dann auf einen Akkord.',f:`400 14px ${FB}`,c:T.muted,h:22}],hwTop+6);
-  } else if(!playing&&!INST.lyrics){
+  } else if(!playing&&!INST.lyrics&&!(INST.quietIdle&&INST.quietIdle())){
     panel([{t:pos<=0?'Drück auf Start':'Pause',f:`700 18px ${FD}`,c:'#fff',h:28},{t:INST.idleHint(),f:`400 14px ${FB}`,c:T.muted,h:22}],hwTop+6);
   }
 }

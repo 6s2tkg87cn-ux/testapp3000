@@ -81,6 +81,15 @@ das Lied wie bei den anderen Instrumenten: Teile, Teil wiederholen, Tempo, Tonar
 Umschalt-Klick nimmt einzelne Noten dazu. Die Auswahl gemeinsam verschieben, mit „Kopieren“ und
 „Einfügen“ (Strg/⌘+C/V) an die Abspiel-Linie setzen, mit Entf löschen; Strg/⌘+A wählt alles.
 
+**Klavierbegleitung – Ansicht „Klaviatur“ (Standard):** Statt des Laufbands eine große Klaviatur mit nur
+dem gebrauchten Tonbereich (am Smartphone hochkant zwei Reihen: oben rechte, unten linke Hand). Oben
+stehen der aktuelle Akkord groß, der nächste mit Punkten bis zum Wechsel, welcher Finger wohin rückt,
+ein Takt Rhythmus mit Lauflicht (■ = Akkord, Buchstabe = Einzelton), die Akkordfolge als Kästchen und
+bei importierten Liedern die Textzeile. Auf den Tasten: blau rechts, rosa links, Fingersatz (1 Daumen
+bis 5 kleiner Finger), gestrichelt der nächste Akkord, Pfeile zeigen die Fingerwege. In den
+Einstellungen: „Laufband“ (alte Ansicht), „Fingersatz“ an/aus, „Leicht“ (ein Akkord pro Takt, links
+nur Grundton). Die Wahl merkt sich das Gerät.
+
 **Teil wiederholen:** Einen Teil antippen (z. B. den Refrain) und „Teil wiederholen“ wählen – der Teil
 läuft dann endlos, ohne Lücke beim Rücksprung. Mit „Schneller werden“ beginnt er bei 70 % und wird
 bei jedem Durchgang 10 % schneller, bis das normale Tempo erreicht ist. Im Laufband ist abgedunkelt,
