@@ -116,6 +116,11 @@ Lerngruppe nutzen und nur innerhalb der Lerngruppe teilen.
 **Vollbild:** Der Knopf „Vollbild“ im Spieler zeigt sofort nur Text und Akkorde bzw. das Laufband –
 z. B. für den Beamer per AirPlay. Wischen, Trackpad und Mausrad funktionieren dort wie sonst; Tippen
 zeigt die Knöpfe (Start/Pause, Teile, Beenden), Esc beendet.
+**Akku sparen:** Die App zeichnet nur dann flüssig (60 Bilder pro Sekunde), wenn sich etwas bewegt –
+ein Lied läuft, man tippt, das Mikrofon hört zu. Sonst schaut sie nur ein paar Mal pro Sekunde nach,
+im Hintergrund noch seltener. Der Bildschirm bleibt nur während des Abspielens wach (nach dem Stoppen
+noch eine Minute), ein offenes Mikrofon wird beim Wechsel in eine andere App ausgeschaltet.
+
 **Sperrbildschirm am iPhone:** Klingt 30 Sekunden nichts oder wird das Gerät gesperrt, schaltet die
 App den Ton schlafen – dann verschwindet die Wiedergabe-Anzeige im Sperrbildschirm. Beim nächsten
 Tippen ist der Ton sofort wieder da.

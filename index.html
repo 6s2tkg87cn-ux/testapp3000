@@ -1137,7 +1137,7 @@ function rgba(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},$
 function shade(hex,f){ const n=parseInt(hex.slice(1),16); return `rgb(${Math.round((n>>16)*f)},${Math.round(((n>>8)&255)*f)},${Math.round((n&255)*f)})`; }
 
 /* ---------- Ton ---------- */
-let acIdle=false, lastActive=performance.now();
+let acIdle=false, lastActive=performance.now(), resumeAt=0;
 let ac=null, master=null, keyWave=null, pianoWave=null, noise=null, voices=[];
 const ksCache=new Map();
 function ensureAudio(){
@@ -1159,7 +1159,7 @@ function ensureAudio(){
     try{ drumSamples(); }catch(e){}
     if(needReattach){ needReattach=false; if(typeof afterAudioReset==='function') try{ afterAudioReset(); }catch(e){} }
   }
-  if(ac.state==='suspended'){ try{ ac.resume().catch(()=>{}); }catch(e){} }
+  if(ac.state==='suspended'){ resumeAt=performance.now(); try{ ac.resume().catch(()=>{}); }catch(e){} }
   audioMode(); unlockIOS();
 }
 /* iPhone/iPad: Ton auch bei Stummschalter und nach Unterbrechungen */
@@ -1208,11 +1208,14 @@ function wakeAudio(){
   if(!ac) return;
   if(acIdle){ acIdle=false; lastActive=performance.now(); audioMode(); unlockIOS(); }
   if(ac.state==='closed'||ac.state==='interrupted'){ hardResetAudio(); ensureAudio(); return; }
-  if(ac.state==='suspended'){ try{ ac.resume().catch(()=>{ hardResetAudio(); }); }catch(e){} }
+  if(ac.state==='suspended'){ resumeAt=performance.now(); try{ ac.resume().catch(()=>{ hardResetAudio(); }); }catch(e){} }
 }
 ['pointerdown','keydown','touchend'].forEach(t=>document.addEventListener(t,wakeAudio,true));
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ try{ for(const m of [...held.keys()]) unpress(m); }catch(e){} if(playing) stopPlayback(); try{ edStop(); }catch(e){} audioSleep(); }
+  if(document.hidden){ try{ for(const m of [...held.keys()]) unpress(m); }catch(e){} if(playing) stopPlayback(); try{ edStop(); }catch(e){}
+    // Im Hintergrund kein offenes Mikrofon – das kostet Akku (und zeigt am iPhone den orangen Punkt)
+    try{ if(mic){ stopMic(); setMicUI(); } }catch(e){} try{ if(typeof tun!=='undefined'&&tun.an){ stopTunerMic(); tunShow(null); } }catch(e){}
+    screenOff(0); audioSleep(); }
   else if(ac&&(mic||(typeof tun!=='undefined'&&tun.an))) wakeAudio();
 });
 let lastClock=-1, stallN=0, silentN=0, recoveries=0, lastRecover=-1e9;
@@ -1230,7 +1233,8 @@ function audioWatch(){
   if(ac.state!=='running'){
     stallN=0; silentN=0;
     if(!document.hidden&&!acIdle){ try{ ac.resume().catch(()=>{}); }catch(e){} }
-    if(playing){ stopPlayback(); if(!audioWarned){ audioWarned=true; notice('Der Ton wurde vom Gerät unterbrochen. Tippe auf Start, dann geht es weiter.'); } }
+    // Gerade aufgeweckt? Dann kurz warten, bis die Tonausgabe wieder läuft, statt das Lied anzuhalten
+    if(playing&&performance.now()-resumeAt>2000){ stopPlayback(); if(!audioWarned){ audioWarned=true; notice('Der Ton wurde vom Gerät unterbrochen. Tippe auf Start, dann geht es weiter.'); } }
     return;
   }
   audioWarned=false;
@@ -5175,10 +5179,14 @@ function play(){
   if(finished||pos>=song.duration){ pos=leadPos(); finished=false; resetScore(); countTo=null; }
   playing=true; resyncFrom(pos);
   if(countTo!=null&&Math.abs(pos-countTo)<1e-6&&song.bar) startCount(); else countTo=null;
-  setPlayUI();
-  try{ navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{}); }catch(e){}
+  setPlayUI(); screenOn(); bgTimerOn(); wakeTick();
 }
-function stopPlayback(){ if(countTo!=null&&pos<countTo) pos=countTo; playing=false; waiting=false; stopScheduled(); setPlayUI(); }
+function stopPlayback(){ if(countTo!=null&&pos<countTo) pos=countTo; playing=false; waiting=false; stopScheduled(); setPlayUI(); screenOff(60000); }
+/* Bildschirm wach halten nur während das Lied läuft – nach dem Stoppen darf das Handy nach einer Minute wieder selbst abdunkeln */
+let wakeSentinel=null, wakeOffT=0;
+function screenOn(){ clearTimeout(wakeOffT); wakeOffT=0; if(wakeSentinel||document.hidden||!navigator.wakeLock) return;
+  try{ navigator.wakeLock.request('screen').then(w=>{ wakeSentinel=w; w.addEventListener('release',()=>{ if(wakeSentinel===w) wakeSentinel=null; }); if(!playing) screenOff(60000); }).catch(()=>{}); }catch(e){} }
+function screenOff(delay){ clearTimeout(wakeOffT); wakeOffT=setTimeout(()=>{ wakeOffT=0; if(playing) return; const w=wakeSentinel; wakeSentinel=null; if(w) try{ w.release().catch(()=>{}); }catch(e){} },delay||0); }
 function setPlayUI(){
   $('play').setAttribute('aria-label',playing?'Pause':'Start');
   $('playIcon').innerHTML=playing?'<path d="M3.5 2h3.5v12H3.5zM9 2h3.5v12H9z"/>':'<path d="M4.5 2.5l9 5.5-9 5.5z"/>';
@@ -5202,16 +5210,39 @@ function checkWait(){
   resumeLag=0;
 }
 let tickErrors=0, lastTickT=0;
-function tick(){
-  lastTickT=performance.now();
-  try{ tickBody(); }catch(e){ tickErrors++; if(tickErrors<5) console.error(e); }
-  requestAnimationFrame(tick);
+/* Akku sparen: Volle Bildrate nur, wenn sich etwas bewegt (Lied läuft, Finger auf dem Bildschirm, Mikrofon, Effekte).
+   Sonst wird nur ein paar Mal pro Sekunde nachgesehen – im Hintergrund noch seltener. */
+let lastInput=performance.now(), tickTimer=0, rafOn=false;
+function busyNow(){
+  if(document.hidden) return false;
+  if(playing||scrubbing||seeking||waiting||held.size||ptr.size||ptrE.size||edOp) return true;
+  if(mic||(typeof tun!=='undefined'&&tun.an)||ED.play||ED.rec||!$('latDlg').hidden) return true;
+  if(fx.length||parts.length) return true;
+  return performance.now()-lastInput<1500;
 }
-/* Ersatz-Taktgeber: Safari bremst das Bildneuzeichnen manchmal aus (Fenster im Hintergrund). Die Begleitung läuft trotzdem weiter. */
-setInterval(()=>{
-  if(!song||!playing||waiting||scrubbing||!ac||ac.state!=='running'||performance.now()-lastTickT<120) return;
+function schedTick(){
+  if(rafOn||tickTimer) return;
+  if(busyNow()){ rafOn=true; requestAnimationFrame(tick); }
+  else tickTimer=setTimeout(()=>{ tickTimer=0; tick(); },document.hidden?3000:400);
+}
+function tick(){
+  rafOn=false; lastTickT=performance.now();
+  try{ tickBody(); }catch(e){ tickErrors++; if(tickErrors<5) console.error(e); }
+  if(playing) bgTimerOn();
+  schedTick();
+}
+/* Jede Eingabe weckt die volle Bildrate sofort */
+function wakeTick(){ lastInput=performance.now(); if(tickTimer){ clearTimeout(tickTimer); tickTimer=0; schedTick(); } }
+['pointerdown','pointermove','pointerup','keydown','keyup','wheel','touchstart','touchmove','resize','focus'].forEach(t=>addEventListener(t,wakeTick,{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) wakeTick(); });
+/* Ersatz-Taktgeber: Safari bremst das Bildneuzeichnen manchmal aus (Fenster im Hintergrund). Die Begleitung läuft trotzdem weiter.
+   Er läuft nur, solange ein Lied spielt. */
+let bgTimer=0;
+function bgTimerOn(){ if(bgTimer) return; bgTimer=setInterval(()=>{
+  if(!playing){ clearInterval(bgTimer); bgTimer=0; return; }
+  if(!song||waiting||scrubbing||!ac||ac.state!=='running'||performance.now()-lastTickT<120) return;
   try{ pos=startOffset+(ac.currentTime-startCtx)*speed; loopCheck(); if(waitMode&&chordIdx<chords.length&&pos>=chords[chordIdx].time) return; schedule(); }catch(e){}
-},50);
+},50); }
 function tickBody(){
   try{ audioWatch(); }catch(e){}
   if(mic&&ac) try{ analyzeMic(); }catch(e){}
@@ -5285,7 +5316,7 @@ function strumInput(dir,src,t,tAc,maxLag){
 }
 function press(m,vel=0.85,src='touch',where){
   if(held.has(m)) return;
-  ensureAudio();
+  wakeTick(); ensureAudio();
   if(edOn()){ held.set(m,pianoVoice(m,ac.currentTime,null,vel)); edRecOn(m); return; }
   held.set(m,viaBus('inst',()=>INST.pressVoice(m,vel)));
   if(where) heldPos.set(m,where);
@@ -6509,7 +6540,7 @@ $('presPrev').onclick=()=>{ partStep(-1); presBar(); }; $('presNext').onclick=()
 $('partPrev').onclick=()=>partStep(-1); $('partNext').onclick=()=>partStep(1);
 
 /* Nur für automatische Tests: mit localStorage „bandlauf-debug“ ist das aktuelle Lied lesbar */
-try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop},ac:ac&&ac.state,idle:acIdle}),ed:()=>ED}; }catch(e){}
+try{ if(localStorage.getItem('bandlauf-debug')) window.__bandlauf={song:()=>song,meta:()=>meta,state:()=>({pos,speed,playing,countTo,loop:loop&&{...loop},ac:ac&&ac.state,idle:acIdle,tickT:lastTickT,bg:!!bgTimer,wake:!!wakeSentinel}),ed:()=>ED}; }catch(e){}
 /* ---------- Start ---------- */
 renderPick();
 if(ONLY){ setInst(ONLY); showScreen('lib'); renderLib(); maybeHelp(); }
