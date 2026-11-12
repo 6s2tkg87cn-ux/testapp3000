@@ -90,6 +90,19 @@ bis 5 kleiner Finger), gestrichelt der nächste Akkord, Pfeile zeigen die Finger
 Einstellungen: „Laufband“ (alte Ansicht), „Fingersatz“ an/aus, „Leicht“ (ein Akkord pro Takt, links
 nur Grundton). Die Wahl merkt sich das Gerät.
 
+**Tempo:** Bei allen Instrumenten unten neben Start (Metronom-Symbol) – immer sichtbar, auch am
+Smartphone, und bewusst getrennt von „Tonart − / +“ in den Einstellungen, damit niemand aus Versehen
+transponiert.
+
+**Fingersatz (Klavierbegleitung):** nach den üblichen Regeln aus dem Klavierunterricht – Dreiklang rechts
+1-3-5 (1. Umkehrung 1-2-5), links 5-3-1 (2. Umkehrung 5-2-1); gebrochen über eine Oktave rechts 1-2-3-5
+bzw. 1-2-4-5, links 5-4-2-1 bzw. 5-3-2-1, je nachdem, wo die Quarte liegt. Gebrochene Muster werden in
+Grundstellung innerhalb einer Oktave gespielt, damit sie in eine Hand passen.
+
+**Bass-Griffe:** Die App greift möglichst im Bereich der Hand (vier Bünde) und nimmt leere Saiten nur,
+wenn kein gegriffener Ton in der Nähe liegt (das tiefe E gibt es nur leer). Die Übung „Leere Saiten“
+spielt weiter nur leere Saiten.
+
 **Teil wiederholen:** Einen Teil antippen (z. B. den Refrain) und „Teil wiederholen“ wählen – der Teil
 läuft dann endlos, ohne Lücke beim Rücksprung. Mit „Schneller werden“ beginnt er bei 70 % und wird
 bei jedem Durchgang 10 % schneller, bis das normale Tempo erreicht ist. Im Laufband ist abgedunkelt,
