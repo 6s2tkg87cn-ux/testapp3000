@@ -372,6 +372,15 @@ canvas#cv{display:block;width:100%;height:100%;touch-action:none}
 .drop{position:fixed;inset:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 92%,transparent);font-family:var(--font-display);font-size:22px;color:var(--accent);border:2px dashed var(--accent);border-radius:var(--r);z-index:30}
 
 .transport{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+/* Tempo: immer unten neben Start, getrennt vom Transponieren */
+.ttempo{display:flex;align-items:center;gap:8px;flex:none}
+.ttempo .tlbl{display:inline-flex;align-items:center;gap:5px;font:600 12px var(--font-body);color:var(--muted)}
+.ttempo .tlbl svg{width:15px;height:15px;fill:currentColor}
+.ttempo .stepper button{width:34px;height:34px}
+.ttempo .stepper output{min-width:70px;font-size:14px}
+.ttempo .seg button{min-height:36px;padding:0 10px}
+@media (max-width:560px){ .ttempo .tlbl span{display:none} .ttempo .stepper output{min-width:62px;font-size:13px} .ttempo .seg button{padding:0 8px;font-size:13px} }
+@media (max-height:520px){ .ttempo .tlbl{display:none} }
 .round{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);width:46px;height:46px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
 .round svg{width:18px;height:18px;fill:currentColor}
 .round.play{width:60px;height:60px;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:0 8px 26px -8px var(--accent)}
@@ -783,18 +792,6 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
       <span class="lbl">Tonart</span>
       <div class="stepper"><button id="trDown" aria-label="Tiefer (einen Halbton)">−</button><output id="trOut">±0</output><button id="trUp" aria-label="Höher (einen Halbton)">+</button></div>
     </div>
-    <div class="group" id="bpmGroup">
-      <span class="lbl">Tempo</span>
-      <div class="stepper"><button id="bpmDown" aria-label="Langsamer">−</button><output id="bpmOut">80 BPM</output><button id="bpmUp" aria-label="Schneller">+</button></div>
-    </div>
-    <div class="group" id="speedGroup" hidden>
-      <span class="lbl">Tempo</span>
-      <div class="seg" id="tempo">
-        <button data-v="50" aria-pressed="false">Langsam</button>
-        <button data-v="75" aria-pressed="false">Mittel</button>
-        <button data-v="100" aria-pressed="true">Normal</button>
-      </div>
-    </div>
     <div class="group">
       <span class="lbl">Lied wartet auf mich</span>
       <button class="switch" id="wait" aria-pressed="false"><span class="track"></span><span id="waitLbl">Aus</span></button>
@@ -899,6 +896,8 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <button class="round" id="restart" aria-label="Von vorn"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
     <button class="round play" id="play" aria-label="Start"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4.5 2.5l9 5.5-9 5.5z"/></svg></button>
     <div class="partnav" id="partNav" hidden><button class="round" id="partPrev" aria-label="Teil zurück"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM9.5 3v10L4.5 8zM15 3v10l-5-5z"/></svg></button><button class="round" id="partNext" aria-label="Nächster Teil"><svg viewBox="0 0 16 16"><path d="M1 3l5 5-5 5zM6.5 3l5 5-5 5zM12 2h2v12h-2z"/></svg></button><button class="round loopr" id="partLoop" aria-pressed="false" aria-label="Teil wiederholen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.5H11V1.6L14.4 4.4 11 7.2V5.3H4.5a1.7 1.7 0 00-1.7 1.7v1.2H1V7a3.5 3.5 0 013.5-3.5zM11.5 12.5H5v1.9L1.6 11.6 5 8.8v1.9h6.5a1.7 1.7 0 001.7-1.7V7.8H15V9a3.5 3.5 0 01-3.5 3.5z"/></svg><span class="lpct" id="partLoopPct"></span></button></div>
+    <div class="ttempo" id="bpmGroup"><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="stepper"><button id="bpmDown" aria-label="Langsamer">−</button><output id="bpmOut">80 BPM</output><button id="bpmUp" aria-label="Schneller">+</button></div></div>
+    <div class="ttempo" id="speedGroup" hidden><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="seg" id="tempo"><button data-v="50" aria-pressed="false">Langsam</button><button data-v="75" aria-pressed="false">Mittel</button><button data-v="100" aria-pressed="true">Normal</button></div></div>
     <div class="strumpad" id="strumpad" hidden>
       <button id="strD" aria-label="Abschlag">↓<small>Ab</small></button>
       <button id="strU" aria-label="Aufschlag">↑<small>Auf</small></button>
@@ -1527,13 +1526,15 @@ const CHORD_OFF=0.012, CHORD_LEN=0.105;
 
 
 /* ---------- Hilfen zum Bauen ---------- */
-function assignFrets(notes,open,maxF){
+/* Griffe wählen: am liebsten im Bereich der Hand (4 Bünde). Leere Saiten nur, wenn es in der Nähe keinen gegriffenen Ton gibt
+   (openCost klein = leere Saiten erwünscht, z. B. in der Übung „Leere Saiten“) */
+function assignFrets(notes,open,maxF,openCost=1.8){
   let hand=1;
   for(const n of notes){
     let best=null,bc=1e9;
     for(let s=0;s<open.length;s++){
       const f=n.midi-open[s]; if(f<0||f>maxF) continue;
-      let c=f===0?0.6:(f>=hand&&f<=hand+3)?0:Math.min(Math.abs(f-hand),Math.abs(f-hand-3))*1.5;
+      let c=f===0?openCost:(f>=hand&&f<=hand+3)?0:Math.min(Math.abs(f-hand),Math.abs(f-hand-3))*1.5;
       c+=f*0.04;
       if(c<bc){bc=c;best={s,f};}
     }
@@ -1722,7 +1723,7 @@ const BASS={
     {id:'motown',n:'Motown',l:3,p:P('1--15-86')}
   ],
   presets:[
-    {name:'Leere Saiten',level:1,hint:'Nur E, A, D und G – ohne Greifen',gv:{bpm:70,reps:2,drums:'simple',pad:true,steps:P('1-1-1-1-'),chords:[ch(4),ch(9),ch(2),ch(7,'maj',1,true)]}},
+    {name:'Leere Saiten',level:1,hint:'Nur E, A, D und G – ohne Greifen',gv:{bpm:70,reps:2,drums:'simple',pad:true,open:true,steps:P('1-1-1-1-'),chords:[ch(4),ch(9),ch(2),ch(7,'maj',1,true)]}},
     {name:'Pop-Hit: C – G – am – F',level:1,hint:'Grundton in Vierteln',gv:{bpm:80,reps:2,drums:'simple',pad:true,steps:P('1-1-1-1-'),chords:[ch(0),ch(7),ch(9,'min'),ch(5)]}},
     {name:'Halbe Noten in G',level:1,hint:'Grundton und Quinte, viel Zeit',gv:{bpm:76,reps:2,drums:'simple',pad:true,steps:P('1---5---'),chords:[ch(7),ch(0),ch(2),ch(7)]}},
     {name:'Achtel-Rock in E',level:1,hint:'Immer derselbe Ton, schnell',gv:{bpm:96,reps:2,drums:'rock',pad:true,steps:P('11111111'),chords:[ch(4,'maj',2),ch(7),ch(9)]}},
@@ -1756,7 +1757,7 @@ const BASS={
         items.push({kind:'note',midi:m,start:t+i*st,end:t+i*st+Math.min(lenOf(steps,i,st),(i1-i)*st*0.92),vel:i%2?0.7:0.88});
       }
     });
-    items.sort((a,b)=>a.start-b.start); assignFrets(items,BOPEN,12);
+    items.sort((a,b)=>a.start-b.start); assignFrets(items,BOPEN,12,gv.open?0.3:1.8);
     return finishSong('',items,acc,fr,{hasAcc:true});
   },
   midi(name,groups){
@@ -1921,10 +1922,53 @@ function kvSeg(lo,hi,x,y,w,h,hand){
   return {lo,hi,x,y,w,h,ww,keys,whites,hand};
 }
 const kvWhites=(lo,hi)=>{ let n=0; for(let m=lo;m<=hi;m++) if(!isBlackKey(m)) n++; return n; };
-/* Fingersatz: rechts vom Daumen aufwärts, links vom kleinen Finger aufwärts */
+/* Fingersatz nach den Regeln aus dem Klavierunterricht. Entscheidend ist, wo im Griff der große Abstand (Quarte) liegt:
+   Dreiklang rechts: Grundstellung 1-3-5, 1. Umkehrung 1-2-5, 2. Umkehrung 1-3-5.
+   Dreiklang links:  Grundstellung und 1. Umkehrung 5-3-1, 2. Umkehrung 5-2-1.
+   Vier Töne (gebrochen über eine Oktave, Septakkorde): rechts 1-2-3-5 (Quarte oben) sonst 1-2-4-5,
+   links 5-3-2-1 (großer Abstand unten) sonst 5-4-2-1. Zwei Töne: Terz 1-3 / 3-1, Quarte 1-4 / 4-1, ab Quinte 1-5 / 5-1.
+   Passt der Griff nicht in eine Hand (mehr als eine Oktave), wird kein Fingersatz gezeigt statt eines falschen. */
 function kvFingers(set,hand){
-  const a=[...set].sort((x,y)=>x-y), F=hand==='L'?{1:[5],2:[5,1],3:[5,3,1],4:[5,4,2,1],5:[5,4,3,2,1]}:{1:[1],2:[1,5],3:[1,3,5],4:[1,2,3,5],5:[1,2,3,4,5]}, f=F[a.length], m=new Map();
+  const a=[...set].sort((x,y)=>x-y), n=a.length, m=new Map(), L=hand==='L';
+  if(!n||a[n-1]-a[0]>12) return m;
+  const gp=a.slice(1).map((x,i)=>x-a[i]); let f=null;
+  if(n===1) f=L?[5]:[1];
+  else if(n===2){ const d=gp[0]; f=d<=2?(L?[2,1]:[1,2]):d<=4?(L?[3,1]:[1,3]):d===5?(L?[4,1]:[1,4]):(L?[5,1]:[1,5]); }
+  else if(n===3){ const [lo,hi]=gp;
+    if(L) f=lo>=5&&lo>hi?[5,2,1]:[5,3,1];
+    else f=hi>=5&&hi>lo?[1,2,5]:[1,3,5]; }
+  else if(n===4){ const mx=Math.max(...gp), top=gp[2]===mx, bottom=gp[0]===mx;
+    if(L) f=bottom||mx<5?[5,3,2,1]:[5,4,2,1];
+    else f=top||mx<5?[1,2,3,5]:[1,2,4,5]; }
+  else if(n===5) f=L?[5,4,3,2,1]:[1,2,3,4,5];
   if(f) a.forEach((x,i)=>m.set(x,f[i])); return m;
+}
+/* Fingersatz im Zusammenhang: Liegende Töne behalten ihren Finger, wenn die Hand den neuen Griff damit bequem greift
+   (z. B. C → a-Moll: Daumen und Mittelfinger bleiben, nur der kleine Finger geht von G nach A).
+   KV_GAP: größter bequemer Abstand (Halbtöne) zwischen zwei Fingern einer Hand. */
+const KV_GAP={'1-2':5,'1-3':7,'1-4':9,'1-5':12,'2-3':3,'2-4':5,'2-5':8,'3-4':3,'3-5':5,'4-5':4};
+const KV_PAT={2:[[1,2],[1,3],[1,4],[1,5],[2,4],[2,5],[3,5]],3:[[1,3,5],[1,2,5],[1,2,4],[1,3,4],[1,2,3],[2,3,5]],4:[[1,2,3,5],[1,2,4,5],[1,2,3,4]],5:[[1,2,3,4,5]]};
+function kvFingersCtx(set,hand,prev){
+  const std=kvFingers(set,hand); if(!prev||!prev.size||!std.size) return std;
+  const a=[...set].sort((x,y)=>x-y), n=a.length, pats=KV_PAT[n]; if(!pats) return std;
+  const gapOk=(f,g,d)=>{ const k=Math.min(f,g)+'-'+Math.max(f,g); return KV_GAP[k]!=null&&d<=KV_GAP[k]; };
+  let best=std, bs=a.filter(x=>prev.get(x)&&prev.get(x)===std.get(x)).length*10;
+  for(const p0 of pats){ const f=hand==='L'?[...p0].reverse():p0;
+    let ok=gapOk(f[0],f[n-1],a[n-1]-a[0]); for(let i=0;i+1<n&&ok;i++) ok=gapOk(f[i],f[i+1],a[i+1]-a[i]); if(!ok) continue;
+    const sc=a.filter((x,i)=>prev.get(x)===f[i]).length*10-1;
+    if(sc>bs){ bs=sc; best=new Map(a.map((x,i)=>[x,f[i]])); } }
+  return best;
+}
+/* Fingersatz je Akkord des Liedes, der Reihe nach (der vorige Akkord bestimmt mit) – einmal berechnet und gemerkt */
+function kvRunFing(ri,h){
+  const runs=kvRuns(); if(ri<0||ri>=runs.length) return new Map();
+  const C=song._fing||(song._fing=new Map()), key=ri+h; if(C.has(key)) return C.get(key);
+  let st=Math.max(0,ri-1); while(st>0&&!C.has((st-1)+h)) st--; // vorne anfangen, wo noch nichts berechnet ist (ohne tiefe Rekursion)
+  const its=song.items;
+  for(let i=st;i<=ri;i++){ if(C.has(i+h)) continue; const R=runs[i], set=new Set();
+    for(let j=lowerBound(its,R.start-1e-4,n=>n.start);j<its.length&&its[j].start<R.end-1e-4;j++) if((its[j].hand==='L')===(h==='L')) set.add(its[j].midi);
+    C.set(i+h,kvFingersCtx(set,h,i>0?C.get((i-1)+h):null)); }
+  return C.get(key);
 }
 /* Was bewegt sich beim Wechsel? Gemeinsame Töne bleiben, die anderen wandern zum nächsten freien Ziel */
 function kvMove(cur,nxt){
@@ -1977,7 +2021,13 @@ function kvDraw(){
   const notesIn=(a,b)=>{ const r={R:new Set(),L:new Set()}; for(let j=lowerBound(its,a-1e-4,n=>n.start);j<its.length&&its[j].start<b-1e-4;j++) r[its[j].hand==='L'?'L':'R'].add(its[j].midi); return r; };
   const cur=notesIn(cr.start,cr.end), soon=!!nr&&nr.start-p<=(song.bar||2)+1e-4, nxt=soon?notesIn(nr.start,nr.end):null;
   const active=new Map(); for(let j=lowerBound(its,pos-song.maxDur-0.1,n=>n.start);j<its.length&&its[j].start<=pos+0.001;j++){ const n=its[j]; if(n.end>pos) active.set(n.midi,n.hand); }
-  const fing={R:kvFingers(cur.R,'R'),L:kvFingers(cur.L,'L')}, mv=nxt?{R:kvMove(cur.R,nxt.R),L:kvMove(cur.L,nxt.L)}:null;
+  const fing={R:kvRunFing(ri,'R'),L:kvRunFing(ri,'L')}, fingN=nxt?{R:kvRunFing(ri+1,'R'),L:kvRunFing(ri+1,'L')}:null, mv=nxt?{R:kvMove(cur.R,nxt.R),L:kvMove(cur.L,nxt.L)}:null;
+  // Lagenwechsel: Bleibt ein Ton zwar liegen, wird aber mit einem anderen Finger gespielt (oder springt die Hand weit),
+  // setzt man die ganze Hand um – dann zählt nur, wohin Daumen (rechts) bzw. kleiner Finger (links) gehen
+  if(mv) for(const h of ['R','L']){ const M=mv[h], f0=fing[h], f1=fingN[h]; if(!cur[h].size||!nxt[h].size||(!M.from.length&&!M.to.length)||(cur[h].size===1&&nxt[h].size===1)) continue;
+    const swap=M.stay.some(m=>f0.get(m)&&f1.get(m)&&f0.get(m)!==f1.get(m)), far=!M.stay.length&&M.pairs.some(([a,b])=>Math.abs(b-a)>2);
+    if(swap||far){ const an=h==='R'?1:5, a=[...f0].find(([,v])=>v===an), b=[...f1].find(([,v])=>v===an);
+      M.shift=a&&b&&a[0]!==b[0]?{from:a[0],to:b[0],finger:an}:{to:Math.min(...nxt[h]),finger:null}; } }
   const plays=h=>who==='app'||who==='both'||who===h, hc=h=>h==='L'?LHC:RHC;
   /* ---- Kopf ---- */
   const secs=song.secs||[]; let sn=''; for(const s of secs) if(s.start<=p+1e-3) sn=s.name;
@@ -2007,6 +2057,7 @@ function kvDraw(){
     const nm=m=>NAMES[mod12(m)];
     if(!mv) return {t:'Töne: '+chordToneNames(cr.c).join(' – ')+(hasBass(cr.c)?' · links: '+bassName(cr.c):''),c:T.soft};
     const part=(h,lab)=>{ const M=mv[h]; if(!cur[h].size||!nxt[h].size) return ''; if(!M.from.length&&!M.to.length) return lab+' bleibt';
+      if(M.shift) return M.shift.finger?lab+': Hand umsetzen – '+(pianoFing?FINGER_NAME[M.shift.finger]+' ':'')+'von '+nm(M.shift.from)+' auf '+nm(M.shift.to):lab+': Hand umsetzen → '+[...nxt[h]].sort((a,b)=>a-b).map(nm).join(' ');
       if(!M.stay.length){
         if(cur[h].size===1&&nxt[h].size===1) return lab+': '+nm([...cur[h]][0])+' → '+nm([...nxt[h]][0]);
         // Rücken alle Finger nur einen Ton in dieselbe Richtung, sag das so
@@ -2059,7 +2110,9 @@ function kvDraw(){
     const fs=Math.max(9,Math.min(14,S.ww*0.36)), fr=Math.max(7,Math.min(13,S.ww*0.32));
     const mark=(k,m,top,bottom,black)=>{ // Finger, Name, nächster Akkord
       const h=inCur(m), nh=inNxt(m), cx=k.x+k.w/2;
-      if(nh&&!h){ g.save(); g.setLineDash([4,3]); g.strokeStyle=T.accent; g.lineWidth=2; rr(k.x+2,top+2,k.w-4,bottom-top-4,4); g.stroke(); g.restore(); }
+      if(nh&&!h){ g.save(); g.setLineDash([4,3]); g.strokeStyle=T.accent; g.lineWidth=2; rr(k.x+2,top+2,k.w-4,bottom-top-4,4); g.stroke(); g.restore();
+        const f=pianoFing&&fingN&&fingN[nh].get(m); if(f){ const cy=black?bottom-fr-6:bottom-fs-fr-14; g.strokeStyle=T.accent; g.lineWidth=2; g.beginPath(); g.arc(cx,cy,fr*0.85,0,7); g.stroke();
+          g.fillStyle=T.accent; g.font=`800 ${Math.round(fr*1.05)}px ${FD}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(f),cx,cy+1); } }
       if(h&&pianoFing){ const f=fing[h].get(m); if(f){ const cy=black?bottom-fr-6:bottom-fs-fr-14; g.globalAlpha=plays(h)?1:0.55;
         g.fillStyle=hc(h); g.beginPath(); g.arc(cx,cy,fr,0,7); g.fill(); if(nh){ g.strokeStyle='#fff'; g.lineWidth=2; g.stroke(); }
         g.fillStyle='#0a1712'; g.font=`800 ${Math.round(fr*1.15)}px ${FD}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(f),cx,cy+1); g.globalAlpha=1; } } };
@@ -2085,7 +2138,7 @@ function kvDraw(){
       if(h&&S.ww>14){ g.fillStyle='#fff'; g.font=`800 ${Math.round(fs*0.8)}px ${FB}`; g.textAlign='center'; g.textBaseline='top'; g.fillText(NAMES[m%12],k.x+k.w/2,S.y+6); }
     }
     // Pfeile: welcher Finger wohin wandert
-    if(mv) for(const h of hset){ for(const [a,b] of mv[h].pairs){ const ka=S.keys[a], kb=S.keys[b]; if(!ka||!kb) continue;
+    if(mv) for(const h of hset){ for(const [a,b] of (mv[h].shift?(mv[h].shift.from!=null?[[mv[h].shift.from,mv[h].shift.to]]:[]):mv[h].pairs)){ const ka=S.keys[a], kb=S.keys[b]; if(!ka||!kb) continue;
       const xa=ka.x+ka.w/2, xb=kb.x+kb.w/2, yy=S.y+S.h*(ka.black||kb.black?0.12:0.3), lift=Math.min(40,12+Math.abs(xb-xa)*0.25);
       g.strokeStyle=T.accent; g.fillStyle=T.accent; g.lineWidth=2.5; g.beginPath(); g.moveTo(xa,yy); g.quadraticCurveTo((xa+xb)/2,yy-lift,xb,yy); g.stroke();
       const ang=Math.atan2(yy-(yy-lift),xb-(xa+xb)/2), al=8; g.beginPath(); g.moveTo(xb,yy); g.lineTo(xb-al*Math.cos(ang-0.45),yy-al*Math.sin(ang-0.45)); g.lineTo(xb-al*Math.cos(ang+0.45),yy-al*Math.sin(ang+0.45)); g.closePath(); g.fill(); } }
@@ -2158,8 +2211,10 @@ const PIANO={
       const reg=gv.reg||'mid', v=gv.voicing==='near'?nearVoicing(c.pc,ivs,prev,REG_MID[reg]):ivs.map(i=>(reg==='low'?48:reg==='high'?72:60)+c.pc+i);
       prev=v;
       const lab=chordLabel(c);
-      const r=v.find(x=>mod12(x-c.pc)===0)??v[0];
-      const R={'A':v,'1':[r],'3':[v.find(x=>mod12(x-c.pc)===third)],'5':[v.find(x=>mod12(x-c.pc)===7)],'8':[r+12]};
+      let r=v.find(x=>mod12(x-c.pc)===0)??v[0];
+      let R={'A':v,'1':[r],'3':[v.find(x=>mod12(x-c.pc)===third)],'5':[v.find(x=>mod12(x-c.pc)===7)],'8':[r+12]};
+      // Gebrochene Akkorde (ohne ganzen Akkord im Muster) in Grundstellung: Grundton, Terz, Quinte, Oktave liegen in einer Hand
+      if(gv.voicing==='near'&&!G.rh.slice(i0,i1).includes('A')){ const r0=c.pc+12*Math.round((REG_MID[reg]-5-c.pc)/12); r=r0; R={'A':v,'1':[r0],'3':[r0+third],'5':[r0+7],'8':[r0+12]}; }
       const lr=c.pc<=6?48+c.pc:36+c.pc;
       let Lt={'1':[lr],'3':[lr+third],'5':[lr+7],'6':[lr+9],'8':[lr+12],'A':[lr,lr+third,lr+7]};
       // Linke Hand bei C/G: unten der Basston G, die anderen Töne darüber
@@ -2957,7 +3012,7 @@ function openEditor(m,isNew,lied){
   $('editor').classList.toggle('edlied',!!lied); $('edName').readOnly=!!lied; $('edDelMel').textContent=lied?'Melodie löschen':'Löschen';
   showScreen('editor'); setVars(MELODY.theme);
   $('edName').value=m.name;
-  edStatus(!navigator.requestMIDIAccess&&IS_IOS?'MIDI-Keyboards gehen in Safari auf iPhone/iPad nicht – spiel auf den Bildschirmtasten (Details unter „So geht’s“).':isNew?'Neu – wird beim ersten Ändern gespeichert':'');
+  edStatus(isNew?'Neu – wird beim ersten Ändern gespeichert':'');
   setEdSettings(false); edLayout();
   const ps=m.notes.map(n=>n.p).sort((a,b)=>a-b), mid=ps.length?ps[ps.length>>1]:62;
   ED.sy=(PMAX-mid)*ED.rh-(ED.H-ED.rulerH)/2; edClamp(); edBtns();
@@ -4857,7 +4912,7 @@ document.querySelectorAll('#filters .filter').forEach(b=>b.onclick=()=>{
 });
 
 /* ---------- Öffnen ---------- */
-function showPlayer(name,level){ loop=null; $('accBtn').textContent=INST.accLabel; showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); setTimeout(midiInfo,0); }
+function showPlayer(name,level){ loop=null; $('accBtn').textContent=INST.accLabel; showScreen('player'); $('pName').textContent=name; $('pLevel').innerHTML=levelHTML(level); }
 function openGroove(p,editable){
   meta={name:p.name,level:p.level,kind:'groove',saved:!!p.saved,lied:p.lied||null,trKey:p.trKey||null};
   gv=clone(p.gv); gv.chords=normalize(gv.chords);
