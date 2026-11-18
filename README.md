@@ -90,6 +90,11 @@ bis 5 kleiner Finger), gestrichelt der nächste Akkord, Pfeile zeigen die Finger
 Einstellungen: „Laufband“ (alte Ansicht), „Fingersatz“ an/aus, „Leicht“ (ein Akkord pro Takt, links
 nur Grundton). Die Wahl merkt sich das Gerät.
 
+**Endlos (∞):** Unten neben dem Tempo, bei allen Instrumenten: das ganze Stück läuft immer wieder von
+vorn, ohne Lücke im Takt – gedacht vor allem für Schlagzeug-Grooves und Übungen. Zweites Tippen: jedes
+Mal etwas schneller (70 % → 100 %), drittes Tippen: aus. Bleibt beim nächsten Stück eingeschaltet. Bei
+Liedern mit Teilen hat „Teil wiederholen“ Vorrang; schaltet man es aus, läuft wieder das ganze Lied endlos.
+
 **Tempo:** Bei allen Instrumenten unten neben Start (Metronom-Symbol) – immer sichtbar, auch am
 Smartphone, und bewusst getrennt von „Tonart − / +“ in den Einstellungen, damit niemand aus Versehen
 transponiert.
