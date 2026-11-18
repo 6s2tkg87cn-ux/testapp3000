@@ -90,6 +90,14 @@ bis 5 kleiner Finger), gestrichelt der nächste Akkord, Pfeile zeigen die Finger
 Einstellungen: „Laufband“ (alte Ansicht), „Fingersatz“ an/aus, „Leicht“ (ein Akkord pro Takt, links
 nur Grundton). Die Wahl merkt sich das Gerät.
 
+**Schlagzeug – wer spielt was?** In der Schlagzeug-Bibliothek gibt es „Plakat & Aufkleber“ (Drucken oder
+PDF teilen, mit Auswahl): ein Plakat mit dem Schlagzeug von oben, so wie man am Hocker sitzt – Arme
+über Kreuz (rechte Hand Hi-Hat, linke Hand Snare), Füße auf den Pedalen, alles in den Farben und
+Zeichen der App, dazu eine Tabelle mit Taste und „wann meistens“; eine Groove-Karte, bei der jede Zeile
+ein Körperteil ist; und einen Bogen runder Aufkleber für die Pads des E-Schlagzeugs. In der App stehen
+an den Zeilen und am gezeichneten Set „rechte Hand“, „linke Hand“, „rechter Fuß“; die Hilfe zeigt das
+Bild von oben.
+
 **Endlos (∞):** Unten neben dem Tempo, bei allen Instrumenten: das ganze Stück läuft immer wieder von
 vorn, ohne Lücke im Takt – gedacht vor allem für Schlagzeug-Grooves und Übungen. Noch einmal tippen: aus.
 Bleibt beim nächsten Stück eingeschaltet. Bei Liedern mit Teilen hat „Teil wiederholen“ Vorrang;

@@ -197,6 +197,18 @@ button,input,select{font-family:inherit}
 #printSheet .ps-cb{display:flex;flex-wrap:wrap;gap:1.2mm}
 #printSheet .ps-box{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:14mm;min-height:9mm;padding:0 1.5mm;border:.3mm solid #444;font-weight:700;font-size:11pt}
 #printSheet .ps-box sub{font-weight:400;font-size:7pt;color:#444;vertical-align:baseline}
+#printSheet .ps-poster{text-align:center;margin:2mm 0 3mm}
+#printSheet .ps-dtab{width:100%;font-size:10pt}
+#printSheet .ps-dtab th,#printSheet .ps-dtab td{border:.25mm solid #bbb;padding:1.4mm 2mm;text-align:left;vertical-align:middle}
+#printSheet .ps-dtab thead th{background:#eee;font-size:9pt}
+#printSheet .ps-dtab small{color:#555}
+#printSheet .ps-dsym{width:11mm;text-align:center}
+#printSheet .ps-key{font:700 13pt var(--font-display);text-align:center}
+#printSheet .ps-cards{display:flex;flex-direction:column;gap:6mm;margin-top:3mm}
+#printSheet .ps-dtbig td{width:11mm;height:11mm;font-size:16pt}
+#printSheet .ps-dtbig th{font-size:10pt;white-space:nowrap;padding-right:3mm}
+#printSheet .ps-stks{display:flex;flex-wrap:wrap;gap:4mm;margin-top:3mm}
+#printSheet .ps-stk{break-inside:avoid}
 #printSheet .ps-foot{margin-top:6mm;font-size:8pt;color:#666;border-top:.25mm solid #bbb;padding-top:1.5mm}
 
 /* Wenig Höhe (Smartphone quer, iPad quer): „Muster ändern“ als Knopf in der oberen Leiste statt eigener Zeile */
@@ -4586,7 +4598,10 @@ const DRUMS={
       g.fillStyle=T.accent; g.font=`700 12px ${FB}`; g.textAlign='left'; g.fillText('Gleich: '+(ns?ns.name:nf?'Fill-in':'neues Muster'),px,hwTop-12);
       g.strokeStyle=rgba(T.accent,0.6); g.lineWidth=1.5; rr(px-4,hwTop-2,pw+8,hwH+4,10); g.stroke();
       this.drawPage(nw,px,hwTop,pw,mh,false); }
-    for(let l=0;l<5;l++){ const y=this.laneY(l); drumSym(['crash','ride','hat','snare','kick'][l],hx<60?16:20,y,Math.min(11,(L.mainH||hwH)/5*0.32),DCOL[l],T.dark); g.font=`600 10px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='middle'; if(hx>90) g.fillText(DNAME[l],34,y); }
+    const lh=(L.mainH||hwH)/5;
+    for(let l=0;l<5;l++){ const y=this.laneY(l); drumSym(['crash','ride','hat','snare','kick'][l],hx<60?16:20,y,Math.min(11,lh*0.32),DCOL[l],T.dark); g.font=`600 10px ${FB}`; g.fillStyle=T.muted; g.textAlign='left'; g.textBaseline='middle';
+      // Wer spielt: rechte Hand, linke Hand, rechter Fuß
+      if(hx>90){ if(lh>=26){ g.fillText(DNAME[l],34,y-6); g.font=`700 9px ${FB}`; g.fillStyle=rgba(DCOL[l],0.95); g.fillText(DLIMB_S[l],34,y+7); } else g.fillText(DNAME[l],34,y); } }
     // Schlagzeug-Set
     const now=ac?ac.currentTime:0, hitAt=L.hitAt||{};
     g.fillStyle='rgba(0,0,0,0.25)'; g.fillRect(0,L.kitTop,W,L.kitH);
@@ -4600,8 +4615,12 @@ const DRUMS={
         if(P.lane===2){ g.fillStyle=rgba(col,0.5); g.beginPath(); g.ellipse(P.x,P.y+P.ry*1.4,P.rx,P.ry,0,0,7); g.fill(); } }
       else { g.fillStyle=lit?col:rgba(col,0.4); g.fillRect(P.x-P.rx,P.y,P.rx*2,P.ry*1.6); g.beginPath(); g.ellipse(P.x,P.y+P.ry*1.6,P.rx,P.ry,0,0,7); g.fill(); g.fillStyle=lit?'#fff':'#e9e3ee'; g.beginPath(); g.ellipse(P.x,P.y,P.rx,P.ry,0,0,7); g.fill(); }
       g.shadowBlur=0;
-      g.font=`700 ${Math.round(Math.max(10,Math.min(14,P.rx*0.32)))}px ${FB}`; g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=P.kick?'#fff':T.soft;
-      const ly=P.kick?P.y:P.cym?P.y-P.ry-10:P.y+P.ry*2.9; g.fillText(DNAME[P.lane]+(W>520?' ('+DKEY[P.lane]+')':''),P.x,ly);
+      // Snare: Name auf dem Fell, „linke Hand“ auf dem Kessel (unter der Trommel wäre er abgeschnitten)
+      const sn=!P.kick&&!P.cym;
+      g.font=`700 ${Math.round(Math.max(10,Math.min(14,P.rx*0.32)))}px ${FB}`; g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=P.kick?'#fff':sn?'#3a1820':T.soft;
+      const ly=P.kick?P.y:P.cym?P.y-P.ry-10:P.y; g.fillText(DNAME[P.lane]+(W>520?' ('+DKEY[P.lane]+')':''),P.x,ly);
+      // darunter klein: wer spielt das Instrument
+      g.font=`600 ${Math.round(Math.max(9,Math.min(12,P.rx*0.26)))}px ${FB}`; g.fillStyle=P.kick||sn?'rgba(255,255,255,0.9)':rgba(DCOL[P.lane],0.95); g.fillText(DLIMB[P.lane],P.x,P.kick?ly+16:P.cym?ly-15:P.y+P.ry*1.25);
     }
   },
   pointerDown(x,y,id){ const L=GEO; if(y<L.kitTop||!L.kit) return false; let best=null,bd=1e9;
@@ -4880,6 +4899,7 @@ function renderLib(){
   else if(INST.songs){ act('card-write',ICON_PEN,'Melodie schreiben','Schreiben',newMelody,true); act('card-import',ICON_DOWN,'Melodie empfangen','Empfangen',()=>openImport('')); }
   else { act('card-build',ICON_PEN,'Selbst bauen','Selbst bauen',()=>openGroove({name:'Mein Stück',level:4,gv:{...INST.defaultGv(),chords:[]}},true),true); act('card-lied-import',ICON_TEXT,'Lied importieren','Lied',newLied); }
   if(!INST.lyrics) act('card-midi',ICON_UP,'MIDI-Datei öffnen','MIDI öffnen',()=>$('file').click());
+  if(INST.id==='drums') act('card-poster','<svg viewBox="0 0 16 16"><path d="M4 1.5h8V5H4zM2 6h12a1 1 0 011 1v5h-3v2.5H4V12H1V7a1 1 0 011-1zm3.5 4.5V13h5v-2.5z"/></svg>','Plakat & Aufkleber','Plakat',openDrumPrint);
   // Bereiche
   const secs=libSections(), keep=it=>!filter||!(it.item.level>=1&&it.item.level<=3)||it.item.level===filter;
   let cur=libTab[INST.id]; if(!cur){ try{ cur=localStorage.getItem('bandlauf-bereich-'+INST.id); }catch(e){} }
@@ -6374,8 +6394,9 @@ const PRINT_OPTS=[
   ['Arrangement',[['arr','Wer spielt wann?']]]
 ];
 const PRINT_KEY='bandlauf-druck';
-function printOpts(){ const all={}; PRINT_OPTS.forEach(([,l])=>l.forEach(([k])=>all[k]=true)); try{ const o=JSON.parse(localStorage.getItem(PRINT_KEY)||'null'); if(o&&typeof o==='object') for(const k in all) if(typeof o[k]==='boolean') all[k]=o[k]; }catch(e){} return all; }
+function printOpts(){ const all={}; printDefs.forEach(([,l])=>l.forEach(([k])=>all[k]=true)); try{ const o=JSON.parse(localStorage.getItem(printKey)||'null'); if(o&&typeof o==='object') for(const k in all) if(typeof o[k]==='boolean') all[k]=o[k]; }catch(e){} return all; }
 function printHTML(S,opt){
+  if(S&&S.kind==='drums') return drumPrintHTML(opt||printOpts());
   opt=opt||printOpts();
   const P=parseLied(S.text), b=liedBeats(S), act=new Set(), tr=S.tr||0;
   P.events.forEach((e,i)=>{ if(b[i]>0) act.add(e.line+':'+e.k); });
@@ -6443,11 +6464,102 @@ ${out}
 }
 /* Export: Erst auswählen, was aufs Blatt soll – die Auswahl merkt sich das Gerät */
 let printFor=null;
+/* ---------- Schlagzeug zum Ausdrucken: Plakat von oben (wer spielt was), Groove-Karte, Aufkleber für die Pads ---------- */
+const DLIMB=['rechte Hand','rechte Hand','rechte Hand','linke Hand','rechter Fuß'], DLIMB_S=['R-Hand','R-Hand','R-Hand','L-Hand','R-Fuß'];
+const DWHEN=['auf der Eins eines neuen Teils','statt Hi-Hat, z. B. im Refrain','meistens in Achteln: 1 + 2 + 3 + 4 +','auf 2 und 4','auf 1 und 3'];
+const DLIGHT=['#ffe1cf','#d6f0ff','#fff3c9','#ffd7dc','#ebe0ff'], DDARK=['#d9622a','#1d86bd','#b98a00','#d1334a','#7a4fd0'];
+/* Zeichen wie in der App: ✱ Crash, ◆ Ride, × Hi-Hat, ● Snare, ◉ Bassdrum */
+function dSymSvg(l,cx,cy,r,col,hole){
+  const f=v=>v.toFixed(1);
+  if(l===0){ let o=''; for(let i=0;i<4;i++){ const a=i*Math.PI/4, dx=Math.cos(a)*r, dy=Math.sin(a)*r; o+=`<line x1="${f(cx-dx)}" y1="${f(cy-dy)}" x2="${f(cx+dx)}" y2="${f(cy+dy)}" stroke="${col}" stroke-width="${f(r*0.26)}"/>`; } return o+`<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r*0.32)}" fill="${col}"/>`; }
+  if(l===1) return `<path d="M${f(cx)} ${f(cy-r)}L${f(cx+r)} ${f(cy)}L${f(cx)} ${f(cy+r)}L${f(cx-r)} ${f(cy)}Z" fill="${col}"/>`;
+  if(l===2){ const q=r*0.78, w=f(r*0.3); return `<line x1="${f(cx-q)}" y1="${f(cy-q)}" x2="${f(cx+q)}" y2="${f(cy+q)}" stroke="${col}" stroke-width="${w}"/><line x1="${f(cx+q)}" y1="${f(cy-q)}" x2="${f(cx-q)}" y2="${f(cy+q)}" stroke="${col}" stroke-width="${w}"/>`; }
+  if(l===3) return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r*0.8)}" fill="${col}"/>`;
+  return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${col}"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r*0.36)}" fill="${hole||'#fff'}"/>`;
+}
+/* Hand von oben (Handrücken), Daumen innen: rechts links vom Handrücken, links rechts */
+function handSvg(x,y,s,side,col='#2d2d2d'){
+  const m=side==='L'?-1:1, f=v=>v.toFixed(1), H=side==='L'?[5.5,7,7.5,7]:[7,7.5,7,5.5];
+  let o=`<rect x="${f(x-5*s)}" y="${f(y-2*s)}" width="${f(10*s)}" height="${f(9*s)}" rx="${f(3*s)}" fill="${col}"/>`;
+  [-3.75,-1.25,1.25,3.75].forEach((fx,i)=>{ const h=H[i]*s; o+=`<rect x="${f(x+fx*s-1.1*s)}" y="${f(y-1*s-h)}" width="${f(2.2*s)}" height="${f(h+1*s)}" rx="${f(1.1*s)}" fill="${col}"/>`; });
+  const tx=x-m*4.6*s; o+=`<path d="M${f(tx)} ${f(y+5*s)}L${f(tx-m*5*s)} ${f(y-0.8*s)}L${f(tx-m*3.3*s)} ${f(y-2.4*s)}L${f(tx+m*0.6*s)} ${f(y+1*s)}Z" fill="${col}"/>`;
+  return o;
+}
+/* Fuß von oben, großer Zeh innen */
+function footSvg(x,y,s,side,col='#2d2d2d'){
+  const m=side==='L'?-1:1, f=v=>v.toFixed(1);
+  let o=`<rect x="${f(x-4.6*s)}" y="${f(y-6*s)}" width="${f(9.2*s)}" height="${f(17*s)}" rx="${f(4.6*s)}" fill="${col}"/>`;
+  [[-3.3,-8.3,1.9],[-1.1,-9.4,1.4],[0.9,-9.3,1.3],[2.7,-8.7,1.15],[4.1,-7.6,1]].forEach(([tx,ty,r])=>{ o+=`<circle cx="${f(x+m*tx*s)}" cy="${f(y+ty*s)}" r="${f(r*s)}" fill="${col}"/>`; });
+  return o;
+}
+const limbBadge=(x,y,t,dark)=>`<circle cx="${x}" cy="${y}" r="13" fill="${dark?'#2d2d2d':'#fff'}" stroke="#2d2d2d" stroke-width="2.5"/><text x="${x}" y="${y+5}" font-size="15" font-weight="800" fill="${dark?'#fff':'#2d2d2d'}" text-anchor="middle">${t}</text>`;
+/* Das Schlagzeug von oben, wie man am Hocker sitzt: Arme über Kreuz (rechte Hand Hi-Hat, linke Snare), Füße auf den Pedalen */
+function drumTopSvg(cssW){
+  // Name oben im Pad, Zeichen darunter – unten bleibt Platz für die Hand
+  const pad=(l,cx,cy,r,name)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${DLIGHT[l]}" stroke="${DDARK[l]}" stroke-width="4"/><text x="${cx}" y="${cy-r*0.3}" font-size="18" font-weight="800" fill="${DDARK[l]}" text-anchor="middle">${name}</text>`+dSymSvg(l,cx,cy+r*0.18,r*0.24,DDARK[l],DLIGHT[l]);
+  const tom=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ececec" stroke="#b5b5b5" stroke-width="3"/><text x="${cx}" y="${cy+5}" font-size="13" font-weight="600" fill="#9a9a9a" text-anchor="middle">Tom</text>`;
+  let o=`<svg viewBox="0 0 720 650" style="width:${cssW};height:auto" role="img" aria-label="Schlagzeug von oben: rechte Hand Hi-Hat, Ride und Crash, linke Hand Snare, rechter Fuß Bassdrum, linker Fuß Hi-Hat-Pedal">`;
+  // Hocker und Beine liegen unter den Trommeln
+  o+=`<circle cx="360" cy="608" r="34" fill="#dcdcdc"/>`;
+  o+=`<line x1="332" y1="580" x2="140" y2="440" stroke="#d4d4d4" stroke-width="18"/><line x1="388" y1="580" x2="362" y2="512" stroke="#d4d4d4" stroke-width="18"/>`;
+  // Bassdrum (von oben ein langer Kessel) mit Pedal zum Hocker hin
+  o+=`<rect x="300" y="250" width="120" height="190" rx="14" fill="${DLIGHT[4]}" stroke="${DDARK[4]}" stroke-width="4"/><text x="360" y="300" font-size="18" font-weight="800" fill="${DDARK[4]}" text-anchor="middle">Bassdrum</text>`+dSymSvg(4,360,345,15,DDARK[4],DLIGHT[4]);
+  o+=`<rect x="346" y="440" width="28" height="60" rx="6" fill="#8d8d8d"/>`;
+  o+=tom(305,222,36)+tom(415,222,36)+tom(565,415,48);
+  o+=`<rect x="114" y="356" width="28" height="74" rx="6" fill="#8d8d8d"/>`;
+  o+=pad(0,180,112,70,'Crash')+pad(1,575,212,82,'Ride')+pad(2,128,282,58,'Hi-Hat')+pad(3,250,368,60,'Snare');
+  // Körper
+  o+=`<rect x="290" y="534" width="140" height="58" rx="29" fill="#c9c9c9"/><text x="360" y="569" font-size="17" font-weight="800" fill="#555" text-anchor="middle">DU</text>`;
+  // Füße auf den Pedalen
+  o+=footSvg(128,412,2.3,'L')+footSvg(360,490,2.3,'R');
+  // Arme: links zur Snare, rechts über Kreuz zur Hi-Hat (oben drüber); Hände am Rand des Pads
+  o+=`<line x1="315" y1="548" x2="268" y2="414" stroke="#a6a6a6" stroke-width="18"/><line x1="405" y1="548" x2="160" y2="326" stroke="#7d7d7d" stroke-width="18"/>`;
+  o+=handSvg(266,404,2.5,'L')+handSvg(158,318,2.5,'R');
+  o+=limbBadge(224,420,'L',false)+limbBadge(196,340,'R',true)+limbBadge(92,420,'L',false)+limbBadge(396,492,'R',true);
+  return o+'</svg>';
+}
+const DRUM_PRINT_OPTS=[['Schlagzeug',[['poster','Plakat: Schlagzeug von oben – wer spielt was?'],['groove','Groove-Karte mit Händen und Füßen'],['stickers','Aufkleber für die Pads']]]];
+function limbIconSvg(l,h){ const foot=l===4; return `<svg viewBox="0 0 40 40" style="height:${h};width:auto;vertical-align:middle">`+(foot?footSvg(20,22,1.35,'R'):handSvg(20,26,1.7,l===3?'L':'R'))+'</svg>'; }
+function drumPrintHTML(opt){
+  const secs=[], order=[2,3,4,1,0];
+  if(opt.poster){
+    const rows=order.map(l=>`<tr><td class="ps-dsym"><svg viewBox="0 0 40 40" style="width:9mm;height:9mm"><circle cx="20" cy="20" r="18" fill="${DLIGHT[l]}" stroke="${DDARK[l]}" stroke-width="2.5"/>${dSymSvg(l,20,20,9,DDARK[l],DLIGHT[l])}</svg></td><td><b>${DNAME[l]}</b></td><td>${limbIconSvg(l,'8mm')} <b>${DLIMB[l]}</b>${l===2?'<br><small>über Kreuz; das Pedal tritt der linke Fuß</small>':''}</td><td>${DWHEN[l]}</td><td class="ps-key">${DKEY[l]}</td></tr>`).join('');
+    secs.push(`<h1>Unser Schlagzeug – wer spielt was?</h1><div class="ps-meta">Von oben gesehen, so wie du am Hocker sitzt. Die Farben und Zeichen sind dieselben wie in Bandlauf.</div>
+<div class="ps-poster">${drumTopSvg('170mm')}</div>
+<table class="ps-dtab"><thead><tr><th>Zeichen</th><th>Instrument</th><th>Wer spielt?</th><th>Wann meistens?</th><th>Taste am Computer</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="ps-legend">Die Arme sind über Kreuz: Die rechte Hand liegt über der linken. Die Toms (grau) braucht Bandlauf nicht – für Fill-ins spielt das Schlagzeug die Snare.</div>`);
+  }
+  if(opt.groove){
+    const card=(id)=>{ const pt=DRUMS.patterns.find(p=>p.id===id); if(!pt) return ''; const n=pt.hh.length;
+      const gl={hh:{x:'×',o:'○',r:'◆',c:'✱'},sn:{x:'●',g:'·',r:'⊘'},bd:{x:'●'}};
+      const row=(arr,key,l,lab)=>`<tr><th>${limbIconSvg(l,'7mm')} ${lab}</th>`+arr.map((v,i)=>`<td${i%2===0?' class="b"':''} style="color:${DDARK[l]}">${gl[key][v]||''}</td>`).join('')+'</tr>';
+      return `<div class="ps-groove"><div class="ps-gh"><b>${escH(pt.n)}</b></div><table class="ps-dt ps-dtbig"><tr><th></th>${Array.from({length:n},(_,i)=>`<td>${i%2?'+':i/2+1}</td>`).join('')}</tr>`+
+        row(pt.hh,'hh',2,'rechte Hand · Hi-Hat')+row(pt.sn,'sn',3,'linke Hand · Snare')+row(pt.bd,'bd',4,'rechter Fuß · Bassdrum')+'</table></div>'; };
+    secs.push(`<div class="${secs.length?'ps-page2':''}"><h1>Groove-Karte</h1><div class="ps-meta">Jede Zeile ist ein Körperteil. Spiel, was in deiner Spalte steht – alle Zeilen gleichzeitig.</div>
+<div class="ps-cards">${card('basic')}${card('rock8')}${card('pop')}</div>
+<div class="ps-legend">Zählt laut mit: „eins und zwei und drei und vier und“. × Hi-Hat zu · ○ Hi-Hat offen · ◆ Ride · ● Schlag · · leise. Fang langsam an und stell in Bandlauf ∞ Endlos ein.</div></div>`);
+  }
+  if(opt.stickers){
+    const st=l=>`<svg viewBox="0 0 100 100" style="width:38mm;height:38mm"><circle cx="50" cy="50" r="47" fill="${DCOL[l]}" stroke="${DDARK[l]}" stroke-width="3"/>${dSymSvg(l,50,42,20,'#1d1d1d',DCOL[l])}<text x="50" y="80" font-size="13" font-weight="800" fill="#1d1d1d" text-anchor="middle">${DNAME[l]}</text></svg>`;
+    let g=''; for(let k=0;k<3;k++) for(const l of [0,1,2,3,4]) g+=`<div class="ps-stk">${st(l)}</div>`;
+    secs.push(`<div class="${secs.length?'ps-page2':''}"><h1>Aufkleber für die Pads</h1><div class="ps-meta">Ausschneiden und mit Klebefilm an die Pads kleben – oder direkt auf Etikettenpapier drucken. So sieht das E-Schlagzeug aus wie das Bild in Bandlauf.</div><div class="ps-stks">${g}</div></div>`);
+  }
+  return secs.join('\n')+`<div class="ps-foot">Erstellt mit Bandlauf.</div>`;
+}
+let printDefs=PRINT_OPTS, printKey=PRINT_KEY;
+function openDrumPrint(){
+  printFor={kind:'drums',name:'Schlagzeug'}; printDefs=DRUM_PRINT_OPTS; printKey='bandlauf-druck-schlagzeug'; fillPrintDlg();
+}
+/* Hilfe beim Schlagzeug: „Wer spielt was?“ mit dem Bild von oben (vor „Endlos üben“) */
+{ const k=DRUMS.help.findIndex(h=>h[0]==='Endlos üben'); DRUMS.help.splice(k<0?DRUMS.help.length:k,0,['Wer spielt was?','Von oben gesehen, so wie du am Hocker sitzt: Die rechte Hand spielt Hi-Hat, Ride und Crash, die linke Hand die Snare – die Arme sind über Kreuz. Der rechte Fuß tritt die Bassdrum, der linke das Hi-Hat-Pedal. In der Bibliothek gibt es dazu „Plakat & Aufkleber“ zum Ausdrucken.<br>'+drumTopSvg('100%')]); }
 function openPrint(S){
   if(!S) return; if(!parseLied(S.text).events.length){ if(LE.S===S) leStatus('Das Lied hat noch keine Akkorde.'); return; }
   if(LE.S===S) leSave();
-  printFor=S; const o=printOpts(), box=$('prGrid'); box.innerHTML='';
-  PRINT_OPTS.forEach(([t,list])=>{ const d=document.createElement('div'); d.className='prgrp'; d.innerHTML=`<b>${t}</b>`;
+  printFor=S; printDefs=PRINT_OPTS; printKey=PRINT_KEY; fillPrintDlg();
+}
+function fillPrintDlg(){
+  const o=printOpts(), box=$('prGrid'); box.innerHTML=''; $('prLyr').hidden=printFor&&printFor.kind==='drums';
+  printDefs.forEach(([t,list])=>{ const d=document.createElement('div'); d.className='prgrp'; d.innerHTML=`<b>${t}</b>`;
     list.forEach(([k,l])=>{ const lb=document.createElement('label'); lb.innerHTML=`<input type="checkbox" data-k="${k}" id="pr-${k}"${o[k]?' checked':''}> ${l}`; d.appendChild(lb); });
     box.appendChild(d); });
   box.querySelectorAll('input').forEach(x=>x.onchange=prUpd); prUpd();
@@ -6460,7 +6572,7 @@ $('prAll').onclick=()=>prSet(()=>true);
 $('prLyr').onclick=()=>prSet(k=>k==='head'||k==='lyrics');
 $('prCancel').onclick=()=>{ $('printDlg').hidden=true; };
 $('printDlg').addEventListener('click',e=>{ if(e.target.id==='printDlg') $('printDlg').hidden=true; });
-function prTake(){ const o=prRead(); try{ localStorage.setItem(PRINT_KEY,JSON.stringify(o)); }catch(e){} $('printDlg').hidden=true; return o; }
+function prTake(){ const o=prRead(); try{ localStorage.setItem(printKey,JSON.stringify(o)); }catch(e){} $('printDlg').hidden=true; return o; }
 $('prGo').onclick=()=>printLied(printFor,prTake());
 $('prPdf').onclick=()=>sharePdf(printFor,prTake());
 function printLied(S,opt){
@@ -6479,7 +6591,7 @@ function printLied(S,opt){
 const PDF_DPI=150, MM=96/25.4, PG={w:210,h:297,ml:14,mt:13,mb:15};
 function sheetPages(root){
   const R0=root.getBoundingClientRect(), top=R0.top, ph=(PG.h-PG.mt-PG.mb)*MM, endY=R0.height;
-  const avoid=[...root.querySelectorAll('.ps-part,.ps-line,figure,.ps-groove,.ps-crow,tr,h2,.ps-legend,.ps-foot,.ps-who,h1,.ps-meta')].map(e=>{ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top,e.tagName==='H2']; });
+  const avoid=[...root.querySelectorAll('.ps-part,.ps-line,figure,.ps-groove,.ps-crow,tr,h2,.ps-legend,.ps-foot,.ps-who,h1,.ps-meta,.ps-poster,.ps-stk')].map(e=>{ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top,e.tagName==='H2']; });
   const forced=[...root.querySelectorAll('.ps-page2')].map(e=>e.getBoundingClientRect().top-top);
   const cand=[...new Set(avoid.map(a=>a[0]).concat(forced))].sort((a,b)=>a-b);
   const ok=y=>!avoid.some(([a,b])=>a<y-0.5&&b>y+0.5)&&!avoid.some(([a,b,hd])=>hd&&b<=y+0.5&&b>y-30);
@@ -6521,7 +6633,7 @@ function paintSheet(root,y0,y1){
       if(e.tagName==='line'){ x.beginPath(); x.moveTo(A('x1'),A('y1')); x.lineTo(A('x2'),A('y2')); x.strokeStyle=st||'#000'; x.lineWidth=sw; x.stroke(); }
       else if(e.tagName==='rect'){ x.beginPath(); const rx=A('rx'); if(rx&&x.roundRect) x.roundRect(A('x'),A('y'),A('width'),A('height'),rx); else x.rect(A('x'),A('y'),A('width'),A('height')); if(!fill&&!st){ x.fillStyle='#000'; x.fill(); } else paint(); }
       else if(e.tagName==='circle'){ x.beginPath(); x.arc(A('cx'),A('cy'),A('r'),0,Math.PI*2); paint(); }
-      else if(e.tagName==='path'){ const p2=new Path2D(e.getAttribute('d')); x.strokeStyle=st||'#000'; x.lineWidth=sw; x.stroke(p2); }
+      else if(e.tagName==='path'){ const p2=new Path2D(e.getAttribute('d')); if(fill&&fill!=='none'){ x.fillStyle=fill; x.fill(p2); } if(st||!fill){ x.strokeStyle=st||'#000'; x.lineWidth=sw; x.stroke(p2); } }
       else if(e.tagName==='text'){ x.font=`${e.getAttribute('font-weight')||400} ${A('font-size')}px ${FB}`; x.fillStyle=fill||'#000'; const an=e.getAttribute('text-anchor'); x.textAlign=an==='middle'?'center':an==='end'?'right':'left'; x.textBaseline='alphabetic'; x.fillText(e.textContent,A('x'),A('y')); }
     }
     x.restore();
