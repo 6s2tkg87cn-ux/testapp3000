@@ -374,6 +374,12 @@ canvas#cv{display:block;width:100%;height:100%;touch-action:none}
 .transport{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 /* Tempo: immer unten neben Start, getrennt vom Transponieren */
 .ttempo{display:flex;align-items:center;gap:8px;flex:none}
+/* Endlos: ganzes Stück in Dauerschleife */
+.tloop{position:relative;min-height:40px;padding:0 14px;gap:6px;flex:none}
+.tloop .inf{font:700 22px/1 var(--font-body);margin-top:-2px}
+.tloop[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(255,255,255,.06)}
+@media (max-width:560px){ .tloop .bt2{display:none} .tloop{width:44px;padding:0;justify-content:center} }
+@media (max-height:520px){ .tloop .bt2{display:none} .tloop{width:42px;padding:0;justify-content:center} }
 .ttempo .tlbl{display:inline-flex;align-items:center;gap:5px;font:600 12px var(--font-body);color:var(--muted)}
 .ttempo .tlbl svg{width:15px;height:15px;fill:currentColor}
 .ttempo .stepper button{width:34px;height:34px}
@@ -898,6 +904,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <div class="partnav" id="partNav" hidden><button class="round" id="partPrev" aria-label="Teil zurück"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM9.5 3v10L4.5 8zM15 3v10l-5-5z"/></svg></button><button class="round" id="partNext" aria-label="Nächster Teil"><svg viewBox="0 0 16 16"><path d="M1 3l5 5-5 5zM6.5 3l5 5-5 5zM12 2h2v12h-2z"/></svg></button><button class="round loopr" id="partLoop" aria-pressed="false" aria-label="Teil wiederholen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.5H11V1.6L14.4 4.4 11 7.2V5.3H4.5a1.7 1.7 0 00-1.7 1.7v1.2H1V7a3.5 3.5 0 013.5-3.5zM11.5 12.5H5v1.9L1.6 11.6 5 8.8v1.9h6.5a1.7 1.7 0 001.7-1.7V7.8H15V9a3.5 3.5 0 01-3.5 3.5z"/></svg><span class="lpct" id="partLoopPct"></span></button></div>
     <div class="ttempo" id="bpmGroup"><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="stepper"><button id="bpmDown" aria-label="Langsamer">−</button><output id="bpmOut">80 BPM</output><button id="bpmUp" aria-label="Schneller">+</button></div></div>
     <div class="ttempo" id="speedGroup" hidden><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="seg" id="tempo"><button data-v="50" aria-pressed="false">Langsam</button><button data-v="75" aria-pressed="false">Mittel</button><button data-v="100" aria-pressed="true">Normal</button></div></div>
+    <button class="btn tloop" id="loopAll" aria-pressed="false" aria-label="Endlos: das Stück immer wieder von vorn spielen" title="Endlos: das Stück immer wieder von vorn spielen. Noch einmal tippen: jedes Mal etwas schneller (70 % bis 100 %). Ein drittes Mal: aus."><span class="inf" aria-hidden="true">∞</span><span class="bt2">Endlos</span><span class="lpct" id="loopAllPct"></span></button>
     <div class="strumpad" id="strumpad" hidden>
       <button id="strD" aria-label="Abschlag">↓<small>Ab</small></button>
       <button id="strU" aria-label="Aufschlag">↑<small>Auf</small></button>
@@ -4610,7 +4617,8 @@ const DRUMS={
     ['Groove aussuchen','Oben wählst du den Bereich: Übungen, Klassenband, Popsongs oder deine eigenen Lieder. Mit „Selbst bauen“ setzt du eigene Grooves in Kästchen.'],
     ['Lesen','Wie im Drumcomputer: Ein Raster zeigt zwei Takte mit fünf Zeilen – Crash ✱, Ride ◆, Hi-Hat × (offen ○), Snare ● (leise kleiner, Rand ⊘) und Bassdrum ⬤. Ein Lauflicht wandert durch. Kommt ein neues Muster oder ein Fill-in, erscheint rechts rechtzeitig die Vorschau „Gleich: …“.'],
     ['Spielen','Erreicht ein Zeichen die Linie, schlägst du: auf dem Bildschirm am Set unten, am Computer mit den Tasten '+DKEY.join(', ')+' (Crash, Ride, Hi-Hat, Snare, Bassdrum). E-Drums oder MIDI-Pads gehen am Computer auch.'],
-    ['Lieder','Importierte Lieder gibt es auch hier. Welchen Groove du in welchem Teil spielst, legt der Arranger im Lied-Editor fest.']
+    ['Lieder','Importierte Lieder gibt es auch hier. Welchen Groove du in welchem Teil spielst, legt der Arranger im Lied-Editor fest.'],
+    ['Endlos üben','Mit ∞ unten neben dem Tempo läuft der Groove immer wieder von vorn – ohne Pause. Noch einmal tippen: Er wird bei jedem Durchgang etwas schneller (70 % bis 100 %). Ein drittes Mal: aus. Die Einstellung bleibt auch beim nächsten Groove an.']
   ],
   helpTip:'Tipp: Stell „Wer spielt“ auf „Ich“ und fang langsam an. Mit „Lied wartet auf mich“ wartet das Lied auf jeden Schlag.',
   art:'<svg viewBox="0 0 220 110"><ellipse cx="110" cy="80" rx="34" ry="22" fill="#ff5d73"/><ellipse cx="110" cy="72" rx="34" ry="10" fill="#ffb3bd"/><ellipse cx="60" cy="60" rx="20" ry="8" fill="#6ec6ff"/><rect x="40" y="60" width="40" height="22" fill="#4aa6df"/><ellipse cx="60" cy="82" rx="20" ry="8" fill="#4aa6df"/><line x1="160" y1="40" x2="160" y2="95" stroke="#c4b3bf" stroke-width="3"/><ellipse cx="160" cy="40" rx="26" ry="5" fill="#ffd166"/><line x1="80" y1="18" x2="98" y2="62" stroke="#fbf3f6" stroke-width="4" stroke-linecap="round"/><line x1="140" y1="18" x2="122" y2="62" stroke="#fbf3f6" stroke-width="4" stroke-linecap="round"/></svg>'
@@ -5820,7 +5828,7 @@ $('mixDlg').addEventListener('click',e=>{ if(e.target.id==='mixDlg') closeMix();
 $('latBtn').onclick=openLat; $('latBtn').textContent=Math.round(avLag*1000)+' ms';
 function renderParts(){
   const S=song&&song.secs||[], box=$('partChips'); box.innerHTML=''; partIdx=-2;
-  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length) loopDrop(); loopUI();
+  $('parts').hidden=$('partNav').hidden=$('presPrev').hidden=$('presNext').hidden=$('presLoop').hidden=!S.length; if(!S.length&&loop&&!loop.whole) loopDrop(); loopUI();
   S.forEach((sc,i)=>{ const b=document.createElement('button'); b.textContent=sc.name; b.dataset.i=i; b.title=sc.name+' – hierhin springen'; b.onclick=()=>jumpPart(i); box.appendChild(b); });
   markPart();
 }
@@ -5849,7 +5857,22 @@ function partStep(d){
 /* ---------- Teil in Schleife üben: ein Teil läuft endlos, auf Wunsch jedes Mal etwas schneller (70 % → 100 %) ---------- */
 let loop=null; // {i,start,end,pass,ramp,base}
 const RAMP0=0.7, RAMPSTEP=0.1;
-function loopBounds(i){ const S=song.secs; return {start:S[i].start,end:i+1<S.length?S[i+1].start:song.duration}; }
+function loopBounds(i){
+  if(i===-1){ // ganzes Stück: vom ersten Ton (Auftakt) bis zum Ende des letzten Takts
+    const tl=song.timeline, st=Math.min(0,song.items.length?song.items[0].start:0);
+    return {start:st,end:tl&&tl.length?tl[tl.length-1].end:song.duration}; }
+  const S=song.secs; return {start:S[i].start,end:i+1<S.length?S[i+1].start:song.duration}; }
+/* Endlos (ganzes Stück immer wieder) bleibt eingeschaltet, auch beim nächsten Stück – praktisch zum Üben, vor allem am Schlagzeug */
+const ENDLOS_KEY='bandlauf-endlos'; let endlosOn=false; try{ endlosOn=localStorage.getItem(ENDLOS_KEY)==='1'; }catch(e){}
+function setLoopAll(on,ramp){
+  endlosOn=!!on; try{ localStorage.setItem(ENDLOS_KEY,on?'1':'0'); }catch(e){}
+  if(!on){ if(loop&&loop.whole){ const b=loop.base; loop=null; setSpeedLive(b); } loopUI(); return; }
+  if(!song) return;
+  const base=loop?loop.base:speed;
+  loop={i:-1,whole:true,...loopBounds(-1),pass:0,ramp:!!ramp,base};
+  setSpeedLive(loopSpeed()); loopUI();
+}
+function loopAllCycle(){ if(!loop||!loop.whole) setLoopAll(true,false); else if(!loop.ramp) setLoopAll(true,true); else setLoopAll(false); }
 function loopSpeed(){ return !loop?speed:loop.ramp?loop.base*Math.min(1,RAMP0+RAMPSTEP*loop.pass):loop.base; }
 /* Schleife fällt weg (z. B. das Lied hat keine Teile mehr): normales Tempo zurück */
 function loopDrop(){ if(loop){ speed=loop.base; loop=null; } }
@@ -5857,14 +5880,15 @@ function loopPct(){ return loop?Math.round(loopSpeed()/loop.base*100):100; }
 /* Tempo mitten im Lauf ändern: alles ab der aktuellen Stelle neu anlegen */
 function setSpeedLive(v){ if(Math.abs(v-speed)<1e-6) return; speed=v; if(playing&&!waiting){ stopScheduled(); resyncFrom(pos); } }
 function setLoop(on,ramp){
-  if(!on){ if(loop){ const b=loop.base; loop=null; setSpeedLive(b); } loopUI(); return; }
+  if(!on){ if(loop&&!loop.whole){ const b=loop.base; loop=null; setSpeedLive(b); if(endlosOn) setLoopAll(true,false); } loopUI(); return; }
   if(!song||!song.secs||!song.secs.length) return;
-  const i=loop?loop.i:curPart(), base=loop?loop.base:speed;
+  const i=loop&&!loop.whole?loop.i:curPart(), base=loop?loop.base:speed;
   loop={i,...loopBounds(i),pass:0,ramp:!!ramp,base};
   setSpeedLive(loopSpeed()); loopUI();
 }
 /* Springt man woandershin (Teil antippen, Regler, Wischen), wird der neue Teil wiederholt */
 function loopRetarget(k){
+  if(loop&&loop.whole){ loop.pre=false; return; } // Endlos: das ganze Stück bleibt die Schleife
   if(!loop||!song||!song.secs||!song.secs.length) return;
   if(k==null) k=curPart(); loop.pre=false;
   if(k!==loop.i){ loop.i=k; Object.assign(loop,loopBounds(k)); loop.pass=0; setSpeedLive(loopSpeed()); }
@@ -5872,7 +5896,9 @@ function loopRetarget(k){
 }
 /* Nach dem Neuaufbau (Tempo, Tonart, Muster) passen Anfang und Ende des Teils wieder */
 function loopSync(){
+  if(!loop&&endlosOn&&song){ loop={i:-1,whole:true,...loopBounds(-1),pass:0,ramp:false,base:speed}; loopUI(); return; }
   if(!loop) return;
+  if(loop.whole){ Object.assign(loop,loopBounds(-1)); loopUI(); return; }
   if(!song.secs||!song.secs[loop.i]){ loopDrop(); loopUI(); return; }
   Object.assign(loop,loopBounds(loop.i)); loopUI();
 }
@@ -5888,7 +5914,10 @@ function loopCheck(){
   loopUI();
 }
 function loopUI(){
-  const on=!!loop, S=song&&song.secs||[], pct=loopPct();
+  const all=!!(loop&&loop.whole), pct=loopPct();
+  $('loopAll').setAttribute('aria-pressed',all); $('loopAllPct').textContent=all&&loop.ramp?pct+'%':'';
+  $('loopAll').setAttribute('aria-label',all?(loop.ramp?'Endlos, jedes Mal schneller – tippen zum Ausschalten':'Endlos – tippen für „jedes Mal schneller“'):'Endlos: das Stück immer wieder von vorn spielen');
+  const on=!!loop&&!all, S=song&&song.secs||[];
   $('loopBtn').setAttribute('aria-pressed',on); $('rampBtn').hidden=!on; $('rampBtn').setAttribute('aria-pressed',!!(loop&&loop.ramp));
   $('loopInfo').textContent=on&&S[loop.i]?S[loop.i].name+(loop.pass?' · '+(loop.pass+1)+'. Mal':'')+(loop.ramp?' · '+pct+' %':''):'';
   const st=!on?'aus':loop.ramp?'schneller':'an';
@@ -5898,9 +5927,10 @@ function loopUI(){
   $('partLoop').dataset.st=st;
 }
 /* Kleiner Knopf (Smartphone quer, Vollbild): aus → wiederholen → jedes Mal schneller → aus */
-function loopCycle(){ if(!loop) setLoop(true,false); else if(!loop.ramp) setLoop(true,true); else setLoop(false); }
-$('loopBtn').onclick=()=>setLoop(!loop,false);
-$('rampBtn').onclick=()=>{ if(loop) setLoop(true,!loop.ramp); };
+function loopCycle(){ if(!loop||loop.whole) setLoop(true,false); else if(!loop.ramp) setLoop(true,true); else setLoop(false); }
+$('loopBtn').onclick=()=>setLoop(!(loop&&!loop.whole),false);
+$('loopAll').onclick=loopAllCycle;
+$('rampBtn').onclick=()=>{ if(loop&&!loop.whole) setLoop(true,!loop.ramp); };
 $('partLoop').onclick=loopCycle;
 $('presLoop').onclick=()=>{ loopCycle(); presBar(); };
 function startCount(){
@@ -5961,7 +5991,7 @@ function drawLoopEnd(){
   g.fillStyle=rgba(T.bot,0.72); g.fillRect(x0,hwTop-4,W-x0,hwH+8);
   if(x>=hx){ g.fillStyle=T.accent; g.fillRect(x-1.5,hwTop-4,3,hwH+8); }
   if(W-x0>90){ g.font=`600 13px ${FB}`; g.textAlign='left'; g.textBaseline='middle'; g.fillStyle=T.accent;
-    g.fillText('↻ wieder '+song.secs[loop.i].name,x0+10,hwTop+hwH/2); }
+    g.fillText(loop.whole?'↻ wieder von vorn':'↻ wieder '+song.secs[loop.i].name,x0+10,hwTop+hwH/2); }
 }
 /* Klaviermelodie zu einem Lied: oben links Teil und Akkord, damit man weiß, wo man ist */
 function drawMelLiedInfo(){
