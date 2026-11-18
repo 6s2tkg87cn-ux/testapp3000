@@ -904,7 +904,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
     <div class="partnav" id="partNav" hidden><button class="round" id="partPrev" aria-label="Teil zurück"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM9.5 3v10L4.5 8zM15 3v10l-5-5z"/></svg></button><button class="round" id="partNext" aria-label="Nächster Teil"><svg viewBox="0 0 16 16"><path d="M1 3l5 5-5 5zM6.5 3l5 5-5 5zM12 2h2v12h-2z"/></svg></button><button class="round loopr" id="partLoop" aria-pressed="false" aria-label="Teil wiederholen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.5H11V1.6L14.4 4.4 11 7.2V5.3H4.5a1.7 1.7 0 00-1.7 1.7v1.2H1V7a3.5 3.5 0 013.5-3.5zM11.5 12.5H5v1.9L1.6 11.6 5 8.8v1.9h6.5a1.7 1.7 0 001.7-1.7V7.8H15V9a3.5 3.5 0 01-3.5 3.5z"/></svg><span class="lpct" id="partLoopPct"></span></button></div>
     <div class="ttempo" id="bpmGroup"><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="stepper"><button id="bpmDown" aria-label="Langsamer">−</button><output id="bpmOut">80 BPM</output><button id="bpmUp" aria-label="Schneller">+</button></div></div>
     <div class="ttempo" id="speedGroup" hidden><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="seg" id="tempo"><button data-v="50" aria-pressed="false">Langsam</button><button data-v="75" aria-pressed="false">Mittel</button><button data-v="100" aria-pressed="true">Normal</button></div></div>
-    <button class="btn tloop" id="loopAll" aria-pressed="false" aria-label="Endlos: das Stück immer wieder von vorn spielen" title="Endlos: das Stück immer wieder von vorn spielen. Noch einmal tippen: jedes Mal etwas schneller (70 % bis 100 %). Ein drittes Mal: aus."><span class="inf" aria-hidden="true">∞</span><span class="bt2">Endlos</span><span class="lpct" id="loopAllPct"></span></button>
+    <button class="btn tloop" id="loopAll" aria-pressed="false" aria-label="Endlos: das Stück immer wieder von vorn spielen" title="Endlos: das Stück immer wieder von vorn spielen. Noch einmal tippen: aus."><span class="inf" aria-hidden="true">∞</span><span class="bt2">Endlos</span><span class="lpct" id="loopAllPct"></span></button>
     <div class="strumpad" id="strumpad" hidden>
       <button id="strD" aria-label="Abschlag">↓<small>Ab</small></button>
       <button id="strU" aria-label="Aufschlag">↑<small>Auf</small></button>
@@ -4618,7 +4618,7 @@ const DRUMS={
     ['Lesen','Wie im Drumcomputer: Ein Raster zeigt zwei Takte mit fünf Zeilen – Crash ✱, Ride ◆, Hi-Hat × (offen ○), Snare ● (leise kleiner, Rand ⊘) und Bassdrum ⬤. Ein Lauflicht wandert durch. Kommt ein neues Muster oder ein Fill-in, erscheint rechts rechtzeitig die Vorschau „Gleich: …“.'],
     ['Spielen','Erreicht ein Zeichen die Linie, schlägst du: auf dem Bildschirm am Set unten, am Computer mit den Tasten '+DKEY.join(', ')+' (Crash, Ride, Hi-Hat, Snare, Bassdrum). E-Drums oder MIDI-Pads gehen am Computer auch.'],
     ['Lieder','Importierte Lieder gibt es auch hier. Welchen Groove du in welchem Teil spielst, legt der Arranger im Lied-Editor fest.'],
-    ['Endlos üben','Mit ∞ unten neben dem Tempo läuft der Groove immer wieder von vorn – ohne Pause. Noch einmal tippen: Er wird bei jedem Durchgang etwas schneller (70 % bis 100 %). Ein drittes Mal: aus. Die Einstellung bleibt auch beim nächsten Groove an.']
+    ['Endlos üben','Mit ∞ unten neben dem Tempo läuft der Groove immer wieder von vorn – ohne Pause. Noch einmal tippen: aus. Die Einstellung bleibt auch beim nächsten Groove an.']
   ],
   helpTip:'Tipp: Stell „Wer spielt“ auf „Ich“ und fang langsam an. Mit „Lied wartet auf mich“ wartet das Lied auf jeden Schlag.',
   art:'<svg viewBox="0 0 220 110"><ellipse cx="110" cy="80" rx="34" ry="22" fill="#ff5d73"/><ellipse cx="110" cy="72" rx="34" ry="10" fill="#ffb3bd"/><ellipse cx="60" cy="60" rx="20" ry="8" fill="#6ec6ff"/><rect x="40" y="60" width="40" height="22" fill="#4aa6df"/><ellipse cx="60" cy="82" rx="20" ry="8" fill="#4aa6df"/><line x1="160" y1="40" x2="160" y2="95" stroke="#c4b3bf" stroke-width="3"/><ellipse cx="160" cy="40" rx="26" ry="5" fill="#ffd166"/><line x1="80" y1="18" x2="98" y2="62" stroke="#fbf3f6" stroke-width="4" stroke-linecap="round"/><line x1="140" y1="18" x2="122" y2="62" stroke="#fbf3f6" stroke-width="4" stroke-linecap="round"/></svg>'
@@ -5872,7 +5872,7 @@ function setLoopAll(on,ramp){
   loop={i:-1,whole:true,...loopBounds(-1),pass:0,ramp:!!ramp,base};
   setSpeedLive(loopSpeed()); loopUI();
 }
-function loopAllCycle(){ if(!loop||!loop.whole) setLoopAll(true,false); else if(!loop.ramp) setLoopAll(true,true); else setLoopAll(false); }
+function loopAllCycle(){ setLoopAll(!(loop&&loop.whole)); }
 function loopSpeed(){ return !loop?speed:loop.ramp?loop.base*Math.min(1,RAMP0+RAMPSTEP*loop.pass):loop.base; }
 /* Schleife fällt weg (z. B. das Lied hat keine Teile mehr): normales Tempo zurück */
 function loopDrop(){ if(loop){ speed=loop.base; loop=null; } }
@@ -5916,7 +5916,7 @@ function loopCheck(){
 function loopUI(){
   const all=!!(loop&&loop.whole), pct=loopPct();
   $('loopAll').setAttribute('aria-pressed',all); $('loopAllPct').textContent=all&&loop.ramp?pct+'%':'';
-  $('loopAll').setAttribute('aria-label',all?(loop.ramp?'Endlos, jedes Mal schneller – tippen zum Ausschalten':'Endlos – tippen für „jedes Mal schneller“'):'Endlos: das Stück immer wieder von vorn spielen');
+  $('loopAll').setAttribute('aria-label',all?'Endlos ist an – tippen zum Ausschalten':'Endlos: das Stück immer wieder von vorn spielen');
   const on=!!loop&&!all, S=song&&song.secs||[];
   $('loopBtn').setAttribute('aria-pressed',on); $('rampBtn').hidden=!on; $('rampBtn').setAttribute('aria-pressed',!!(loop&&loop.ramp));
   $('loopInfo').textContent=on&&S[loop.i]?S[loop.i].name+(loop.pass?' · '+(loop.pass+1)+'. Mal':'')+(loop.ramp?' · '+pct+' %':''):'';
