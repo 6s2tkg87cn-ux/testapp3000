@@ -191,6 +191,8 @@ button,input,select{font-family:inherit}
 .prgrp input{width:20px;height:20px;accent-color:var(--accent);flex:none}
 #prGo:disabled,#prPdf:disabled{opacity:.45;cursor:default}
 #printSheet.pdfmake{display:block!important;position:absolute;left:-12000px;top:0;width:182mm;background:#fff;z-index:-1}
+#printSheet.pdfmake.pdffull{width:210mm}
+@media print{ body.printfull #printSheet{width:210mm} body.printfull #printSheet .ps-foot{display:none} }
 #printSheet .ps-chart{display:flex;flex-direction:column;gap:2mm}
 #printSheet .ps-crow{display:flex;gap:3mm;align-items:flex-start;break-inside:avoid}
 #printSheet .ps-cn{flex:none;width:28mm;font:700 9pt var(--font-body);text-transform:uppercase;letter-spacing:.04em;padding-top:2mm}
@@ -6394,7 +6396,7 @@ const PRINT_OPTS=[
   ['Arrangement',[['arr','Wer spielt wann?']]]
 ];
 const PRINT_KEY='bandlauf-druck';
-function printOpts(){ const all={}; printDefs.forEach(([,l])=>l.forEach(([k])=>all[k]=true)); try{ const o=JSON.parse(localStorage.getItem(printKey)||'null'); if(o&&typeof o==='object') for(const k in all) if(typeof o[k]==='boolean') all[k]=o[k]; }catch(e){} return all; }
+function printOpts(){ const all={}; printDefs.forEach(([,l])=>l.forEach(([k])=>all[k]=k!=='labels')); try{ const o=JSON.parse(localStorage.getItem(printKey)||'null'); if(o&&typeof o==='object') for(const k in all) if(typeof o[k]==='boolean') all[k]=o[k]; }catch(e){} return all; }
 function printHTML(S,opt){
   if(S&&S.kind==='drums') return drumPrintHTML(opt||printOpts());
   opt=opt||printOpts();
@@ -6546,9 +6548,30 @@ function drumTopSvg(cssW){
   o+=tag(70,500,footL[0]-14,footL[1]+4,'linker Fuß',false)+tag(560,560,footR[0]+14,footR[1]+4,'rechter Fuß',true);
   return o+'</svg>';
 }
-const DRUM_PRINT_OPTS=[['Schlagzeug',[['poster','Plakat: Schlagzeug von oben – wer spielt was?'],['groove','Groove-Karte mit Händen und Füßen'],['stickers','Aufkleber für die Pads']]]];
+const DRUM_PRINT_OPTS=[['Schlagzeug',[['poster','Plakat: Schlagzeug von oben – wer spielt was?'],['groove','Groove-Karte mit Händen und Füßen'],['stickers','Aufkleber zum Ausschneiden (normales Papier)']]],
+  ['Etikettenbogen',[['labels','Aufkleber auf Etikettenbogen: 4 Streifen à 192 × 61 mm (z. B. Avery Zweckform L4761)']]]];
 function limbIconSvg(l,h){ const foot=l===4; return `<svg viewBox="0 0 40 40" style="height:${h};width:auto;vertical-align:middle">`+(foot?footSvg(20,22,1.35,'R'):handSvg(20,26,1.7,l===3?'L':'R'))+'</svg>'; }
+/* Ein runder Aufkleber: Farbe und Zeichen wie in der App, Name, wer spielt. l=5: Hi-Hat-Pedal (linker Fuß) */
+function stickerSvg(l,size){
+  const ped=l===5, c=ped?DCOL[2]:DCOL[l], d=ped?DDARK[2]:DDARK[l], name=ped?'Hi-Hat-Pedal':DNAME[l], limb=ped?'linker Fuß':DLIMB[l];
+  return `<svg viewBox="0 0 100 100" style="width:${size};height:${size}"><circle cx="50" cy="50" r="47" fill="${c}" stroke="${d}" stroke-width="3"/>`+(ped?footSvg(50,37,1.45,'L','#1d1d1d'):dSymSvg(l,50,34,16,'#1d1d1d',c))+
+    `<text x="50" y="64" font-size="${ped?11.5:13.5}" font-weight="800" fill="#1d1d1d" text-anchor="middle">${name}</text><rect x="19" y="70" width="62" height="14" rx="7" fill="#1d1d1d"/><text x="50" y="80.3" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">${limb}</text></svg>`;
+}
+/* Etikettenbogen A4 mit 4 Streifen 192 × 61 mm (Rand links 9 mm, oben 26,5 mm): je Streifen 3 runde Aufkleber (5 cm),
+   zwei Sätze mit Crash, Ride, Hi-Hat, Snare, Bassdrum, Hi-Hat-Pedal. Schnittmarken zeigen, wo man die Streifen teilt. */
+const LABEL_SHEET={left:9,top:26.5,w:192,h:61,rows:4,cols:3,d:50};
+function labelSheetHTML(){
+  const L=LABEL_SHEET, cw=L.w/L.cols, order=[0,1,2,3,4,5,0,1,2,3,4,5]; let o='';
+  for(let r=0;r<L.rows;r++){ const y=L.top+r*L.h;
+    for(let c=0;c<L.cols;c++){ const k=r*L.cols+c, x=L.left+c*cw+(cw-L.d)/2, yy=y+(L.h-L.d)/2;
+      o+=`<div style="position:absolute;left:${x.toFixed(2)}mm;top:${yy.toFixed(2)}mm;width:${L.d}mm;height:${L.d}mm">${stickerSvg(order[k],L.d+'mm')}</div>`; }
+    for(let c=1;c<L.cols;c++){ const x=L.left+c*cw; // Schnittmarken oben und unten am Streifen
+      o+=`<div style="position:absolute;left:${(x-0.15).toFixed(2)}mm;top:${y.toFixed(2)}mm;width:0.3mm;height:3mm;background:#9a9a9a"></div><div style="position:absolute;left:${(x-0.15).toFixed(2)}mm;top:${(y+L.h-3).toFixed(2)}mm;width:0.3mm;height:3mm;background:#9a9a9a"></div>`; } }
+  const note=`<div style="position:absolute;left:${L.left}mm;top:${(L.top+L.rows*L.h+4).toFixed(1)}mm;width:${L.w}mm;font:500 7.5pt var(--font-body);color:#777">Bandlauf · Etikettenbogen 4 × 192 × 61 mm · in Originalgröße (100 %) und ohne Seitenränder drucken · Probe auf normalem Papier gegen das Licht halten</div>`;
+  return `<div class="ps-full" style="position:relative;width:210mm;height:297mm;overflow:hidden">${o}${note}</div>`;
+}
 function drumPrintHTML(opt){
+  if(opt.labels) return labelSheetHTML();
   const secs=[], order=[2,3,4,1,0];
   if(opt.poster){
     const rows=order.map(l=>`<tr><td class="ps-dsym"><svg viewBox="0 0 40 40" style="width:9mm;height:9mm"><circle cx="20" cy="20" r="18" fill="${DLIGHT[l]}" stroke="${DDARK[l]}" stroke-width="2.5"/>${dSymSvg(l,20,20,9,DDARK[l],DLIGHT[l])}</svg></td><td><b>${DNAME[l]}</b></td><td>${limbIconSvg(l,'8mm')} <b>${DLIMB[l]}</b>${l===2?'<br><small>über Kreuz; das Pedal tritt der linke Fuß</small>':''}</td><td>${DWHEN[l]}</td><td class="ps-key">${DKEY[l]}</td></tr>`).join('');
@@ -6568,8 +6591,8 @@ function drumPrintHTML(opt){
 <div class="ps-legend">Zählt laut mit: „eins und zwei und drei und vier und“. × Hi-Hat zu · ○ Hi-Hat offen · ◆ Ride · ● Schlag · · leise. Fang langsam an und stell in Bandlauf ∞ Endlos ein.</div></div>`);
   }
   if(opt.stickers){
-    const st=l=>`<svg viewBox="0 0 100 100" style="width:38mm;height:38mm"><circle cx="50" cy="50" r="47" fill="${DCOL[l]}" stroke="${DDARK[l]}" stroke-width="3"/>${dSymSvg(l,50,34,16,'#1d1d1d',DCOL[l])}<text x="50" y="66" font-size="13.5" font-weight="800" fill="#1d1d1d" text-anchor="middle">${DNAME[l]}</text><rect x="17" y="72" width="66" height="15" rx="7.5" fill="#1d1d1d"/><text x="50" y="83.5" font-size="10" font-weight="800" fill="#fff" text-anchor="middle">${DLIMB[l]}</text></svg>`;
-    let g=''; for(let k=0;k<3;k++) for(const l of [0,1,2,3,4]) g+=`<div class="ps-stk">${st(l)}</div>`;
+    const st=l=>stickerSvg(l,'38mm');
+    let g=''; for(let k=0;k<3;k++) for(const l of [0,1,2,3,4,5]) g+=`<div class="ps-stk">${st(l)}</div>`;
     secs.push(`<div class="${secs.length?'ps-page2':''}"><h1>Aufkleber für die Pads</h1><div class="ps-meta">Ausschneiden und mit Klebefilm an die Pads kleben – oder direkt auf Etikettenpapier drucken. So sieht das E-Schlagzeug aus wie das Bild in Bandlauf.</div><div class="ps-stks">${g}</div></div>`);
   }
   return secs.join('\n')+`<div class="ps-foot">Erstellt mit Bandlauf.</div>`;
@@ -6590,7 +6613,10 @@ function fillPrintDlg(){
   printDefs.forEach(([t,list])=>{ const d=document.createElement('div'); d.className='prgrp'; d.innerHTML=`<b>${t}</b>`;
     list.forEach(([k,l])=>{ const lb=document.createElement('label'); lb.innerHTML=`<input type="checkbox" data-k="${k}" id="pr-${k}"${o[k]?' checked':''}> ${l}`; d.appendChild(lb); });
     box.appendChild(d); });
-  box.querySelectorAll('input').forEach(x=>x.onchange=prUpd); prUpd();
+  // Etikettenbogen wird randlos und allein gedruckt: er schließt die anderen Teile aus (und umgekehrt)
+  box.querySelectorAll('input').forEach(x=>x.onchange=()=>{ if(x.checked&&(x.dataset.k==='labels'||$('pr-labels'))) box.querySelectorAll('input').forEach(y=>{ if(y!==x&&((x.dataset.k==='labels')!==(y.dataset.k==='labels'))) y.checked=false; }); prUpd(); });
+  if($('pr-labels')&&$('pr-labels').checked) box.querySelectorAll('input').forEach(y=>{ if(y.dataset.k!=='labels') y.checked=false; });
+  prUpd();
   $('printDlg').hidden=false;
 }
 function prRead(){ const o={}; $('prGrid').querySelectorAll('input').forEach(x=>o[x.dataset.k]=x.checked); return o; }
@@ -6607,7 +6633,10 @@ function printLied(S,opt){
   if(!S) return;
   $('printSheet').innerHTML=printHTML(S,opt);
   document.body.classList.add('printing');
-  const done=()=>{ document.body.classList.remove('printing'); removeEventListener('afterprint',done); };
+  // Etikettenbogen: Seite ohne Ränder, damit die Aufkleber genau auf den Etiketten landen
+  const full=!!(S.kind==='drums'&&opt&&opt.labels); let st=null;
+  if(full){ st=document.createElement('style'); st.id='pgfull'; st.textContent='@media print{@page{size:A4;margin:0}}'; document.head.appendChild(st); document.body.classList.add('printfull'); }
+  const done=()=>{ document.body.classList.remove('printing'); document.body.classList.remove('printfull'); if(st) st.remove(); removeEventListener('afterprint',done); };
   addEventListener('afterprint',done);
   // Direkt im Tipp aufrufen – iPhone und iPad drucken sonst nicht
   try{ window.print(); }catch(e){ done(); }
@@ -6616,9 +6645,9 @@ function printLied(S,opt){
 /* ---------- Export als PDF-Datei (fürs Teilen-Menü am iPhone/iPad, sonst zum Speichern) ----------
    Das Blatt wird wie beim Drucken als HTML aufgebaut, unsichtbar in A4-Breite gesetzt und dann Element für
    Element auf A4-Seiten gemalt (150 dpi). Seitenumbrüche nur dort, wo kein Block zerschnitten wird. */
-const PDF_DPI=150, MM=96/25.4, PG={w:210,h:297,ml:14,mt:13,mb:15};
-function sheetPages(root){
-  const R0=root.getBoundingClientRect(), top=R0.top, ph=(PG.h-PG.mt-PG.mb)*MM, endY=R0.height;
+const PDF_DPI=150, MM=96/25.4, PG={w:210,h:297,ml:14,mt:13,mb:15}, PG_FULL={w:210,h:297,ml:0,mt:0,mb:0};
+function sheetPages(root,pg=PG){
+  const R0=root.getBoundingClientRect(), top=R0.top, ph=(pg.h-pg.mt-pg.mb)*MM, endY=R0.height;
   const avoid=[...root.querySelectorAll('.ps-part,.ps-line,figure,.ps-groove,.ps-crow,tr,h2,.ps-legend,.ps-foot,.ps-who,h1,.ps-meta,.ps-poster,.ps-stk')].map(e=>{ const r=e.getBoundingClientRect(); return [r.top-top,r.bottom-top,e.tagName==='H2']; });
   const forced=[...root.querySelectorAll('.ps-page2')].map(e=>e.getBoundingClientRect().top-top);
   const cand=[...new Set(avoid.map(a=>a[0]).concat(forced))].sort((a,b)=>a-b);
@@ -6632,11 +6661,11 @@ function sheetPages(root){
   }
   return pages;
 }
-function paintSheet(root,y0,y1){
-  const k=PDF_DPI/96, cv=document.createElement('canvas'); cv.width=Math.round(PG.w*MM*k); cv.height=Math.round(PG.h*MM*k);
+function paintSheet(root,y0,y1,pg=PG){
+  const k=PDF_DPI/96, cv=document.createElement('canvas'); cv.width=Math.round(pg.w*MM*k); cv.height=Math.round(pg.h*MM*k);
   const x=cv.getContext('2d'), R0=root.getBoundingClientRect();
   x.fillStyle='#fff'; x.fillRect(0,0,cv.width,cv.height);
-  x.setTransform(k,0,0,k,k*(PG.ml*MM-R0.left),k*(PG.mt*MM-R0.top-y0));
+  x.setTransform(k,0,0,k,k*(pg.ml*MM-R0.left),k*(pg.mt*MM-R0.top-y0));
   const vis=r=>r.bottom>R0.top+y0-0.5&&r.top<R0.top+y1+0.5;
   const inside=r=>r.top>=R0.top+y0-0.5&&r.bottom<=R0.top+y1+0.5;
   // Hintergründe und Linien
@@ -6699,11 +6728,11 @@ function pdfFromJpegs(imgs){
 }
 function sheetPdf(S,opt){
   const root=$('printSheet'); root.innerHTML=printHTML(S,opt); root.querySelectorAll('.ps-cols').forEach(e=>e.classList.remove('ps-cols'));
-  root.classList.add('pdfmake');
+  const full=!!(S&&S.kind==='drums'&&opt&&opt.labels), pg=full?PG_FULL:PG; root.classList.add('pdfmake'); root.classList.toggle('pdffull',full); if(full) root.querySelectorAll('.ps-foot').forEach(e=>e.remove());
   try{
-    const pages=sheetPages(root).slice(0,30), imgs=pages.map(([a,b])=>{ const cv=paintSheet(root,a,b), u=cv.toDataURL('image/jpeg',0.88), bin=atob(u.split(',')[1]), d=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) d[i]=bin.charCodeAt(i); return {w:cv.width,h:cv.height,data:d}; });
+    const pages=(full?[[0,297*MM]]:sheetPages(root,pg)).slice(0,30), imgs=pages.map(([a,b])=>{ const cv=paintSheet(root,a,b,pg), u=cv.toDataURL('image/jpeg',0.88), bin=atob(u.split(',')[1]), d=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) d[i]=bin.charCodeAt(i); return {w:cv.width,h:cv.height,data:d}; });
     return pdfFromJpegs(imgs);
-  } finally { root.classList.remove('pdfmake'); }
+  } finally { root.classList.remove('pdfmake'); root.classList.remove('pdffull'); }
 }
 function sharePdf(S,opt){
   let blob; try{ blob=sheetPdf(S,opt); }catch(e){ notice('Das PDF konnte nicht erstellt werden. Nimm „Drucken“.'); return; }

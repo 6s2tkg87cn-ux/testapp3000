@@ -94,9 +94,16 @@ nur Grundton). Die Wahl merkt sich das Gerät.
 PDF teilen, mit Auswahl): ein Plakat mit dem Schlagzeug von oben, so wie man am Hocker sitzt – Arme
 über Kreuz (rechte Hand Hi-Hat, linke Hand Snare), Füße auf den Pedalen, alles in den Farben und
 Zeichen der App, dazu eine Tabelle mit Taste und „wann meistens“; eine Groove-Karte, bei der jede Zeile
-ein Körperteil ist; und einen Bogen runder Aufkleber für die Pads des E-Schlagzeugs. In der App stehen
-an den Zeilen und am gezeichneten Set „rechte Hand“, „linke Hand“, „rechter Fuß“; die Hilfe zeigt das
-Bild von oben.
+ein Körperteil ist; und einen Bogen runder Aufkleber für die Pads des E-Schlagzeugs (jeder Aufkleber
+mit Name und „rechte Hand“ / „linke Hand“ / „rechter Fuß“ / „linker Fuß“, auch für das Hi-Hat-Pedal).
+In der App stehen an den Zeilen und am gezeichneten Set „rechte Hand“, „linke Hand“, „rechter Fuß“;
+die Hilfe zeigt das Bild von oben.
+
+*Etikettenbogen:* Im selben Dialog lässt sich statt der anderen Teile „Aufkleber auf Etikettenbogen“
+wählen – für perforierte A4-Bögen mit 4 Streifen à 192 × 61 mm (z. B. Avery Zweckform L4761). Auf jeden
+Streifen kommen drei runde Aufkleber (5 cm), insgesamt zwei Sätze; feine Marken zeigen, wo man die
+Streifen teilt. Die Seite wird randlos erzeugt: in Originalgröße (100 %, „Tatsächliche Größe“, ohne
+„An Seite anpassen“) drucken und vorher eine Probe auf normalem Papier gegen den Bogen ins Licht halten.
 
 **Endlos (∞):** Unten neben dem Tempo, bei allen Instrumenten: das ganze Stück läuft immer wieder von
 vorn, ohne Lücke im Takt – gedacht vor allem für Schlagzeug-Grooves und Übungen. Noch einmal tippen: aus.
