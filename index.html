@@ -235,8 +235,6 @@ button,input,select{font-family:inherit}
 #loopInfo:empty{display:none}
 .loopr{position:relative}
 .round.loopr[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-.lpct{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);font:700 9.5px var(--font-body);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:1px 4px;white-space:nowrap}
-.lpct:empty{display:none}
 #presLoop svg{width:15px;height:15px;fill:currentColor}
 #presLoop[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .loopctl .ls{display:none}
@@ -906,7 +904,7 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   <div class="notice" id="notice" role="status" hidden><p id="noticeText"></p><button id="noticeX" aria-label="Hinweis schließen">OK</button></div>
 
   <div class="parts" id="parts" hidden><span class="lbl">Springen zu</span><div class="pchips" id="partChips" role="group" aria-label="Teile des Liedes"></div>
-    <div class="loopctl"><button class="chipt" id="loopBtn" aria-pressed="false" title="Den Teil, der gerade dran ist, immer wieder spielen"><span class="lw">Teil wiederholen</span><span class="ls">Wiederholen</span></button><button class="chipt" id="rampBtn" aria-pressed="false" hidden title="Jeder Durchgang etwas schneller: von 70 % bis 100 %"><span class="lw">Schneller werden</span><span class="ls">Schneller</span></button><span class="lbl" id="loopInfo" role="status"></span></div></div>
+    <div class="loopctl"><button class="chipt" id="loopBtn" aria-pressed="false" title="Den Teil, der gerade dran ist, immer wieder spielen"><span class="lw">Teil wiederholen</span><span class="ls">Wiederholen</span></button><span class="lbl" id="loopInfo" role="status"></span></div></div>
 
   <div class="stage" id="stage">
     <canvas id="cv" aria-label="Laufband und Instrument"></canvas>
@@ -915,10 +913,10 @@ body.present .stage{position:fixed;inset:0;border:0;border-radius:0;min-height:0
   <div class="transport">
     <button class="round" id="restart" aria-label="Von vorn"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
     <button class="round play" id="play" aria-label="Start"><svg viewBox="0 0 16 16" id="playIcon"><path d="M4.5 2.5l9 5.5-9 5.5z"/></svg></button>
-    <div class="partnav" id="partNav" hidden><button class="round" id="partPrev" aria-label="Teil zurück"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM9.5 3v10L4.5 8zM15 3v10l-5-5z"/></svg></button><button class="round" id="partNext" aria-label="Nächster Teil"><svg viewBox="0 0 16 16"><path d="M1 3l5 5-5 5zM6.5 3l5 5-5 5zM12 2h2v12h-2z"/></svg></button><button class="round loopr" id="partLoop" aria-pressed="false" aria-label="Teil wiederholen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.5H11V1.6L14.4 4.4 11 7.2V5.3H4.5a1.7 1.7 0 00-1.7 1.7v1.2H1V7a3.5 3.5 0 013.5-3.5zM11.5 12.5H5v1.9L1.6 11.6 5 8.8v1.9h6.5a1.7 1.7 0 001.7-1.7V7.8H15V9a3.5 3.5 0 01-3.5 3.5z"/></svg><span class="lpct" id="partLoopPct"></span></button></div>
+    <div class="partnav" id="partNav" hidden><button class="round" id="partPrev" aria-label="Teil zurück"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM9.5 3v10L4.5 8zM15 3v10l-5-5z"/></svg></button><button class="round" id="partNext" aria-label="Nächster Teil"><svg viewBox="0 0 16 16"><path d="M1 3l5 5-5 5zM6.5 3l5 5-5 5zM12 2h2v12h-2z"/></svg></button><button class="round loopr" id="partLoop" aria-pressed="false" aria-label="Teil wiederholen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.5H11V1.6L14.4 4.4 11 7.2V5.3H4.5a1.7 1.7 0 00-1.7 1.7v1.2H1V7a3.5 3.5 0 013.5-3.5zM11.5 12.5H5v1.9L1.6 11.6 5 8.8v1.9h6.5a1.7 1.7 0 001.7-1.7V7.8H15V9a3.5 3.5 0 01-3.5 3.5z"/></svg></button></div>
     <div class="ttempo" id="bpmGroup"><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="stepper"><button id="bpmDown" aria-label="Langsamer">−</button><output id="bpmOut">80 BPM</output><button id="bpmUp" aria-label="Schneller">+</button></div></div>
     <div class="ttempo" id="speedGroup" hidden><span class="tlbl"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.3 1h3.4l3.3 13.5H3zM5.1 13h5.8L9.3 6.4 11.9 3l1 .8-2.9 3.7.9 5.5zM7.2 2.5L6.2 6.8h1.6l2-2.6-.3-1.7z"/></svg><span>Tempo</span></span><div class="seg" id="tempo"><button data-v="50" aria-pressed="false">Langsam</button><button data-v="75" aria-pressed="false">Mittel</button><button data-v="100" aria-pressed="true">Normal</button></div></div>
-    <button class="btn tloop" id="loopAll" aria-pressed="false" aria-label="Endlos: das Stück immer wieder von vorn spielen" title="Endlos: das Stück immer wieder von vorn spielen. Noch einmal tippen: aus."><span class="inf" aria-hidden="true">∞</span><span class="bt2">Endlos</span><span class="lpct" id="loopAllPct"></span></button>
+    <button class="btn tloop" id="loopAll" aria-pressed="false" aria-label="Endlos: das Stück immer wieder von vorn spielen" title="Endlos: das Stück immer wieder von vorn spielen. Noch einmal tippen: aus."><span class="inf" aria-hidden="true">∞</span><span class="bt2">Endlos</span></button>
     <div class="strumpad" id="strumpad" hidden>
       <button id="strD" aria-label="Abschlag">↓<small>Ab</small></button>
       <button id="strU" aria-label="Aufschlag">↑<small>Auf</small></button>
@@ -5876,9 +5874,8 @@ function partStep(d){
   const k=curPart(), back=countTo==null&&Math.max(0,pos)-S[k].start>song.bar;
   jumpPart(Math.max(0,Math.min(S.length-1,d>0?k+1:back?k:k-1))); return true;
 }
-/* ---------- Teil in Schleife üben: ein Teil läuft endlos, auf Wunsch jedes Mal etwas schneller (70 % → 100 %) ---------- */
-let loop=null; // {i,start,end,pass,ramp,base}
-const RAMP0=0.7, RAMPSTEP=0.1;
+/* ---------- Teil in Schleife üben: ein Teil läuft endlos im eingestellten Tempo ---------- */
+let loop=null; // {i,start,end,pass,whole,pre}
 function loopBounds(i){
   if(i===-1){ // ganzes Stück: vom ersten Ton (Auftakt) bis zum Ende des letzten Takts
     const tl=song.timeline, st=Math.min(0,song.items.length?song.items[0].start:0);
@@ -5886,39 +5883,32 @@ function loopBounds(i){
   const S=song.secs; return {start:S[i].start,end:i+1<S.length?S[i+1].start:song.duration}; }
 /* Endlos (ganzes Stück immer wieder) bleibt eingeschaltet, auch beim nächsten Stück – praktisch zum Üben, vor allem am Schlagzeug */
 const ENDLOS_KEY='bandlauf-endlos'; let endlosOn=false; try{ endlosOn=localStorage.getItem(ENDLOS_KEY)==='1'; }catch(e){}
-function setLoopAll(on,ramp){
+function setLoopAll(on){
   endlosOn=!!on; try{ localStorage.setItem(ENDLOS_KEY,on?'1':'0'); }catch(e){}
-  if(!on){ if(loop&&loop.whole){ const b=loop.base; loop=null; setSpeedLive(b); } loopUI(); return; }
+  if(!on){ if(loop&&loop.whole) loop=null; loopUI(); return; }
   if(!song) return;
-  const base=loop?loop.base:speed;
-  loop={i:-1,whole:true,...loopBounds(-1),pass:0,ramp:!!ramp,base};
-  setSpeedLive(loopSpeed()); loopUI();
+  loop={i:-1,whole:true,...loopBounds(-1),pass:0}; loopUI();
 }
 function loopAllCycle(){ setLoopAll(!(loop&&loop.whole)); }
-function loopSpeed(){ return !loop?speed:loop.ramp?loop.base*Math.min(1,RAMP0+RAMPSTEP*loop.pass):loop.base; }
-/* Schleife fällt weg (z. B. das Lied hat keine Teile mehr): normales Tempo zurück */
-function loopDrop(){ if(loop){ speed=loop.base; loop=null; } }
-function loopPct(){ return loop?Math.round(loopSpeed()/loop.base*100):100; }
-/* Tempo mitten im Lauf ändern: alles ab der aktuellen Stelle neu anlegen */
-function setSpeedLive(v){ if(Math.abs(v-speed)<1e-6) return; speed=v; if(playing&&!waiting){ stopScheduled(); resyncFrom(pos); } }
-function setLoop(on,ramp){
-  if(!on){ if(loop&&!loop.whole){ const b=loop.base; loop=null; setSpeedLive(b); if(endlosOn) setLoopAll(true,false); } loopUI(); return; }
+/* Schleife fällt weg (z. B. das Lied hat keine Teile mehr) */
+function loopDrop(){ loop=null; }
+function setLoop(on){
+  if(!on){ if(loop&&!loop.whole){ loop=null; if(endlosOn) setLoopAll(true); } loopUI(); return; }
   if(!song||!song.secs||!song.secs.length) return;
-  const i=loop&&!loop.whole?loop.i:curPart(), base=loop?loop.base:speed;
-  loop={i,...loopBounds(i),pass:0,ramp:!!ramp,base};
-  setSpeedLive(loopSpeed()); loopUI();
+  const i=loop&&!loop.whole?loop.i:curPart();
+  loop={i,...loopBounds(i),pass:0}; loopUI();
 }
 /* Springt man woandershin (Teil antippen, Regler, Wischen), wird der neue Teil wiederholt */
 function loopRetarget(k){
   if(loop&&loop.whole){ loop.pre=false; return; } // Endlos: das ganze Stück bleibt die Schleife
   if(!loop||!song||!song.secs||!song.secs.length) return;
   if(k==null) k=curPart(); loop.pre=false;
-  if(k!==loop.i){ loop.i=k; Object.assign(loop,loopBounds(k)); loop.pass=0; setSpeedLive(loopSpeed()); }
+  if(k!==loop.i){ loop.i=k; Object.assign(loop,loopBounds(k)); loop.pass=0; }
   loopUI();
 }
 /* Nach dem Neuaufbau (Tempo, Tonart, Muster) passen Anfang und Ende des Teils wieder */
 function loopSync(){
-  if(!loop&&endlosOn&&song){ loop={i:-1,whole:true,...loopBounds(-1),pass:0,ramp:false,base:speed}; loopUI(); return; }
+  if(!loop&&endlosOn&&song){ loop={i:-1,whole:true,...loopBounds(-1),pass:0}; loopUI(); return; }
   if(!loop) return;
   if(loop.whole){ Object.assign(loop,loopBounds(-1)); loopUI(); return; }
   if(!song.secs||!song.secs[loop.i]){ loopDrop(); loopUI(); return; }
@@ -5931,28 +5921,25 @@ function loopCheck(){
   const tEnd=startCtx+(loop.end-startOffset)/speed;
   loop.pass++;
   for(const n of song.items) if(n.start>=loop.start-1e-4&&n.start<loop.end) n.hit=false;
-  speed=loopSpeed(); resyncFrom(loop.start); startCtx=Math.max(ac.currentTime,tEnd); loop.pre=true;
+  resyncFrom(loop.start); startCtx=Math.max(ac.currentTime,tEnd); loop.pre=true;
   pos=startOffset+(ac.currentTime-startCtx)*speed;
   loopUI();
 }
 function loopUI(){
-  const all=!!(loop&&loop.whole), pct=loopPct();
-  $('loopAll').setAttribute('aria-pressed',all); $('loopAllPct').textContent=all&&loop.ramp?pct+'%':'';
+  const all=!!(loop&&loop.whole);
+  $('loopAll').setAttribute('aria-pressed',all);
   $('loopAll').setAttribute('aria-label',all?'Endlos ist an – tippen zum Ausschalten':'Endlos: das Stück immer wieder von vorn spielen');
   const on=!!loop&&!all, S=song&&song.secs||[];
-  $('loopBtn').setAttribute('aria-pressed',on); $('rampBtn').hidden=!on; $('rampBtn').setAttribute('aria-pressed',!!(loop&&loop.ramp));
-  $('loopInfo').textContent=on&&S[loop.i]?S[loop.i].name+(loop.pass?' · '+(loop.pass+1)+'. Mal':'')+(loop.ramp?' · '+pct+' %':''):'';
-  const st=!on?'aus':loop.ramp?'schneller':'an';
-  $('partLoop').setAttribute('aria-pressed',on); $('partLoopPct').textContent=on&&loop.ramp?pct+'%':'';
-  $('partLoop').setAttribute('aria-label',on?(loop.ramp?'Teil wiederholen, jedes Mal schneller – tippen zum Beenden':'Teil wiederholen – tippen für „jedes Mal schneller“'):'Teil wiederholen');
-  $('presLoop').setAttribute('aria-pressed',on); $('presLoopT').textContent=!on?'Wiederholen':loop.ramp?'Schneller · '+pct+' %':'Wiederholen';
-  $('partLoop').dataset.st=st;
+  $('loopBtn').setAttribute('aria-pressed',on);
+  $('loopInfo').textContent=on&&S[loop.i]?S[loop.i].name+(loop.pass?' · '+(loop.pass+1)+'. Mal':''):'';
+  $('partLoop').setAttribute('aria-pressed',on);
+  $('partLoop').setAttribute('aria-label',on?'Teil wiederholen ist an – tippen zum Beenden':'Teil wiederholen');
+  $('presLoop').setAttribute('aria-pressed',on);
 }
-/* Kleiner Knopf (Smartphone quer, Vollbild): aus → wiederholen → jedes Mal schneller → aus */
-function loopCycle(){ if(!loop||loop.whole) setLoop(true,false); else if(!loop.ramp) setLoop(true,true); else setLoop(false); }
-$('loopBtn').onclick=()=>setLoop(!(loop&&!loop.whole),false);
+/* Kleiner Knopf (Smartphone quer, Vollbild): an ↔ aus */
+function loopCycle(){ setLoop(!(loop&&!loop.whole)); }
+$('loopBtn').onclick=loopCycle;
 $('loopAll').onclick=loopAllCycle;
-$('rampBtn').onclick=()=>{ if(loop&&!loop.whole) setLoop(true,!loop.ramp); };
 $('partLoop').onclick=loopCycle;
 $('presLoop').onclick=()=>{ loopCycle(); presBar(); };
 function startCount(){
@@ -6022,7 +6009,7 @@ function drawMelLiedInfo(){
   g.font=`700 13px ${FB}`; const w=g.measureText(txt).width+20; g.fillStyle=T.panel; rr(10,10,w,28,14); g.fill();
   g.fillStyle=T.accent; g.textAlign='left'; g.textBaseline='middle'; g.fillText(txt,20,24.5);
 }
-function secLab(i){ const S=song.secs, L=loop&&loop.i===i; return (L?'↻ ':'')+S[i].name.toUpperCase()+(L&&loop.ramp?' · '+loopPct()+' %':''); }
+function secLab(i){ const S=song.secs, L=loop&&loop.i===i; return (L?'↻ ':'')+S[i].name.toUpperCase(); }
 function drawSecs(tStart,tEnd){
   const S=song.secs, sr=secRowH(), T=TH.canvas; if(!S||!S.length) return;
   g.textBaseline='middle'; g.textAlign='left';
