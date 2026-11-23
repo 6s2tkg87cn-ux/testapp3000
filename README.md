@@ -124,10 +124,9 @@ wenn kein gegriffener Ton in der Nähe liegt (das tiefe E gibt es nur leer). Die
 spielt weiter nur leere Saiten.
 
 **Teil wiederholen:** Einen Teil antippen (z. B. den Refrain) und „Teil wiederholen“ wählen – der Teil
-läuft dann endlos, ohne Lücke beim Rücksprung. Mit „Schneller werden“ beginnt er bei 70 % und wird
-bei jedem Durchgang 10 % schneller, bis das normale Tempo erreicht ist. Im Laufband ist abgedunkelt,
-was nach dem Teil käme. Am Smartphone quer und im Vollbild schaltet ein Knopf durch: wiederholen →
-jedes Mal schneller → aus. Springt man woandershin, wird der neue Teil wiederholt.
+läuft dann endlos im eingestellten Tempo, ohne Lücke beim Rücksprung. Im Laufband ist abgedunkelt,
+was nach dem Teil käme. Am Smartphone quer und im Vollbild schaltet ein Knopf an und aus. Springt man
+woandershin, wird der neue Teil wiederholt.
 
 **Akkordsymbole:** Überall einheitlich – Dur groß (D), Moll klein mit m (dm), Vorzeichen als
 # und b (C#, Eb), dazu G7, Cmaj7, am7 und C/G. Wie im Deutschen üblich ist H das englische B
